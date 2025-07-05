@@ -31,7 +31,6 @@ import {
   Clock,
   Webhook,
   ShoppingCart,
-  Filter,
   StopCircle,
   Code,
   AppWindow,
@@ -143,8 +142,7 @@ export function DashboardLayout({ workflow }: { workflow: WorkflowType }) {
         newStep.description = 'Click Edit to set conditions';
         newStep.data = {
             conditionData: {
-                logicalOperator: 'AND',
-                conditions: [{ id: uuidv4(), variable: '', operator: 'equals', value: '' }]
+                cases: [{ id: uuidv4(), name: 'Case 1', logicalOperator: 'AND', rules: [{ id: uuidv4(), variable: '', operator: 'equals', value: '' }] }]
             }
         };
     }

@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview A flow to evaluate conditions and branch workflows.
@@ -10,23 +11,31 @@
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 
-const ConditionSchema = z.object({
+const RuleSchema = z.object({
   id: z.string(),
   variable: z.string().describe("The variable from the context to check, e.g., 'trigger.data.name'."),
   operator: z.enum(['equals', 'not_equals', 'contains', 'not_contains', 'starts_with', 'ends_with', 'is_empty', 'is_not_empty', 'greater_than', 'less_than']),
   value: z.string().describe("The value to compare against."),
 });
-type Condition = z.infer<typeof ConditionSchema>;
+type Rule = z.infer<typeof RuleSchema>;
+
+const CaseSchema = z.object({
+    id: z.string(),
+    name: z.string(),
+    rules: z.array(RuleSchema),
+    logicalOperator: z.enum(['AND', 'OR']),
+});
+type Case = z.infer<typeof CaseSchema>;
+
 
 export const ConditionInputSchema = z.object({
-  conditions: z.array(ConditionSchema),
-  logicalOperator: z.enum(['AND', 'OR']),
+  cases: z.array(CaseSchema),
   dataContext: z.record(z.any()).describe('The data context from previous steps to evaluate against.'),
 });
 export type ConditionInput = z.infer<typeof ConditionInputSchema>;
 
 export const ConditionOutputSchema = z.object({
-  match: z.boolean().describe('Whether the data matches the filter conditions.'),
+  outcome: z.string().describe('The name of the first matching case, or "default" if none match.'),
 });
 export type ConditionOutput = z.infer<typeof ConditionOutputSchema>;
 
@@ -38,46 +47,50 @@ export type ConditionOutput = z.infer<typeof ConditionOutputSchema>;
  */
 function resolvePath(obj: Record<string, any>, path: string): any {
   if (!path) return undefined;
-  const properties = path.split('.');
+  // Strip {{...}} if present
+  const pathWithoutBraces = path.replace(/^{{|}}$/g, '').trim();
+  const properties = pathWithoutBraces.split('.');
   return properties.reduce((prev, curr) => (prev && prev[curr] !== undefined ? prev[curr] : undefined), obj);
 }
 
 /**
- * Evaluates a single filter condition against the data context.
- * @param condition The condition to evaluate.
+ * Evaluates a single rule against the data context.
+ * @param rule The rule to evaluate.
  * @param dataContext The data context.
- * @returns True if the condition is met, false otherwise.
+ * @returns True if the rule is met, false otherwise.
  */
-function evaluateSingleCondition(condition: Condition, dataContext: Record<string, any>): boolean {
-    const actualValue = resolvePath(dataContext, condition.variable);
-    const expectedValue = condition.value;
+function evaluateSingleRule(rule: Rule, dataContext: Record<string, any>): boolean {
+    const actualValue = resolvePath(dataContext, rule.variable);
+    const expectedValue = rule.value;
 
-    switch (condition.operator) {
+    switch (rule.operator) {
         case 'is_empty':
             return actualValue === null || actualValue === undefined || actualValue === '';
         case 'is_not_empty':
             return actualValue !== null && actualValue !== undefined && actualValue !== '';
     }
 
+    // For most operators, if the actual value is nullish, it can't be compared.
     if (actualValue === null || actualValue === undefined) {
         return false;
     }
 
-    if (condition.operator === 'greater_than' || condition.operator === 'less_than') {
+    if (rule.operator === 'greater_than' || rule.operator === 'less_than') {
         const numActual = parseFloat(String(actualValue));
         const numExpected = parseFloat(expectedValue);
         
         if (!isNaN(numActual) && !isNaN(numExpected)) {
-            if (condition.operator === 'greater_than') return numActual > numExpected;
-            if (condition.operator === 'less_than') return numActual < numExpected;
+            if (rule.operator === 'greater_than') return numActual > numExpected;
+            if (rule.operator === 'less_than') return numActual < numExpected;
         } else {
+            // Can't compare non-numbers
             return false;
         }
     }
     
     const actualValueStr = String(actualValue);
 
-    switch (condition.operator) {
+    switch (rule.operator) {
         case 'equals':
             return actualValueStr === expectedValue;
         case 'not_equals':
@@ -95,6 +108,28 @@ function evaluateSingleCondition(condition: Condition, dataContext: Record<strin
     }
 }
 
+/**
+ * Evaluates a single case by checking all its rules.
+ * @param caseItem The case to evaluate.
+ * @param dataContext The data context.
+ * @returns True if the case's conditions are met, false otherwise.
+ */
+function evaluateCase(caseItem: Case, dataContext: Record<string, any>): boolean {
+    if (!caseItem.rules || caseItem.rules.length === 0) {
+        return true; // A case with no rules always passes.
+    }
+    
+    const ruleResults = caseItem.rules.map(rule =>
+      evaluateSingleRule(rule, dataContext)
+    );
+    
+    if (caseItem.logicalOperator === 'AND') {
+      return ruleResults.every(result => result);
+    } else { // OR
+      return ruleResults.some(result => result);
+    }
+}
+
 
 const conditionFlow = ai.defineFlow(
   {
@@ -103,27 +138,23 @@ const conditionFlow = ai.defineFlow(
     outputSchema: ConditionOutputSchema,
   },
   async (input) => {
-    if (!input.conditions || input.conditions.length === 0) {
-        return { match: true }; // No conditions means it passes.
+    if (!input.cases || input.cases.length === 0) {
+        // No cases defined, so it can't match anything.
+        return { outcome: 'default' };
     }
     
-    // In a real application, the dataContext would be the combined output
-    // of all previous steps in the workflow. For this prototype, it's passed directly.
-    console.log('Evaluating filter with data context:', input.dataContext);
+    console.log('Evaluating condition with data context:', input.dataContext);
 
-    const conditionResults = input.conditions.map(c =>
-      evaluateSingleCondition(c, input.dataContext)
-    );
-    
-    let match = false;
-    if (input.logicalOperator === 'AND') {
-      match = conditionResults.every(result => result);
-    } else { // OR
-      match = conditionResults.some(result => result);
+    for (const caseItem of input.cases) {
+        const isMatch = evaluateCase(caseItem, input.dataContext);
+        if (isMatch) {
+            console.log(`Matched case: "${caseItem.name}"`);
+            return { outcome: caseItem.name };
+        }
     }
 
-    console.log(`Condition result (${input.logicalOperator}): ${match}`);
-    return { match };
+    console.log(`No cases matched. Falling back to "default".`);
+    return { outcome: 'default' };
   }
 );
 

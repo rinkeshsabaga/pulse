@@ -19,7 +19,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { MoreVertical, Pencil, Trash2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import type { WorkflowStepData, IconName } from '@/lib/types';
+import type { WorkflowStepData, IconName, Case } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import * as icons from 'lucide-react';
 
@@ -38,12 +38,16 @@ const iconMap: Record<IconName, React.ElementType> = {
   AppWindow: icons.AppWindow,
 };
 
-// Using memo to prevent unnecessary re-renders
+const HANDLE_BASE_TOP = 45; // Starting top percentage
+const HANDLE_SPACING = 25; // Spacing between handles in pixels
+
 const WorkflowNode = memo(({ data }: NodeProps<{ step: WorkflowStepData; onEdit: () => void; onDelete: () => void; }>) => {
   const { step, onEdit, onDelete } = data;
   const isTrigger = step.type === 'trigger';
   const isEndNode = step.title === 'End Automation';
   const isConditional = step.title === 'Condition';
+  
+  const cases = step.data?.conditionData?.cases || [];
 
   const statusClasses = {
     success: 'border-success',
@@ -53,6 +57,54 @@ const WorkflowNode = memo(({ data }: NodeProps<{ step: WorkflowStepData; onEdit:
   };
 
   const Icon = iconMap[step.icon];
+
+  const renderHandles = () => {
+    if (!isConditional) {
+      return (
+         <Handle
+          type="source"
+          position={Position.Right}
+          className="!bg-muted-foreground/80"
+          style={{ visibility: isEndNode ? 'hidden' : 'visible' }}
+        />
+      );
+    }
+    
+    const totalHandles = cases.length + 1; // cases + default
+    const totalHeight = totalHandles * HANDLE_SPACING;
+    const startTop = `calc(50% - ${totalHeight / 2}px)`;
+
+    return (
+      <>
+        {cases.map((caseItem: Case, index: number) => (
+           <React.Fragment key={caseItem.id}>
+             <Handle
+                type="source"
+                position={Position.Right}
+                id={caseItem.name}
+                style={{ top: `calc(${startTop} + ${index * HANDLE_SPACING}px)` }}
+                className="!bg-primary"
+            />
+            <div className="absolute right-[-70px] text-xs text-foreground font-semibold" style={{ top: `calc(${startTop} + ${index * HANDLE_SPACING}px)`, transform: 'translateY(-50%)' }}>
+                {caseItem.name}
+            </div>
+           </React.Fragment>
+        ))}
+         <React.Fragment>
+            <Handle
+                type="source"
+                position={Position.Right}
+                id="default"
+                style={{ top: `calc(${startTop} + ${cases.length * HANDLE_SPACING}px)` }}
+                className="!bg-muted-foreground"
+            />
+             <div className="absolute right-[-70px] text-xs text-muted-foreground font-semibold" style={{ top: `calc(${startTop} + ${cases.length * HANDLE_SPACING}px)`, transform: 'translateY(-50%)' }}>
+                Default
+            </div>
+         </React.Fragment>
+      </>
+    );
+  }
 
   return (
     <>
@@ -138,31 +190,7 @@ const WorkflowNode = memo(({ data }: NodeProps<{ step: WorkflowStepData; onEdit:
         )}
       </Card>
       
-      {isConditional ? (
-        <>
-            <Handle
-                type="source"
-                position={Position.Right}
-                id="true"
-                style={{ top: '40%', background: 'hsl(var(--success))' }}
-            />
-             <div className="absolute right-[-50px] top-[40%] -translate-y-1/2 text-xs text-success font-semibold">True</div>
-            <Handle
-                type="source"
-                position={Position.Right}
-                id="false"
-                style={{ top: '60%', background: 'hsl(var(--destructive))' }}
-            />
-            <div className="absolute right-[-55px] top-[60%] -translate-y-1/2 text-xs text-destructive font-semibold">False</div>
-        </>
-      ) : (
-        <Handle
-          type="source"
-          position={Position.Right}
-          className="!bg-muted-foreground/80"
-          style={{ visibility: isEndNode ? 'hidden' : 'visible' }}
-        />
-      )}
+      {renderHandles()}
     </>
   );
 });

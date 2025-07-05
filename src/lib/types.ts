@@ -62,16 +62,22 @@ export type AppActionData = {
   params?: Record<string, any>;
 };
 
-export type Condition = {
+export type Rule = {
   id: string;
   variable: string;
   operator: 'equals' | 'not_equals' | 'contains' | 'not_contains' | 'starts_with' | 'ends_with' | 'is_empty' | 'is_not_empty' | 'greater_than' | 'less_than';
   value: string;
 };
 
+export type Case = {
+    id: string;
+    name: string;
+    rules: Rule[];
+    logicalOperator: 'AND' | 'OR';
+};
+
 export type ConditionData = {
-  conditions: Condition[];
-  logicalOperator: 'AND' | 'OR';
+  cases: Case[];
 };
 
 export type ApiRequestData = {

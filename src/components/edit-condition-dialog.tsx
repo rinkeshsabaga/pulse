@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -14,9 +15,10 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from './ui/radio-group';
-import type { WorkflowStepData, ConditionData, Condition } from '@/lib/types';
-import { Plus, Trash2, GitBranch } from 'lucide-react';
+import type { WorkflowStepData, ConditionData, Case, Rule } from '@/lib/types';
+import { Plus, Trash2, GitBranch, GripVertical } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
+import { Card, CardContent, CardHeader } from './ui/card';
 
 type EditConditionDialogProps = {
   step: WorkflowStepData | null;
@@ -39,17 +41,13 @@ const operatorOptions = [
 ];
 
 export function EditConditionDialog({ step, open, onOpenChange, onSave }: EditConditionDialogProps) {
-  const [conditionData, setConditionData] = useState<ConditionData>({ conditions: [], logicalOperator: 'AND' });
+  const [cases, setCases] = useState<Case[]>([]);
   
   useEffect(() => {
     if (open && step?.data?.conditionData) {
-      setConditionData(step.data.conditionData);
+      setCases(step.data.conditionData.cases || []);
     } else if (open) {
-      // Default state if no data is present
-      setConditionData({
-        conditions: [{ id: uuidv4(), variable: '', operator: 'equals', value: '' }],
-        logicalOperator: 'AND',
-      });
+      setCases([{ id: uuidv4(), name: 'Case 1', rules: [{ id: uuidv4(), variable: '', operator: 'equals', value: '' }], logicalOperator: 'AND' }]);
     }
   }, [open, step?.data]);
 
@@ -57,121 +55,150 @@ export function EditConditionDialog({ step, open, onOpenChange, onSave }: EditCo
     if (!step) return;
     const updatedStep: WorkflowStepData = {
       ...step,
-      description: `Runs if conditions are met`,
+      description: `${cases.length} case(s) defined`,
       data: {
         ...step.data,
-        conditionData,
+        conditionData: {
+          cases: cases
+        },
       },
     };
     onSave(updatedStep);
     onOpenChange(false);
   };
-
-  const handleAddCondition = () => {
-    setConditionData(prev => ({
-      ...prev,
-      conditions: [...prev.conditions, { id: uuidv4(), variable: '', operator: 'equals', value: '' }]
-    }));
-  };
-
-  const handleRemoveCondition = (id: string) => {
-    setConditionData(prev => ({
-      ...prev,
-      conditions: prev.conditions.filter((c) => c.id !== id)
-    }));
-  };
   
-  const handleConditionChange = (id: string, field: keyof Omit<Condition, 'id'>, value: string) => {
-    setConditionData(prev => ({
-      ...prev,
-      conditions: prev.conditions.map(c => c.id === id ? {...c, [field]: value} : c)
-    }));
+  const handleAddCase = () => {
+    setCases(prev => [
+        ...prev, 
+        { id: uuidv4(), name: `Case ${prev.length + 1}`, rules: [{ id: uuidv4(), variable: '', operator: 'equals', value: '' }], logicalOperator: 'AND' }
+    ]);
+  }
+
+  const handleRemoveCase = (caseId: string) => {
+    setCases(prev => prev.filter(c => c.id !== caseId));
+  }
+  
+  const handleCaseChange = (caseId: string, field: keyof Omit<Case, 'id' | 'rules'>, value: any) => {
+      setCases(prev => prev.map(c => c.id === caseId ? { ...c, [field]: value } : c));
+  }
+
+  const handleAddRule = (caseId: string) => {
+      setCases(prev => prev.map(c => c.id === caseId ? { ...c, rules: [...c.rules, { id: uuidv4(), variable: '', operator: 'equals', value: '' }] } : c));
+  }
+  
+  const handleRemoveRule = (caseId: string, ruleId: string) => {
+      setCases(prev => prev.map(c => c.id === caseId ? { ...c, rules: c.rules.filter(r => r.id !== ruleId) } : c));
+  }
+
+  const handleRuleChange = (caseId: string, ruleId: string, field: keyof Omit<Rule, 'id'>, value: string) => {
+      setCases(prev => prev.map(c => c.id === caseId ? { ...c, rules: c.rules.map(r => r.id === ruleId ? { ...r, [field]: value } : r) } : c));
   }
 
   if (!step) return null;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-3xl">
+      <DialogContent className="sm:max-w-4xl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 font-headline">
             <GitBranch className="text-primary" />
             Edit Action: {step.title}
           </DialogTitle>
           <DialogDescription>
-            Define conditions to control the workflow path. The workflow will only continue down the 'true' path if these conditions are met, otherwise it will follow the 'false' path.
+            Define multiple cases to create different branches in your workflow. The first case that evaluates to true will be executed.
           </DialogDescription>
         </DialogHeader>
-        <div className="space-y-6 py-4 max-h-[70vh] overflow-y-auto pr-2">
-            <RadioGroup
-                value={conditionData.logicalOperator}
-                onValueChange={(v) => setConditionData(prev => ({ ...prev, logicalOperator: v as 'AND' | 'OR' }))}
-                className="flex items-center gap-4"
-            >
-                <Label>Conditions must match:</Label>
-                <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="AND" id="op-and" />
-                    <Label htmlFor="op-and">All (AND)</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="OR" id="op-or" />
-                    <Label htmlFor="op-or">Any (OR)</Label>
-                </div>
-            </RadioGroup>
-
-            <div className="space-y-3">
-                {conditionData.conditions.map((condition) => (
-                   <div key={condition.id} className="flex items-end gap-2 p-3 bg-muted/50 rounded-lg">
-                       <div className="flex-1 space-y-2">
-                           <Label htmlFor={`var-${condition.id}`}>Variable</Label>
-                           <Input 
-                               id={`var-${condition.id}`}
-                               placeholder="{{trigger.body.name}}" 
-                               value={condition.variable} 
-                               onChange={e => handleConditionChange(condition.id, 'variable', e.target.value)} 
-                           />
+        <div className="space-y-4 py-4 max-h-[70vh] overflow-y-auto pr-4">
+            {cases.map((caseItem, caseIndex) => (
+                <Card key={caseItem.id} className="bg-muted/30">
+                    <CardHeader className="flex flex-row items-center justify-between p-4">
+                       <div className="flex items-center gap-2 flex-1">
+                            <GripVertical className="h-5 w-5 text-muted-foreground cursor-grab" />
+                            <Input 
+                                placeholder="Case Name" 
+                                value={caseItem.name}
+                                onChange={(e) => handleCaseChange(caseItem.id, 'name', e.target.value)}
+                                className="text-md font-semibold w-auto flex-1"
+                            />
                        </div>
-                       <div className="w-48 space-y-2">
-                           <Label htmlFor={`op-${condition.id}`}>Operator</Label>
-                           <Select 
-                               value={condition.operator} 
-                               onValueChange={(v) => handleConditionChange(condition.id, 'operator', v)}
-                           >
-                               <SelectTrigger id={`op-${condition.id}`}>
-                                   <SelectValue />
-                               </SelectTrigger>
-                               <SelectContent>
-                                   {operatorOptions.map(opt => (
-                                       <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
-                                   ))}
-                               </SelectContent>
-                           </Select>
-                       </div>
-                        <div className="flex-1 space-y-2">
-                           <Label htmlFor={`val-${condition.id}`}>Value</Label>
-                           <Input 
-                               id={`val-${condition.id}`}
-                               placeholder="Enter a value" 
-                               value={condition.value} 
-                               onChange={e => handleConditionChange(condition.id, 'value', e.target.value)} 
-                               disabled={condition.operator === 'is_empty' || condition.operator === 'is_not_empty'}
-                           />
-                       </div>
-                       <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            onClick={() => handleRemoveCondition(condition.id)}
-                            disabled={conditionData.conditions.length <= 1}
-                        >
+                        <Button variant="ghost" size="icon" onClick={() => handleRemoveCase(caseItem.id)} disabled={cases.length <= 1}>
                            <Trash2 className="h-4 w-4 text-destructive" />
                        </Button>
-                   </div>
-                ))}
-            </div>
-
-             <Button variant="outline" size="sm" onClick={handleAddCondition}>
-                 <Plus className="mr-2 h-4 w-4" /> Add Condition
-             </Button>
+                    </CardHeader>
+                    <CardContent className="p-4 pt-0 space-y-4">
+                        <RadioGroup
+                            value={caseItem.logicalOperator}
+                            onValueChange={(v) => handleCaseChange(caseItem.id, 'logicalOperator', v as 'AND' | 'OR')}
+                            className="flex items-center gap-4"
+                        >
+                            <Label className="text-xs">Rules must match:</Label>
+                            <div className="flex items-center space-x-2">
+                                <RadioGroupItem value="AND" id={`op-and-${caseItem.id}`} />
+                                <Label htmlFor={`op-and-${caseItem.id}`} className="font-normal">All (AND)</Label>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                                <RadioGroupItem value="OR" id={`op-or-${caseItem.id}`} />
+                                <Label htmlFor={`op-or-${caseItem.id}`} className="font-normal">Any (OR)</Label>
+                            </div>
+                        </RadioGroup>
+                        <div className="space-y-2">
+                            {caseItem.rules.map(rule => (
+                                <div key={rule.id} className="flex items-end gap-2">
+                                    <div className="flex-1 space-y-1">
+                                        <Label htmlFor={`var-${rule.id}`} className="text-xs">Variable</Label>
+                                        <Input 
+                                            id={`var-${rule.id}`}
+                                            placeholder="{{trigger.body.name}}" 
+                                            value={rule.variable} 
+                                            onChange={e => handleRuleChange(caseItem.id, rule.id, 'variable', e.target.value)} 
+                                        />
+                                    </div>
+                                    <div className="w-48 space-y-1">
+                                        <Label htmlFor={`op-${rule.id}`} className="text-xs">Operator</Label>
+                                        <Select 
+                                            value={rule.operator} 
+                                            onValueChange={(v) => handleRuleChange(caseItem.id, rule.id, 'operator', v)}
+                                        >
+                                            <SelectTrigger id={`op-${rule.id}`}>
+                                                <SelectValue />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {operatorOptions.map(opt => (
+                                                    <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                    <div className="flex-1 space-y-1">
+                                        <Label htmlFor={`val-${rule.id}`} className="text-xs">Value</Label>
+                                        <Input 
+                                            id={`val-${rule.id}`}
+                                            placeholder="Enter a value" 
+                                            value={rule.value} 
+                                            onChange={e => handleRuleChange(caseItem.id, rule.id, 'value', e.target.value)} 
+                                            disabled={rule.operator === 'is_empty' || rule.operator === 'is_not_empty'}
+                                        />
+                                    </div>
+                                    <Button 
+                                        variant="ghost" 
+                                        size="icon" 
+                                        onClick={() => handleRemoveRule(caseItem.id, rule.id)}
+                                        disabled={caseItem.rules.length <= 1}
+                                    >
+                                        <Trash2 className="h-4 w-4 text-destructive" />
+                                    </Button>
+                                </div>
+                            ))}
+                        </div>
+                        <Button variant="outline" size="sm" onClick={() => handleAddRule(caseItem.id)}>
+                            <Plus className="mr-2 h-4 w-4" /> Add Rule
+                        </Button>
+                    </CardContent>
+                </Card>
+            ))}
+            <Button variant="outline" className="w-full border-dashed" onClick={handleAddCase}>
+                <Plus className="mr-2 h-4 w-4" /> Add Case
+            </Button>
         </div>
         <DialogFooter>
           <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
