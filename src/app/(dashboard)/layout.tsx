@@ -194,7 +194,7 @@ export default function DashboardLayout({
               </DropdownMenu>
             </div>
           </header>
-          <main className={cn('flex-1 flex', !isEditorPage && 'p-4 sm:p-6')}>
+          <main className={cn('flex-1', !isEditorPage && 'p-4 sm:p-6')}>
             {children}
           </main>
         </SidebarInset>
