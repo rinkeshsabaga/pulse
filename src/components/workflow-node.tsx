@@ -33,6 +33,7 @@ const iconMap: Record<IconName, React.ElementType> = {
   Clock: icons.Clock,
   ShoppingCart: icons.ShoppingCart,
   StopCircle: icons.StopCircle,
+  Code: icons.Code,
 };
 
 // Using memo to prevent unnecessary re-renders

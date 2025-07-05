@@ -33,6 +33,7 @@ import {
   ShoppingCart,
   GitMerge,
   StopCircle,
+  Code,
 } from 'lucide-react';
 import * as icons from 'lucide-react';
 
@@ -43,6 +44,7 @@ import { AIFunctionGenerator } from './ai-function-generator';
 import { EditTriggerDialog } from './edit-trigger-dialog';
 import { EditShopifyTriggerDialog } from './edit-shopify-trigger-dialog';
 import { EditApiRequestDialog } from './edit-api-request-dialog';
+import { EditCustomCodeDialog } from './edit-custom-code-dialog';
 import type { Workflow as WorkflowType, WorkflowStepData, IconName } from '@/lib/types';
 import { updateWorkflow } from '@/lib/db';
 
@@ -56,6 +58,7 @@ const iconMap: Record<IconName, React.ElementType> = {
   Clock: icons.Clock,
   ShoppingCart: icons.ShoppingCart,
   StopCircle: icons.StopCircle,
+  Code: icons.Code,
 };
 
 export function DashboardLayout({ workflow }: { workflow: WorkflowType }) {
@@ -102,6 +105,11 @@ export function DashboardLayout({ workflow }: { workflow: WorkflowType }) {
           body: { type: 'none', content: '' }
         };
     }
+    
+    if (newStep.title === 'Custom Code') {
+        newStep.description = 'Click Edit to write code';
+        newStep.content = { code: '// Your code here', language: 'typescript' };
+    }
 
     handleSetSteps(prev => {
       if (newStep.type === 'trigger' && newStep.title !== 'Shopify' && newStep.title !== 'Webhook' && newStep.title !== 'Cron Job') {
@@ -147,6 +155,7 @@ export function DashboardLayout({ workflow }: { workflow: WorkflowType }) {
   }
 
   const actionSteps = [
+    { type: 'action' as const, icon: 'Code' as const, title: 'Custom Code', description: 'Write and run custom code' },
     { type: 'action' as const, icon: 'ArrowRightLeft' as const, title: 'API Request', description: 'Make an HTTP request' },
     { type: 'action' as const, icon: 'Mail' as const, title: 'Send Email', description: 'Send an email' },
     { type: 'action' as const, icon: 'Database' as const, title: 'Database Query', description: 'Interact with a database' },
@@ -288,6 +297,12 @@ export function DashboardLayout({ workflow }: { workflow: WorkflowType }) {
             onSave={handleSaveAction}
         />
       )}
+      <EditCustomCodeDialog
+        step={editingStep}
+        open={!!editingStep && editingStep.title === 'Custom Code'}
+        onOpenChange={(isOpen) => !isOpen && setEditingStep(null)}
+        onSave={handleSaveAction}
+      />
     </SidebarProvider>
   );
 }

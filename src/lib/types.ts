@@ -10,7 +10,8 @@ export type IconName =
   | 'GitMerge'
   | 'Clock'
   | 'ShoppingCart'
-  | 'StopCircle';
+  | 'StopCircle'
+  | 'Code';
 
 export type ApiRequestAuth = {
     type: 'none' | 'bearer' | 'basic' | 'apiKey';

@@ -110,7 +110,7 @@ function WorkflowCanvasComponent({
   }, [setSteps, toast]);
 
   const handleEditStep = useCallback((stepToEdit: WorkflowStepData) => {
-    if (stepToEdit.type === 'trigger' || stepToEdit.title === 'API Request') {
+    if (stepToEdit.type === 'trigger' || stepToEdit.title === 'API Request' || stepToEdit.title === 'Custom Code') {
       onEditStep(stepToEdit);
     } else {
       toast({
