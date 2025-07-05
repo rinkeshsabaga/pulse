@@ -1,39 +1,24 @@
 
 'use client';
 
-import React from 'react';
-import {
-  DndContext,
-  closestCenter,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
-  type DragEndEvent,
-} from '@dnd-kit/core';
-import {
-  arrayMove,
-  SortableContext,
-  sortableKeyboardCoordinates,
-  useSortable,
-  horizontalListSortingStrategy,
-  verticalListSortingStrategy,
-} from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
+import React, { useCallback, useEffect } from 'react';
+import ReactFlow, {
+  addEdge,
+  Background,
+  Controls,
+  MiniMap,
+  useNodesState,
+  useEdgesState,
+  ReactFlowProvider,
+  type Connection,
+  type Edge,
+} from 'reactflow';
+
 import {
   Card,
   CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import {
   Select,
   SelectContent,
@@ -43,209 +28,60 @@ import {
 } from '@/components/ui/select';
 import {
   Play,
-  MoreVertical,
   Plus,
   Workflow,
-  GripVertical,
-  Pencil,
-  Trash2,
   LayoutGrid,
   List,
 } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
 import { Separator } from './ui/separator';
-import type { WorkflowStepData, IconName } from '@/lib/types';
+import type { WorkflowStepData } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
-import { cn } from '@/lib/utils';
-import * as icons from 'lucide-react';
+import WorkflowNode from './workflow-node';
 
-const iconMap: Record<IconName, React.ElementType> = {
-  Webhook: icons.Webhook,
-  Mail: icons.Mail,
-  FlaskConical: icons.FlaskConical,
-  Database: icons.Database,
-  ArrowRightLeft: icons.ArrowRightLeft,
-  GitMerge: icons.GitMerge,
-  Clock: icons.Clock,
-  ShoppingCart: icons.ShoppingCart,
+const nodeTypes = {
+  workflowNode: WorkflowNode,
 };
 
-function SortableWorkflowStep({
-  step,
-  isTrigger,
-  onEdit,
-  onDelete,
-  layout,
-  isFirst,
-  isLast,
-}: {
-  step: WorkflowStepData;
-  isTrigger: boolean;
-  onEdit: () => void;
-  onDelete: () => void;
-  layout: 'horizontal' | 'vertical';
-  isFirst: boolean;
-  isLast: boolean;
-}) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id: step.id, disabled: isTrigger });
+const getNodePositions = (steps: WorkflowStepData[], layout: 'horizontal' | 'vertical') => {
+  const nodes = [];
+  const edges = [];
+  
+  const nodeWidth = 320; // from w-80 on the card
+  const nodeHeight = 220; // estimated height
+  const horizontalGap = 150;
+  const verticalGap = 100;
 
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    zIndex: isDragging ? 10 : 'auto',
-  };
+  for (let i = 0; i < steps.length; i++) {
+    const step = steps[i];
+    const position =
+      layout === 'horizontal'
+        ? { x: i * (nodeWidth + horizontalGap), y: 100 }
+        : { x: 100, y: i * (nodeHeight + verticalGap) };
 
-  const statusClasses = {
-    success: 'border-success',
-    warning: 'border-accent',
-    error: 'border-destructive',
-    default: 'border-border'
-  };
+    nodes.push({
+      id: step.id,
+      type: 'workflowNode',
+      position,
+      data: {
+        step,
+      },
+    });
 
-  const Icon = iconMap[step.icon];
-
-  return (
-    <div ref={setNodeRef} style={style} {...attributes} className="relative">
-      <Card
-        className={cn(
-          'w-80 shrink-0 transition-shadow hover:shadow-lg relative group',
-          statusClasses[step.status || 'default']
-        )}
-      >
-        {!isTrigger && (
-          <div
-            {...listeners}
-            className="absolute -left-3 top-1/2 -translate-y-1/2 p-1 text-muted-foreground/50 group-hover:text-muted-foreground cursor-grab"
-          >
-            <GripVertical className="h-5 w-5" />
-          </div>
-        )}
-        <CardHeader>
-          <div className="flex justify-between items-start">
-            <div className="flex items-center gap-3">
-              <div className="p-3 bg-primary/10 rounded-lg">
-                {Icon && <Icon className="h-6 w-6 text-primary" />}
-              </div>
-              <div>
-                <CardTitle className="text-md font-semibold font-headline flex items-left gap-2">
-                  {step.title}
-                  <Badge variant="outline" className="capitalize font-medium">
-                    {step.type}
-                  </Badge>
-                </CardTitle>
-                <CardDescription className="text-sm">
-                  {step.description}
-                </CardDescription>
-              </div>
-            </div>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0">
-                    <MoreVertical className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={onEdit}>
-                    <Pencil className="mr-2 h-4 w-4" />
-                    Edit
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={onDelete}
-                    className="text-destructive focus:text-destructive"
-                  >
-                    <Trash2 className="mr-2 h-4 w-4" />
-                    Delete
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-          </div>
-        </CardHeader>
-        {(step.content || step.errorMessage) && (
-          <CardContent>
-            {step.content && (
-              <div className="text-sm text-muted-foreground p-4 bg-muted/50 rounded-md">
-                <pre className="overflow-x-auto">
-                  <code
-                    className={`language-${step.content.language} font-code text-xs`}
-                  >
-                    {step.content.code}
-                  </code>
-                </pre>
-                <div className="mt-2 flex gap-2">
-                  {step.title.includes('AI') && (
-                    <Badge variant="outline">AI Generated</Badge>
-                  )}
-                  <Badge variant="outline">{step.content.language}</Badge>
-                </div>
-              </div>
-            )}
-            {step.errorMessage && (
-              <div className="text-sm text-destructive-foreground p-4 bg-destructive/80 rounded-md">
-                <p className="font-semibold">{step.errorMessage.title}</p>
-                <p className="opacity-80">{step.errorMessage.description}</p>
-              </div>
-            )}
-          </CardContent>
-        )}
-      </Card>
-      {/* Connection points */}
-      {layout === 'horizontal' && !isFirst && (
-        <div className="absolute top-1/2 -left-[5px] w-2.5 h-2.5 bg-background border border-muted-foreground/80 rounded-full -translate-y-1/2" />
-      )}
-      {layout === 'horizontal' && !isLast && (
-        <div className="absolute top-1/2 -right-[5px] w-2.5 h-2.5 bg-background border border-muted-foreground/80 rounded-full -translate-y-1/2" />
-      )}
-      {layout === 'vertical' && !isFirst && (
-        <div className="absolute left-1/2 -top-[5px] w-2.5 h-2.5 bg-background border border-muted-foreground/80 rounded-full -translate-x-1/2" />
-      )}
-      {layout === 'vertical' && !isLast && (
-        <div className="absolute left-1/2 -bottom-[5px] w-2.5 h-2.5 bg-background border border-muted-foreground/80 rounded-full -translate-x-1/2" />
-      )}
-    </div>
-  );
-}
-
-const FlowConnector = ({ direction = 'horizontal' }: { direction?: 'horizontal' | 'vertical' }) => {
-    const pathClass = "stroke-muted-foreground/30";
-    const strokeWidth = 1.5;
-
-    // For vertical layout, the curve goes from top-center to bottom-center
-    if (direction === 'vertical') {
-        return (
-            <div className="flex justify-center w-full h-16 shrink-0" aria-hidden="true">
-                <svg width="100%" height="100%" viewBox="0 0 320 64" fill="none" preserveAspectRatio="none">
-                    <path
-                        d="M 160 0 Q 120 32, 160 64"
-                        className={pathClass}
-                        strokeWidth={strokeWidth}
-                    />
-                </svg>
-            </div>
-        );
+    if (i > 0) {
+      edges.push({
+        id: `e${steps[i-1].id}-${step.id}`,
+        source: steps[i-1].id,
+        target: step.id,
+        type: 'smoothstep',
+        animated: step.status === 'success'
+      });
     }
-    // For horizontal layout, the curve goes from left-center to right-center
-    return (
-        <div className="flex items-center justify-center h-full w-16 shrink-0" aria-hidden="true">
-             <svg width="100%" height="100%" viewBox="0 0 64 200" fill="none" preserveAspectRatio="none">
-                <path
-                    d="M 0 100 Q 32 60, 64 100"
-                    className={pathClass}
-                    strokeWidth={strokeWidth}
-                />
-            </svg>
-        </div>
-    );
+  }
+  return { nodes, edges };
 };
 
 
-export function WorkflowCanvas({
+function WorkflowCanvasComponent({
   steps,
   setSteps,
   onCreateNewWorkflow,
@@ -260,45 +96,20 @@ export function WorkflowCanvas({
   workflowName: string;
   workflowDescription?: string;
 }) {
-  const { toast } = useToast();
+  const [nodes, setNodes, onNodesChange] = useNodesState([]);
+  const [edges, setEdges, onEdgesChange] = useEdgesState([]);
   const [layout, setLayout] = React.useState<'horizontal' | 'vertical'>('horizontal');
+  const { toast } = useToast();
   
-  const sensors = useSensors(
-    useSensor(PointerSensor),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    })
-  );
-
-  function handleDragEnd(event: DragEndEvent) {
-    const { active, over } = event;
-
-    if (over && active.id !== over.id) {
-      setSteps((currentSteps) => {
-        const oldIndex = currentSteps.findIndex((s) => s.id === active.id);
-        const newIndex = currentSteps.findIndex((s) => s.id === over.id);
-
-        if (
-          currentSteps[oldIndex].type === 'trigger' ||
-          (currentSteps[newIndex] && currentSteps[newIndex].type === 'trigger')
-        ) {
-          return currentSteps;
-        }
-
-        return arrayMove(currentSteps, oldIndex, newIndex);
-      });
-    }
-  }
-
-  const handleDeleteStep = (stepIdToDelete: string) => {
+  const handleDeleteStep = useCallback((stepIdToDelete: string) => {
     setSteps((prevSteps) => prevSteps.filter((step) => step.id !== stepIdToDelete));
     toast({
       title: 'Step Deleted',
       description: 'The step has been removed from your workflow.',
     });
-  };
+  }, [setSteps, toast]);
 
-  const handleEditStep = (stepToEdit: WorkflowStepData) => {
+  const handleEditStep = useCallback((stepToEdit: WorkflowStepData) => {
     if (stepToEdit.type === 'trigger' || stepToEdit.title === 'API Request') {
       onEditStep(stepToEdit);
     } else {
@@ -307,7 +118,29 @@ export function WorkflowCanvas({
         description: `Editing for "${stepToEdit.title}" is not yet implemented.`,
       });
     }
-  };
+  }, [onEditStep, toast]);
+
+  useEffect(() => {
+    const { nodes: newNodes, edges: newEdges } = getNodePositions(steps, layout);
+
+    const nodesWithCallbacks = newNodes.map(node => ({
+      ...node,
+      data: {
+        step: node.data.step,
+        onEdit: () => handleEditStep(node.data.step),
+        onDelete: () => handleDeleteStep(node.id),
+      }
+    }));
+
+    setNodes(nodesWithCallbacks);
+    setEdges(newEdges);
+  }, [steps, layout, handleEditStep, handleDeleteStep, setNodes, setEdges]);
+
+
+  const onConnect = useCallback(
+    (params: Connection | Edge) => setEdges((eds) => addEdge(params, eds)),
+    [setEdges]
+  );
 
   return (
     <div className="space-y-6">
@@ -368,47 +201,24 @@ export function WorkflowCanvas({
 
       <Separator />
 
-      <div className={cn(
-        "relative flex min-h-[500px] w-full items-center justify-center rounded-lg border dot-grid p-4"
-      )}>
+      <div className="h-[60vh] rounded-lg border bg-background">
         {steps.length > 0 ? (
-          <DndContext
-            sensors={sensors}
-            collisionDetection={closestCenter}
-            onDragEnd={handleDragEnd}
+          <ReactFlow
+            nodes={nodes}
+            edges={edges}
+            onNodesChange={onNodesChange}
+            onEdgesChange={onEdgesChange}
+            onConnect={onConnect}
+            nodeTypes={nodeTypes}
+            fitView
+            className="bg-background"
           >
-            <SortableContext
-              items={steps.map((s) => s.id)}
-              strategy={layout === 'horizontal' ? horizontalListSortingStrategy : verticalListSortingStrategy}
-            >
-              <div className={cn(
-                "w-full h-full",
-                layout === 'horizontal' && 'overflow-x-auto'
-              )}>
-                <div className={cn(
-                  "gap-4 h-full",
-                  layout === 'horizontal' ? "inline-flex items-center" : "flex flex-col items-center"
-                )}>
-                  {steps.map((step, index) => (
-                    <React.Fragment key={step.id}>
-                      <SortableWorkflowStep
-                        step={step}
-                        isTrigger={step.type === 'trigger'}
-                        onEdit={() => handleEditStep(step)}
-                        onDelete={() => handleDeleteStep(step.id)}
-                        layout={layout}
-                        isFirst={index === 0}
-                        isLast={index === steps.length - 1}
-                      />
-                      {index < steps.length - 1 && <FlowConnector direction={layout} />}
-                    </React.Fragment>
-                  ))}
-                </div>
-              </div>
-            </SortableContext>
-          </DndContext>
+            <Controls />
+            <MiniMap nodeStrokeWidth={3} zoomable pannable />
+            <Background variant="dots" gap={16} size={1} />
+          </ReactFlow>
         ) : (
-          <div className="flex-1 flex items-center justify-center">
+          <div className="flex h-full w-full items-center justify-center p-4">
             <Card className="w-full max-w-lg border-dashed bg-transparent hover:border-primary/50 transition-colors">
               <CardContent className="p-10 text-center flex flex-col items-center">
                 <div className="p-3 bg-primary/10 rounded-full mb-4">
@@ -427,4 +237,19 @@ export function WorkflowCanvas({
       </div>
     </div>
   );
+}
+
+export function WorkflowCanvas(props: {
+  steps: WorkflowStepData[];
+  setSteps: (steps: React.SetStateAction<WorkflowStepData[]>) => void;
+  onCreateNewWorkflow: () => void;
+  onEditStep: (step: WorkflowStepData) => void;
+  workflowName: string;
+  workflowDescription?: string;
+}) {
+  return (
+    <ReactFlowProvider>
+      <WorkflowCanvasComponent {...props} />
+    </ReactFlowProvider>
+  )
 }
