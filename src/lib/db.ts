@@ -35,7 +35,11 @@ export async function getWorkflows(): Promise<Workflow[]> {
 }
 
 export async function getWorkflowById(id: string): Promise<Workflow | undefined> {
-  return JSON.parse(JSON.stringify(workflows.find((wf) => wf.id === id)));
+  const workflow = workflows.find((wf) => wf.id === id);
+  if (!workflow) {
+    return undefined;
+  }
+  return JSON.parse(JSON.stringify(workflow));
 }
 
 export async function addWorkflow(workflowData: { name: string; description?: string }): Promise<Workflow> {
