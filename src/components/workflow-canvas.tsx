@@ -55,9 +55,21 @@ import {
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from './ui/separator';
-import type { WorkflowStepData } from '@/lib/types';
+import type { WorkflowStepData, IconName } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import * as icons from 'lucide-react';
+
+const iconMap: Record<IconName, React.ElementType> = {
+  Webhook: icons.Webhook,
+  Mail: icons.Mail,
+  FlaskConical: icons.FlaskConical,
+  Database: icons.Database,
+  ArrowRightLeft: icons.ArrowRightLeft,
+  GitMerge: icons.GitMerge,
+  Clock: icons.Clock,
+  ShoppingCart: icons.ShoppingCart,
+};
 
 function SortableWorkflowStep({
   step,
@@ -92,7 +104,7 @@ function SortableWorkflowStep({
     default: 'border-border'
   };
 
-  const Icon = step.icon;
+  const Icon = iconMap[step.icon];
 
   return (
     <div ref={setNodeRef} style={style} {...attributes}>
@@ -114,10 +126,10 @@ function SortableWorkflowStep({
           <div className="flex justify-between items-start">
             <div className="flex items-center gap-3">
               <div className="p-3 bg-primary/10 rounded-lg">
-                <Icon className="h-6 w-6 text-primary" />
+                {Icon && <Icon className="h-6 w-6 text-primary" />}
               </div>
               <div>
-                <CardTitle className="text-md font-semibold font-headline flex items-center gap-2">
+                <CardTitle className="text-md font-semibold font-headline flex items-left gap-2">
                   {step.title}
                   <Badge variant="outline" className="capitalize font-medium">
                     {step.type}

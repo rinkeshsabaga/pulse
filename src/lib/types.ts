@@ -1,9 +1,19 @@
 import type { ReactElement, ElementType } from 'react';
 
+export type IconName =
+  | 'Webhook'
+  | 'Mail'
+  | 'FlaskConical'
+  | 'Database'
+  | 'ArrowRightLeft'
+  | 'GitMerge'
+  | 'Clock'
+  | 'ShoppingCart';
+
 export type WorkflowStepData = {
   id: string;
   type: 'trigger' | 'action';
-  icon: ElementType;
+  icon: IconName;
   title: string;
   description: string;
   data?: {

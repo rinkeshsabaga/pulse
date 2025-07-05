@@ -23,7 +23,6 @@ import {
 } from '@/components/ui/tabs';
 import {
   Mail,
-  Workflow,
   Settings,
   HelpCircle,
   FlaskConical,
@@ -34,15 +33,26 @@ import {
   ShoppingCart,
   GitMerge,
 } from 'lucide-react';
+import * as icons from 'lucide-react';
 
 import { Logo } from './icons';
 import { WorkflowCanvas } from './workflow-canvas';
 import { MonitoringPanel } from './monitoring-panel';
 import { AIFunctionGenerator } from './ai-function-generator';
 import { EditTriggerDialog } from './edit-trigger-dialog';
-import type { Workflow as WorkflowType, WorkflowStepData } from '@/lib/types';
+import type { Workflow as WorkflowType, WorkflowStepData, IconName } from '@/lib/types';
 import { updateWorkflow } from '@/lib/db';
 
+const iconMap: Record<IconName, React.ElementType> = {
+  Webhook: icons.Webhook,
+  Mail: icons.Mail,
+  FlaskConical: icons.FlaskConical,
+  Database: icons.Database,
+  ArrowRightLeft: icons.ArrowRightLeft,
+  GitMerge: icons.GitMerge,
+  Clock: icons.Clock,
+  ShoppingCart: icons.ShoppingCart,
+};
 
 export function DashboardLayout({ workflow }: { workflow: WorkflowType }) {
   const [steps, setSteps] = React.useState<WorkflowStepData[]>(workflow.steps);
@@ -94,7 +104,7 @@ export function DashboardLayout({ workflow }: { workflow: WorkflowType }) {
     const newStep: WorkflowStepData = {
         id: `step-${Date.now()}`,
         type: 'action',
-        icon: FlaskConical,
+        icon: 'FlaskConical',
         title: 'Custom AI Function',
         description: intent.length > 50 ? intent.substring(0, 47) + '...' : intent,
         content: {
@@ -111,16 +121,16 @@ export function DashboardLayout({ workflow }: { workflow: WorkflowType }) {
   };
 
   const actionSteps = [
-    { type: 'action' as const, icon: ArrowRightLeft, title: 'Data Transform', description: 'Transform data structure' },
-    { type: 'action' as const, icon: Mail, title: 'Send Email', description: 'Send an email' },
-    { type: 'action' as const, icon: Database, title: 'Database Query', description: 'Interact with a database' },
-    { type: 'action' as const, icon: GitMerge, title: 'Condition', description: 'If/Else, Switch logic' },
+    { type: 'action' as const, icon: 'ArrowRightLeft' as const, title: 'Data Transform', description: 'Transform data structure' },
+    { type: 'action' as const, icon: 'Mail' as const, title: 'Send Email', description: 'Send an email' },
+    { type: 'action' as const, icon: 'Database' as const, title: 'Database Query', description: 'Interact with a database' },
+    { type: 'action' as const, icon: 'GitMerge' as const, title: 'Condition', description: 'If/Else, Switch logic' },
   ];
 
   const triggerSteps = [
-    { type: 'trigger' as const, icon: Webhook, title: 'Webhook', description: 'Trigger via HTTP POST' },
-    { type: 'trigger' as const, icon: Clock, title: 'Cron Job', description: 'Run on a schedule' },
-    { type: 'trigger' as const, icon: ShoppingCart, title: 'Shopify Event', description: 'Trigger on a Shopify event' },
+    { type: 'trigger' as const, icon: 'Webhook' as const, title: 'Webhook', description: 'Trigger via HTTP POST' },
+    { type: 'trigger' as const, icon: 'Clock' as const, title: 'Cron Job', description: 'Run on a schedule' },
+    { type: 'trigger' as const, icon: 'ShoppingCart' as const, title: 'Shopify Event', description: 'Trigger on a Shopify event' },
   ];
 
   return (
@@ -138,17 +148,20 @@ export function DashboardLayout({ workflow }: { workflow: WorkflowType }) {
            <SidebarGroup>
             <SidebarGroupLabel>Triggers</SidebarGroupLabel>
             <SidebarMenu>
-              {triggerSteps.map((trigger) => (
-                <SidebarMenuItem key={trigger.title}>
-                  <SidebarMenuButton
-                    onClick={() => handleAddStep(trigger)}
-                    tooltip={trigger.description}
-                  >
-                    <trigger.icon />
-                    <span>{trigger.title}</span>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
+              {triggerSteps.map((trigger) => {
+                const TriggerIcon = iconMap[trigger.icon];
+                return (
+                  <SidebarMenuItem key={trigger.title}>
+                    <SidebarMenuButton
+                      onClick={() => handleAddStep(trigger)}
+                      tooltip={trigger.description}
+                    >
+                      <TriggerIcon />
+                      <span>{trigger.title}</span>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                );
+              })}
             </SidebarMenu>
           </SidebarGroup>
           <SidebarGroup>
@@ -163,17 +176,20 @@ export function DashboardLayout({ workflow }: { workflow: WorkflowType }) {
                   <span>Custom AI Function</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
-               {actionSteps.map((action) => (
-                <SidebarMenuItem key={action.title}>
-                  <SidebarMenuButton
-                    onClick={() => handleAddStep(action)}
-                    tooltip={action.description}
-                  >
-                    <action.icon />
-                    <span>{action.title}</span>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
+               {actionSteps.map((action) => {
+                const ActionIcon = iconMap[action.icon];
+                return (
+                  <SidebarMenuItem key={action.title}>
+                    <SidebarMenuButton
+                      onClick={() => handleAddStep(action)}
+                      tooltip={action.description}
+                    >
+                      <ActionIcon />
+                      <span>{action.title}</span>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                );
+              })}
             </SidebarMenu>
           </SidebarGroup>
         </SidebarContent>

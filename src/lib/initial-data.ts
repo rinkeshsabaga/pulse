@@ -1,11 +1,10 @@
-import { Mail, Webhook, FlaskConical } from 'lucide-react';
 import type { WorkflowStepData } from './types';
 
 export const initialSteps: WorkflowStepData[] = [
     {
       id: 'step-1',
       type: 'trigger',
-      icon: Webhook,
+      icon: 'Webhook',
       title: 'HTTP Request Recieved',
       description: 'via Webhook',
       status: 'success',
@@ -16,7 +15,7 @@ export const initialSteps: WorkflowStepData[] = [
     {
       id: 'step-2',
       type: 'action',
-      icon: FlaskConical,
+      icon: 'FlaskConical',
       title: 'Generate Welcome Email',
       description: 'AI-powered content generation',
       content: {
@@ -28,7 +27,7 @@ export const initialSteps: WorkflowStepData[] = [
     {
       id: 'step-3',
       type: 'action',
-      icon: Mail,
+      icon: 'Mail',
       title: 'Send Email',
       description: 'via SendGrid',
       status: 'error',

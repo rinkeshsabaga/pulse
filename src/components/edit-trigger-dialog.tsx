@@ -15,7 +15,19 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Copy } from 'lucide-react';
-import type { WorkflowStepData } from '@/lib/types';
+import type { WorkflowStepData, IconName } from '@/lib/types';
+import * as icons from 'lucide-react';
+
+const iconMap: Record<IconName, React.ElementType> = {
+  Webhook: icons.Webhook,
+  Mail: icons.Mail,
+  FlaskConical: icons.FlaskConical,
+  Database: icons.Database,
+  ArrowRightLeft: icons.ArrowRightLeft,
+  GitMerge: icons.GitMerge,
+  Clock: icons.Clock,
+  ShoppingCart: icons.ShoppingCart,
+};
 
 type EditTriggerDialogProps = {
   step: WorkflowStepData;
@@ -25,7 +37,7 @@ type EditTriggerDialogProps = {
 
 export function EditTriggerDialog({ step, open, onOpenChange }: EditTriggerDialogProps) {
   const { toast } = useToast();
-  const Icon = step.icon;
+  const Icon = iconMap[step.icon];
 
   const handleCopy = () => {
     if (step.data?.webhookUrl) {
@@ -42,7 +54,7 @@ export function EditTriggerDialog({ step, open, onOpenChange }: EditTriggerDialo
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 font-headline">
-            <Icon className="text-primary" />
+            {Icon && <Icon className="text-primary" />}
             Edit Trigger: {step.title}
           </DialogTitle>
           <DialogDescription>{step.description}</DialogDescription>
