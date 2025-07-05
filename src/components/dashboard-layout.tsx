@@ -32,6 +32,7 @@ import {
   Code,
   AppWindow,
   GitBranch,
+  Filter,
 } from 'lucide-react';
 import * as icons from 'lucide-react';
 
@@ -207,93 +208,95 @@ export function DashboardLayout({ workflow }: { workflow: WorkflowType }) {
 
   return (
     <>
-      <div className="w-64 flex-shrink-0 border-r bg-sidebar text-sidebar-foreground flex flex-col">
-        <SidebarHeader>
-          <div className="flex items-center gap-2">
-            <Logo className="w-8 h-8 text-primary" />
-            <span className="text-lg font-semibold font-headline text-primary">
-              Tools
-            </span>
-          </div>
-        </SidebarHeader>
-        <SidebarContent>
-           <SidebarGroup>
-            <SidebarGroupLabel>Triggers</SidebarGroupLabel>
-            <SidebarMenu>
-              {triggerSteps.map((trigger) => {
-                const TriggerIcon = iconMap[trigger.icon];
-                return (
-                  <SidebarMenuItem key={trigger.title}>
-                    <SidebarMenuButton onClick={() => handleAddStep(trigger)}>
-                      <TriggerIcon />
-                      <span>{trigger.title}</span>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                );
-              })}
-            </SidebarMenu>
-          </SidebarGroup>
-          <SidebarGroup>
-            <SidebarGroupLabel>Actions</SidebarGroupLabel>
+      <div className="flex flex-row flex-1 w-full h-full">
+        <div className="w-64 flex-shrink-0 border-r bg-sidebar text-sidebar-foreground flex flex-col">
+          <SidebarHeader>
+            <div className="flex items-center gap-2">
+              <Logo className="w-8 h-8 text-primary" />
+              <span className="text-lg font-semibold font-headline text-primary">
+                Tools
+              </span>
+            </div>
+          </SidebarHeader>
+          <SidebarContent>
+            <SidebarGroup>
+              <SidebarGroupLabel>Triggers</SidebarGroupLabel>
+              <SidebarMenu>
+                {triggerSteps.map((trigger) => {
+                  const TriggerIcon = iconMap[trigger.icon];
+                  return (
+                    <SidebarMenuItem key={trigger.title}>
+                      <SidebarMenuButton onClick={() => handleAddStep(trigger)}>
+                        <TriggerIcon />
+                        <span>{trigger.title}</span>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  );
+                })}
+              </SidebarMenu>
+            </SidebarGroup>
+            <SidebarGroup>
+              <SidebarGroupLabel>Actions</SidebarGroupLabel>
+              <SidebarMenu>
+                <SidebarMenuItem>
+                  <SidebarMenuButton onClick={() => setIsAiGeneratorOpen(true)}>
+                    <FlaskConical />
+                    <span>Custom AI Function</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                {actionSteps.map((action) => {
+                  const ActionIcon = iconMap[action.icon];
+                  return (
+                    <SidebarMenuItem key={action.title}>
+                      <SidebarMenuButton onClick={() => handleAddStep(action)}>
+                        <ActionIcon />
+                        <span>{action.title}</span>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  );
+                })}
+              </SidebarMenu>
+            </SidebarGroup>
+          </SidebarContent>
+          <SidebarFooter>
             <SidebarMenu>
               <SidebarMenuItem>
-                <SidebarMenuButton onClick={() => setIsAiGeneratorOpen(true)}>
-                  <FlaskConical />
-                  <span>Custom AI Function</span>
+                <SidebarMenuButton>
+                  <Settings />
+                  <span>Settings</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
-               {actionSteps.map((action) => {
-                const ActionIcon = iconMap[action.icon];
-                return (
-                  <SidebarMenuItem key={action.title}>
-                    <SidebarMenuButton onClick={() => handleAddStep(action)}>
-                      <ActionIcon />
-                      <span>{action.title}</span>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                );
-              })}
+              <SidebarMenuItem>
+                <SidebarMenuButton>
+                  <HelpCircle />
+                  <span>Help</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
             </SidebarMenu>
-          </SidebarGroup>
-        </SidebarContent>
-        <SidebarFooter>
-          <SidebarMenu>
-            <SidebarMenuItem>
-              <SidebarMenuButton>
-                <Settings />
-                <span>Settings</span>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-            <SidebarMenuItem>
-              <SidebarMenuButton>
-                <HelpCircle />
-                <span>Help</span>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          </SidebarMenu>
-        </SidebarFooter>
-      </div>
-      <div className="flex-1 flex flex-col">
-        <div className="flex h-full flex-col p-4 md:p-6">
-          <Tabs defaultValue="designer" className="flex h-full w-full flex-col">
-            <TabsList className="mb-4">
-              <TabsTrigger value="designer">Designer</TabsTrigger>
-              <TabsTrigger value="logs">Monitoring & Logs</TabsTrigger>
-            </TabsList>
-            <TabsContent value="designer" className="flex-1">
-              <WorkflowCanvas 
-                steps={steps}
-                setSteps={handleSetSteps}
-                onCreateNewWorkflow={handleCreateNewWorkflow}
-                onEditStep={setEditingStep}
-                workflowName={workflow.name}
-                workflowDescription={workflow.description}
-              />
-            </TabsContent>
-            <TabsContent value="logs" className="flex-1">
-              <MonitoringPanel />
-            </TabsContent>
-          </Tabs>
+          </SidebarFooter>
+        </div>
+        <div className="flex-1 flex flex-col">
+          <div className="flex h-full flex-col p-4 md:p-6">
+            <Tabs defaultValue="designer" className="flex h-full w-full flex-col">
+              <TabsList className="mb-4">
+                <TabsTrigger value="designer">Designer</TabsTrigger>
+                <TabsTrigger value="logs">Monitoring & Logs</TabsTrigger>
+              </TabsList>
+              <TabsContent value="designer" className="flex-1">
+                <WorkflowCanvas 
+                  steps={steps}
+                  setSteps={handleSetSteps}
+                  onCreateNewWorkflow={handleCreateNewWorkflow}
+                  onEditStep={setEditingStep}
+                  workflowName={workflow.name}
+                  workflowDescription={workflow.description}
+                />
+              </TabsContent>
+              <TabsContent value="logs" className="flex-1">
+                <MonitoringPanel />
+              </TabsContent>
+            </Tabs>
+          </div>
         </div>
       </div>
       <AIFunctionGenerator
