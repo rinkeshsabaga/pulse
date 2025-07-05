@@ -1,4 +1,5 @@
 
+
 import type { ReactElement, ElementType } from 'react';
 
 export type IconName =
@@ -84,6 +85,12 @@ export type ApiRequestData = {
     webhookUrl?: string; // for trigger
     // for Cron Job trigger
     cronString?: string;
+    scheduleMode?: 'interval' | 'daily' | 'weekly' | 'monthly' | 'cron';
+    scheduleIntervalValue?: number;
+    scheduleIntervalUnit?: 'minutes' | 'hours' | 'days';
+    scheduleTime?: string; // HH:mm for daily, weekly, monthly
+    scheduleWeeklyDays?: OfficeHoursDay[];
+    scheduleMonthlyDates?: number[]; // day numbers 1-31
     // for Shopify Trigger
     shopifyEvent?: ShopifyEvent;
     shopifySubEvent?: ShopifySubEvent;

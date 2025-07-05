@@ -108,8 +108,9 @@ export function DashboardLayout({ workflow }: { workflow: WorkflowType }) {
     }
 
     if (newStep.type === 'trigger' && newStep.title === 'Cron Job') {
-        newStep.description = 'Every minute (* * * * *)';
+        newStep.description = 'Every minute';
         newStep.data = {
+            scheduleMode: 'cron',
             cronString: '* * * * *'
         };
     }
