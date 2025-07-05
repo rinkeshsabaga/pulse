@@ -204,12 +204,14 @@ export function WorkflowCanvas({
   onCreateNewWorkflow,
   onEditStep,
   workflowName,
+  workflowDescription,
 }: {
   steps: WorkflowStepData[];
   setSteps: (steps: React.SetStateAction<WorkflowStepData[]>) => void;
   onCreateNewWorkflow: () => void;
   onEditStep: (step: WorkflowStepData) => void;
   workflowName: string;
+  workflowDescription?: string;
 }) {
   const { toast } = useToast();
   const [layout, setLayout] = React.useState<'horizontal' | 'vertical'>('horizontal');
@@ -262,18 +264,18 @@ export function WorkflowCanvas({
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <div>
+      <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+        <div className="flex-1 space-y-1">
           <h1 className="text-2xl font-bold font-headline">
             {workflowName || 'Untitled Workflow'}
           </h1>
           <p className="text-muted-foreground">
-            {steps.length > 0
+            {workflowDescription || (steps.length > 0
               ? 'A sequence of automated actions.'
-              : 'Start building your new workflow by adding steps.'}
+              : 'Start building your new workflow by adding steps.')}
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-shrink-0 items-center gap-2">
           {steps.length > 0 && (
             <>
               <Select defaultValue="1.0">

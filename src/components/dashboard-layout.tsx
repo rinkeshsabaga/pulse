@@ -208,6 +208,7 @@ export function DashboardLayout({ workflow }: { workflow: WorkflowType }) {
                 onCreateNewWorkflow={handleCreateNewWorkflow}
                 onEditStep={setEditingStep}
                 workflowName={workflow.name}
+                workflowDescription={workflow.description}
               />
             </TabsContent>
             <TabsContent value="logs">
