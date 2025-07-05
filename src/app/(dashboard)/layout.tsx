@@ -46,9 +46,11 @@ export default function DashboardLayout({
 }) {
   const pathname = usePathname();
   const pathParts = pathname.split('/').filter(Boolean);
-  // An editor page (e.g. workflow designer) has no padding
   const isEditorPage = pathParts[0] === 'workflows' && pathParts.length > 1;
 
+  if (isEditorPage) {
+    return <div className="min-h-screen flex flex-col bg-muted/40">{children}</div>;
+  }
 
   return (
     <SidebarProvider>
@@ -194,7 +196,7 @@ export default function DashboardLayout({
               </DropdownMenu>
             </div>
           </header>
-          <main className="flex-1 flex flex-col">
+          <main className="flex-1 flex flex-col p-4 sm:p-6">
             {children}
           </main>
         </SidebarInset>
