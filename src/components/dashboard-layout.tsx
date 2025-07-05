@@ -42,6 +42,7 @@ import {
   ArrowRightLeft,
   Search,
   ChevronDown,
+  Zap,
 } from 'lucide-react';
 
 import { Logo } from './icons';
@@ -49,12 +50,76 @@ import { WorkflowCanvas } from './workflow-canvas';
 import { MonitoringPanel } from './monitoring-panel';
 import { AIFunctionGenerator } from './ai-function-generator';
 
+export type WorkflowStepData = {
+  id: string;
+  icon: React.ElementType;
+  title: string;
+  description: string;
+  content?: {
+    code: string;
+    language: string;
+  };
+  errorMessage?: {
+    title: string;
+    description: string;
+  };
+  status?: 'success' | 'warning' | 'error' | 'default';
+};
+
+const initialSteps: WorkflowStepData[] = [
+    {
+      id: 'step-1',
+      icon: Zap,
+      title: 'Trigger',
+      description: 'On new user signup',
+      status: 'success',
+    },
+    {
+      id: 'step-2',
+      icon: FlaskConical,
+      title: 'Generate Welcome Email',
+      description: 'AI-powered content generation',
+      content: {
+          code: 'function generateEmail(username) {\n  // ...\n}',
+          language: 'typescript'
+      },
+      status: 'success',
+    },
+    {
+      id: 'step-3',
+      icon: Mail,
+      title: 'Send Email',
+      description: 'via SendGrid',
+      status: 'error',
+      errorMessage: {
+        title: 'Error: SMTP connection failed',
+        description: 'Could not connect to SendGrid API.'
+      }
+    },
+];
+
+
 export function DashboardLayout() {
+  const [steps, setSteps] = React.useState<WorkflowStepData[]>(initialSteps);
   const [isAiGeneratorOpen, setIsAiGeneratorOpen] = React.useState(false);
 
-  const handleFunctionGenerated = (code: string, language: string) => {
-    console.log(`Generated ${language} function:`, code);
-    // Here you would typically update the workflow state
+  const handleFunctionGenerated = (code: string, language: string, intent: string) => {
+    const newStep: WorkflowStepData = {
+        id: `step-${Date.now()}`,
+        icon: FlaskConical,
+        title: 'Custom AI Function',
+        description: intent.length > 50 ? intent.substring(0, 47) + '...' : intent,
+        content: {
+            code,
+            language
+        },
+        status: 'default'
+    }
+    setSteps(prevSteps => [...prevSteps, newStep]);
+  };
+
+  const handleCreateNewWorkflow = () => {
+    setSteps([]);
   };
 
   return (
@@ -168,7 +233,10 @@ export function DashboardLayout() {
               <TabsTrigger value="logs">Monitoring & Logs</TabsTrigger>
             </TabsList>
             <TabsContent value="designer">
-              <WorkflowCanvas />
+              <WorkflowCanvas 
+                steps={steps}
+                onCreateNewWorkflow={handleCreateNewWorkflow}
+              />
             </TabsContent>
             <TabsContent value="logs">
               <MonitoringPanel />

@@ -18,14 +18,13 @@ import {
 } from '@/components/ui/select';
 import {
   Play,
-  Zap,
-  FlaskConical,
-  Mail,
   MoreVertical,
   ArrowDown,
+  Plus
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from './ui/separator';
+import type { WorkflowStepData } from './dashboard-layout';
 
 const WorkflowStep = ({ icon: Icon, title, description, children, status }: {
   icon: React.ElementType,
@@ -73,32 +72,40 @@ const FlowArrow = () => (
     </div>
 )
 
-export function WorkflowCanvas() {
+export function WorkflowCanvas({ steps, onCreateNewWorkflow }: { steps: WorkflowStepData[], onCreateNewWorkflow: () => void }) {
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold font-headline">
-            Onboarding Email Sequence
+            {steps.length > 0 ? 'Onboarding Email Sequence' : 'Untitled Workflow'}
           </h1>
           <p className="text-muted-foreground">
-            Automate sending welcome emails to new users.
+            {steps.length > 0 ? 'Automate sending welcome emails to new users.' : 'Start building your new workflow.'}
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Select defaultValue="1.3">
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Version" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="1.3">Version 1.3 (latest)</SelectItem>
-              <SelectItem value="1.2">Version 1.2</SelectItem>
-              <SelectItem value="1.1">Version 1.1</SelectItem>
-            </SelectContent>
-          </Select>
-          <Button>
-            <Play className="mr-2 h-4 w-4" />
-            Run Workflow
+          {steps.length > 0 && (
+            <>
+              <Select defaultValue="1.3">
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Version" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="1.3">Version 1.3 (latest)</SelectItem>
+                  <SelectItem value="1.2">Version 1.2</SelectItem>
+                  <SelectItem value="1.1">Version 1.1</SelectItem>
+                </SelectContent>
+              </Select>
+              <Button>
+                <Play className="mr-2 h-4 w-4" />
+                Run Workflow
+              </Button>
+            </>
+          )}
+           <Button variant="outline" onClick={onCreateNewWorkflow}>
+            <Plus className="mr-2 h-4 w-4" />
+            New Workflow
           </Button>
         </div>
       </div>
@@ -106,46 +113,48 @@ export function WorkflowCanvas() {
       <Separator />
 
       <div className="flex flex-col items-center">
-        <WorkflowStep 
-          icon={Zap}
-          title="Trigger"
-          description="On new user signup"
-          status='success'
-        />
-
-        <FlowArrow />
-
-        <WorkflowStep 
-          icon={FlaskConical}
-          title="Generate Welcome Email"
-          description="AI-powered content generation"
-          status='success'
-        >
-          <div className='text-sm text-muted-foreground p-4 bg-muted/50 rounded-md'>
-            <p className='font-mono text-xs'>
-              <span className='text-primary'>function</span> generateEmail(username) &#123; ... &#125;
-            </p>
-            <div className='mt-2 flex gap-2'>
-                <Badge variant='outline'>AI Generated</Badge>
-                <Badge variant='outline'>typescript</Badge>
-            </div>
-          </div>
-        </WorkflowStep>
-        
-        <FlowArrow />
-
-        <WorkflowStep 
-          icon={Mail}
-          title="Send Email"
-          description="via SendGrid"
-          status='error'
-        >
-          <div className='text-sm text-destructive-foreground p-4 bg-destructive/80 rounded-md'>
-            <p className='font-semibold'>Error: SMTP connection failed</p>
-            <p className='opacity-80'>Could not connect to SendGrid API.</p>
-          </div>
-        </WorkflowStep>
-
+        {steps.length > 0 ? (
+          steps.map((step, index) => (
+            <React.Fragment key={step.id}>
+              <WorkflowStep 
+                icon={step.icon}
+                title={step.title}
+                description={step.description}
+                status={(step.status === 'default' ? undefined : step.status)}
+              >
+                {step.content && (
+                  <div className='text-sm text-muted-foreground p-4 bg-muted/50 rounded-md'>
+                    <pre className="overflow-x-auto">
+                      <code className={`language-${step.content.language} font-code text-xs`}>
+                        {step.content.code}
+                      </code>
+                    </pre>
+                    <div className='mt-2 flex gap-2'>
+                        {step.title.includes('AI') && <Badge variant='outline'>AI Generated</Badge>}
+                        <Badge variant='outline'>{step.content.language}</Badge>
+                    </div>
+                  </div>
+                )}
+                {step.errorMessage && (
+                   <div className='text-sm text-destructive-foreground p-4 bg-destructive/80 rounded-md'>
+                    <p className='font-semibold'>{step.errorMessage.title}</p>
+                    <p className='opacity-80'>{step.errorMessage.description}</p>
+                  </div>
+                )}
+              </WorkflowStep>
+              {index < steps.length - 1 && <FlowArrow />}
+            </React.Fragment>
+          ))
+        ) : (
+           <Card className="w-full max-w-sm border-dashed">
+            <CardContent className="p-10 text-center">
+              <p className="text-muted-foreground font-semibold">Your workflow is empty</p>
+              <p className="text-sm text-muted-foreground mt-2">
+                Add a step from the sidebar to get started.
+              </p>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </div>
   );

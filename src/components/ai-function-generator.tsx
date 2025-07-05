@@ -53,7 +53,7 @@ const formSchema = z.object({
 type AIFunctionGeneratorProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onFunctionGenerated: (code: string, language: string) => void;
+  onFunctionGenerated: (code: string, language: string, intent: string) => void;
 };
 
 export function AIFunctionGenerator({
@@ -102,12 +102,24 @@ export function AIFunctionGenerator({
   };
   
   const handleAddToWorkflow = () => {
-    onFunctionGenerated(generatedCode, form.getValues('language'));
+    onFunctionGenerated(generatedCode, form.getValues('language'), form.getValues('intent'));
     onOpenChange(false);
   }
 
+  const resetForm = () => {
+    setGeneratedCode('');
+    form.reset();
+  }
+
+  const handleOpenChange = (isOpen: boolean) => {
+    if (isOpen) {
+      resetForm();
+    }
+    onOpenChange(isOpen);
+  }
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-[600px] grid-rows-[auto_1fr_auto]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 font-headline">
