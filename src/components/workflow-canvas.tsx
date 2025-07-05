@@ -21,9 +21,8 @@ import {
   Zap,
   FlaskConical,
   Mail,
-  ArrowRight,
   MoreVertical,
-  ChevronRight
+  ArrowDown,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from './ui/separator';
@@ -36,8 +35,8 @@ const WorkflowStep = ({ icon: Icon, title, description, children, status }: {
   status?: 'success' | 'warning' | 'error'
 }) => {
   const statusClasses = {
-    success: 'border-green-500',
-    warning: 'border-yellow-500',
+    success: 'border-success',
+    warning: 'border-accent',
     error: 'border-destructive',
   }
   return (
@@ -68,8 +67,9 @@ const WorkflowStep = ({ icon: Icon, title, description, children, status }: {
 };
 
 const FlowArrow = () => (
-    <div className='flex justify-center items-center my-2'>
-        <ChevronRight className='h-8 w-8 text-muted-foreground' />
+    <div className="flex flex-col items-center my-2">
+        <div className="h-4 w-px bg-border" />
+        <ArrowDown className="h-5 w-5 text-muted-foreground" />
     </div>
 )
 
