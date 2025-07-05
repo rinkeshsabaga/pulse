@@ -16,6 +16,7 @@ import {
   sortableKeyboardCoordinates,
   useSortable,
   horizontalListSortingStrategy,
+  verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import {
@@ -43,11 +44,14 @@ import {
   Play,
   MoreVertical,
   ArrowRight,
+  ArrowDown,
   Plus,
   Workflow,
   GripVertical,
   Pencil,
   Trash2,
+  LayoutGrid,
+  List,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from './ui/separator';
@@ -182,11 +186,21 @@ function SortableWorkflowStep({
   );
 }
 
-const FlowConnector = () => (
-  <div className="flex items-center justify-center h-full px-4 shrink-0">
-    <ArrowRight className="h-5 w-5 text-muted-foreground" />
-  </div>
-);
+const FlowConnector = ({ direction = 'horizontal' }: { direction?: 'horizontal' | 'vertical' }) => {
+    if (direction === 'vertical') {
+        return (
+            <div className="flex items-center justify-center w-full py-4 shrink-0">
+                <ArrowDown className="h-5 w-5 text-muted-foreground" />
+            </div>
+        );
+    }
+    return (
+        <div className="flex items-center justify-center h-full px-4 shrink-0">
+            <ArrowRight className="h-5 w-5 text-muted-foreground" />
+        </div>
+    );
+};
+
 
 export function WorkflowCanvas({
   steps,
@@ -198,6 +212,8 @@ export function WorkflowCanvas({
   onCreateNewWorkflow: () => void;
 }) {
   const { toast } = useToast();
+  const [layout, setLayout] = React.useState<'horizontal' | 'vertical'>('horizontal');
+  
   const sensors = useSensors(
     useSensor(PointerSensor),
     useSensor(KeyboardSensor, {
@@ -270,6 +286,26 @@ export function WorkflowCanvas({
               </Button>
             </>
           )}
+          <div className="flex items-center gap-1 bg-muted p-1 rounded-md">
+            <Button
+              variant={layout === 'horizontal' ? 'secondary' : 'ghost'}
+              size="icon"
+              className="h-8 w-8"
+              onClick={() => setLayout('horizontal')}
+            >
+              <LayoutGrid className="h-4 w-4" />
+              <span className="sr-only">Horizontal Layout</span>
+            </Button>
+            <Button
+              variant={layout === 'vertical' ? 'secondary' : 'ghost'}
+              size="icon"
+              className="h-8 w-8"
+              onClick={() => setLayout('vertical')}
+            >
+              <List className="h-4 w-4" />
+              <span className="sr-only">Vertical Layout</span>
+            </Button>
+          </div>
           <Button variant="outline" onClick={onCreateNewWorkflow}>
             <Plus className="mr-2 h-4 w-4" />
             New Workflow
@@ -279,7 +315,10 @@ export function WorkflowCanvas({
 
       <Separator />
 
-      <div className="flex min-h-[400px] items-center">
+      <div className={cn(
+        "flex min-h-[400px]",
+        layout === 'horizontal' ? 'items-start' : 'items-center justify-center'
+      )}>
         {steps.length > 0 ? (
           <DndContext
             sensors={sensors}
@@ -288,10 +327,16 @@ export function WorkflowCanvas({
           >
             <SortableContext
               items={steps.map((s) => s.id)}
-              strategy={horizontalListSortingStrategy}
+              strategy={layout === 'horizontal' ? horizontalListSortingStrategy : verticalListSortingStrategy}
             >
-              <div className="overflow-x-auto w-full pb-4 -mx-6 px-6">
-                <div className="inline-flex items-start gap-4">
+              <div className={cn(
+                "w-full pb-4",
+                layout === 'horizontal' && 'overflow-x-auto -mx-6 px-6'
+              )}>
+                <div className={cn(
+                  "gap-4",
+                  layout === 'horizontal' ? "inline-flex items-start" : "flex flex-col items-center"
+                )}>
                   {steps.map((step, index) => (
                     <React.Fragment key={step.id}>
                       <SortableWorkflowStep
@@ -300,7 +345,7 @@ export function WorkflowCanvas({
                         onEdit={() => handleEditStep(step)}
                         onDelete={() => handleDeleteStep(step.id)}
                       />
-                      {index < steps.length - 1 && <FlowConnector />}
+                      {index < steps.length - 1 && <FlowConnector direction={layout} />}
                     </React.Fragment>
                   ))}
                 </div>
