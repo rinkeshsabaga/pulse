@@ -21,7 +21,7 @@ import {
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import type { WorkflowStepData } from '@/lib/types';
-import { Code } from 'lucide-react';
+import { Code, FlaskConical } from 'lucide-react';
 
 type EditCustomCodeDialogProps = {
   step: WorkflowStepData | null;
@@ -56,7 +56,7 @@ export function EditCustomCodeDialog({
         code,
         language,
       },
-      description: `Custom ${language} code snippet`,
+      description: step.title === 'Custom Code' ? `Custom ${language} code snippet` : step.description,
     };
     onSave(updatedStep);
     onOpenChange(false);
@@ -64,12 +64,15 @@ export function EditCustomCodeDialog({
 
   if (!step) return null;
 
+  const isAiFunction = step.title === 'Custom AI Function';
+  const Icon = isAiFunction ? FlaskConical : Code;
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-3xl grid-rows-[auto_1fr_auto]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 font-headline">
-            <Code className="text-primary" />
+            <Icon className="text-primary" />
             Edit Action: {step.title}
           </DialogTitle>
           <DialogDescription>{step.description}</DialogDescription>

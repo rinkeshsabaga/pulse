@@ -45,6 +45,7 @@ import { EditTriggerDialog } from './edit-trigger-dialog';
 import { EditShopifyTriggerDialog } from './edit-shopify-trigger-dialog';
 import { EditApiRequestDialog } from './edit-api-request-dialog';
 import { EditCustomCodeDialog } from './edit-custom-code-dialog';
+import { EditWaitDialog } from './edit-wait-dialog';
 import type { Workflow as WorkflowType, WorkflowStepData, IconName } from '@/lib/types';
 import { updateWorkflow } from '@/lib/db';
 
@@ -111,6 +112,15 @@ export function DashboardLayout({ workflow }: { workflow: WorkflowType }) {
         newStep.content = { code: '// Your code here', language: 'typescript' };
     }
 
+    if (newStep.title === 'Wait') {
+        newStep.description = 'For 5 minutes';
+        newStep.data = {
+            waitMode: 'duration',
+            waitDurationValue: 5,
+            waitDurationUnit: 'minutes'
+        };
+    }
+
     handleSetSteps(prev => {
       if (newStep.type === 'trigger' && newStep.title !== 'Shopify' && newStep.title !== 'Webhook' && newStep.title !== 'Cron Job') {
          // This logic handles replacing existing triggers, but Shopify can have multiple.
@@ -155,6 +165,7 @@ export function DashboardLayout({ workflow }: { workflow: WorkflowType }) {
   }
 
   const actionSteps = [
+    { type: 'action' as const, icon: 'Clock' as const, title: 'Wait', description: 'Delay workflow execution' },
     { type: 'action' as const, icon: 'Code' as const, title: 'Custom Code', description: 'Write and run custom code' },
     { type: 'action' as const, icon: 'ArrowRightLeft' as const, title: 'API Request', description: 'Make an HTTP request' },
     { type: 'action' as const, icon: 'Mail' as const, title: 'Send Email', description: 'Send an email' },
@@ -299,7 +310,13 @@ export function DashboardLayout({ workflow }: { workflow: WorkflowType }) {
       )}
       <EditCustomCodeDialog
         step={editingStep}
-        open={!!editingStep && editingStep.title === 'Custom Code'}
+        open={!!editingStep && (editingStep.title === 'Custom Code' || editingStep.title === 'Custom AI Function')}
+        onOpenChange={(isOpen) => !isOpen && setEditingStep(null)}
+        onSave={handleSaveAction}
+      />
+      <EditWaitDialog
+        step={editingStep}
+        open={!!editingStep && editingStep.title === 'Wait'}
         onOpenChange={(isOpen) => !isOpen && setEditingStep(null)}
         onSave={handleSaveAction}
       />

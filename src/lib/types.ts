@@ -51,6 +51,9 @@ export type ShopifySubEvent =
   | 'update_tags_removed'
   | 'update_line_items_changed';
 
+export type WaitMode = 'duration' | 'datetime' | 'office_hours';
+export type OfficeHoursDay = 'sun' | 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat';
+
 export type ApiRequestData = {
     webhookUrl?: string; // for trigger
     // for Shopify Trigger
@@ -62,6 +65,15 @@ export type ApiRequestData = {
     headers?: { id: string; key: string; value: string }[];
     body?: RequestBody;
     auth?: ApiRequestAuth;
+    // for Wait action
+    waitMode?: WaitMode;
+    waitDurationValue?: number;
+    waitDurationUnit?: 'minutes' | 'hours' | 'days';
+    waitDateTime?: string; // ISO
+    waitOfficeHoursDays?: OfficeHoursDay[];
+    waitOfficeHoursStartTime?: string; // HH:mm
+    waitOfficeHoursEndTime?: string; // HH:mm
+    waitOfficeHoursAction?: 'wait' | 'proceed';
 }
 
 
