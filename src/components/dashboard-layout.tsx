@@ -3,15 +3,12 @@
 
 import React from 'react';
 import {
-  SidebarProvider,
-  Sidebar,
   SidebarHeader,
   SidebarContent,
   SidebarFooter,
   SidebarMenu,
   SidebarMenuItem,
   SidebarMenuButton,
-  SidebarInset,
   SidebarGroup,
   SidebarGroupLabel,
 } from '@/components/ui/sidebar';
@@ -209,8 +206,8 @@ export function DashboardLayout({ workflow }: { workflow: WorkflowType }) {
   ];
 
   return (
-    <SidebarProvider>
-      <Sidebar>
+    <>
+      <div className="w-64 flex-shrink-0 border-r bg-sidebar text-sidebar-foreground flex flex-col">
         <SidebarHeader>
           <div className="flex items-center gap-2">
             <Logo className="w-8 h-8 text-primary" />
@@ -227,10 +224,7 @@ export function DashboardLayout({ workflow }: { workflow: WorkflowType }) {
                 const TriggerIcon = iconMap[trigger.icon];
                 return (
                   <SidebarMenuItem key={trigger.title}>
-                    <SidebarMenuButton
-                      onClick={() => handleAddStep(trigger)}
-                      tooltip={trigger.description}
-                    >
+                    <SidebarMenuButton onClick={() => handleAddStep(trigger)}>
                       <TriggerIcon />
                       <span>{trigger.title}</span>
                     </SidebarMenuButton>
@@ -243,10 +237,7 @@ export function DashboardLayout({ workflow }: { workflow: WorkflowType }) {
             <SidebarGroupLabel>Actions</SidebarGroupLabel>
             <SidebarMenu>
               <SidebarMenuItem>
-                <SidebarMenuButton
-                  onClick={() => setIsAiGeneratorOpen(true)}
-                  tooltip="Generate function from text"
-                >
+                <SidebarMenuButton onClick={() => setIsAiGeneratorOpen(true)}>
                   <FlaskConical />
                   <span>Custom AI Function</span>
                 </SidebarMenuButton>
@@ -255,10 +246,7 @@ export function DashboardLayout({ workflow }: { workflow: WorkflowType }) {
                 const ActionIcon = iconMap[action.icon];
                 return (
                   <SidebarMenuItem key={action.title}>
-                    <SidebarMenuButton
-                      onClick={() => handleAddStep(action)}
-                      tooltip={action.description}
-                    >
+                    <SidebarMenuButton onClick={() => handleAddStep(action)}>
                       <ActionIcon />
                       <span>{action.title}</span>
                     </SidebarMenuButton>
@@ -271,21 +259,21 @@ export function DashboardLayout({ workflow }: { workflow: WorkflowType }) {
         <SidebarFooter>
           <SidebarMenu>
             <SidebarMenuItem>
-              <SidebarMenuButton tooltip="Application settings">
+              <SidebarMenuButton>
                 <Settings />
                 <span>Settings</span>
               </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
-              <SidebarMenuButton tooltip="Help and documentation">
+              <SidebarMenuButton>
                 <HelpCircle />
                 <span>Help</span>
               </SidebarMenuButton>
             </SidebarMenuItem>
           </SidebarMenu>
         </SidebarFooter>
-      </Sidebar>
-      <SidebarInset>
+      </div>
+      <div className="flex-1 flex flex-col">
         <div className="flex h-full flex-col p-4 md:p-6">
           <Tabs defaultValue="designer" className="flex h-full w-full flex-col">
             <TabsList className="mb-4">
@@ -307,7 +295,7 @@ export function DashboardLayout({ workflow }: { workflow: WorkflowType }) {
             </TabsContent>
           </Tabs>
         </div>
-      </SidebarInset>
+      </div>
       <AIFunctionGenerator
         open={isAiGeneratorOpen}
         onOpenChange={setIsAiGeneratorOpen}
@@ -370,6 +358,6 @@ export function DashboardLayout({ workflow }: { workflow: WorkflowType }) {
         onOpenChange={(isOpen) => !isOpen && setEditingStep(null)}
         onSave={handleSaveAction}
       />
-    </SidebarProvider>
+    </>
   );
 }
