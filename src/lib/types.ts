@@ -51,8 +51,9 @@ export type ShopifySubEvent =
   | 'update_tags_removed'
   | 'update_line_items_changed';
 
-export type WaitMode = 'duration' | 'datetime' | 'office_hours' | 'timestamp';
+export type WaitMode = 'duration' | 'datetime' | 'office_hours' | 'timestamp' | 'specific_day';
 export type OfficeHoursDay = 'sun' | 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat';
+export type SpecificDay = OfficeHoursDay | 'any';
 
 export type ApiRequestData = {
     webhookUrl?: string; // for trigger
@@ -75,6 +76,8 @@ export type ApiRequestData = {
     waitOfficeHoursEndTime?: string; // HH:mm
     waitOfficeHoursAction?: 'wait' | 'proceed';
     waitTimestamp?: string;
+    waitSpecificDay?: SpecificDay;
+    waitSpecificTime?: string; // HH:mm
 }
 
 

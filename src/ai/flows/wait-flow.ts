@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview A flow to handle various wait/delay conditions in a workflow.
@@ -18,10 +19,12 @@ import {
   differenceInMilliseconds,
   getDay,
   set,
+  nextDay,
 } from 'date-fns';
 
 const OfficeHoursDaySchema = z.enum(['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat']);
-const WaitModeSchema = z.enum(['duration', 'datetime', 'office_hours', 'timestamp']);
+const SpecificDaySchema = z.enum(['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'any']);
+const WaitModeSchema = z.enum(['duration', 'datetime', 'office_hours', 'timestamp', 'specific_day']);
 
 export const WaitInputSchema = z.object({
   waitMode: WaitModeSchema.default('duration'),
@@ -33,6 +36,8 @@ export const WaitInputSchema = z.object({
   waitOfficeHoursEndTime: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, { message: "Invalid time format, expected HH:mm" }).optional(),
   waitOfficeHoursAction: z.enum(['wait', 'proceed']).optional(),
   waitTimestamp: z.string().optional(),
+  waitSpecificDay: SpecificDaySchema.optional(),
+  waitSpecificTime: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, { message: "Invalid time format, expected HH:mm" }).optional(),
 });
 export type WaitInput = z.infer<typeof WaitInputSchema>;
 
@@ -89,6 +94,34 @@ const waitFlow = ai.defineFlow(
         }
         break;
       }
+      case 'specific_day': {
+        if (!input.waitSpecificDay || !input.waitSpecificTime) {
+            break;
+        }
+
+        const [hours, minutes] = input.waitSpecificTime.split(':').map(Number);
+        let targetDateTime: Date;
+        
+        if (input.waitSpecificDay === 'any') {
+            targetDateTime = set(now, { hours, minutes, seconds: 0, milliseconds: 0 });
+            if (isBefore(targetDateTime, now)) {
+                targetDateTime = addDays(targetDateTime, 1);
+            }
+        } else {
+            const targetDayIndex = dayMap[input.waitSpecificDay as keyof typeof dayMap];
+            const timeOnToday = set(now, { hours, minutes, seconds: 0, milliseconds: 0 });
+            
+            if (getDay(now) === targetDayIndex && isAfter(timeOnToday, now)) {
+                targetDateTime = timeOnToday;
+            } else {
+                targetDateTime = nextDay(now, targetDayIndex);
+                targetDateTime = set(targetDateTime, { hours, minutes, seconds: 0, milliseconds: 0 });
+            }
+        }
+        
+        waitMs = differenceInMilliseconds(targetDateTime, now);
+        break;
+      }
       case 'office_hours': {
         if (
           !input.waitOfficeHoursDays ||
@@ -133,17 +166,17 @@ const waitFlow = ai.defineFlow(
         } else {
           // It's after hours, or not an office day. Find next office day.
           let attempts = 0;
-          let nextDay = addDays(now, 1);
+          let nextDayDate = addDays(now, 1);
           
-          while (!isOfficeDay(nextDay) && attempts < 8) {
-            nextDay = addDays(nextDay, 1);
+          while (!isOfficeDay(nextDayDate) && attempts < 8) {
+            nextDayDate = addDays(nextDayDate, 1);
             attempts++;
           }
           
           // Set time to the start of that day.
           const nextStartTimeStr = input.waitOfficeHoursStartTime;
           const [hours, minutes] = nextStartTimeStr.split(':').map(Number);
-          nextAvailableTime = set(nextDay, { hours, minutes, seconds: 0, milliseconds: 0 });
+          nextAvailableTime = set(nextDayDate, { hours, minutes, seconds: 0, milliseconds: 0 });
         }
 
         waitMs = differenceInMilliseconds(nextAvailableTime, now);

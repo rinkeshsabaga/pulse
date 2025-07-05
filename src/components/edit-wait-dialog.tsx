@@ -27,7 +27,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { Clock, CalendarDays } from 'lucide-react';
-import type { WorkflowStepData, WaitMode, OfficeHoursDay } from '@/lib/types';
+import type { WorkflowStepData, WaitMode, OfficeHoursDay, SpecificDay } from '@/lib/types';
 
 type EditWaitDialogProps = {
   step: WorkflowStepData | null;
@@ -46,6 +46,17 @@ const officeDays: { id: OfficeHoursDay; label: string }[] = [
   { id: 'sat', label: 'Saturday' },
 ];
 
+const specificDayOptions: { value: SpecificDay; label: string }[] = [
+    { value: 'any', label: 'Any Day' },
+    { value: 'mon', label: 'Monday' },
+    { value: 'tue', label: 'Tuesday' },
+    { value: 'wed', label: 'Wednesday' },
+    { value: 'thu', label: 'Thursday' },
+    { value: 'fri', label: 'Friday' },
+    { value: 'sat', label: 'Saturday' },
+    { value: 'sun', label: 'Sunday' },
+];
+
 export function EditWaitDialog({ step, open, onOpenChange, onSave }: EditWaitDialogProps) {
   const [mode, setMode] = useState<WaitMode>('duration');
   const [durationValue, setDurationValue] = useState(5);
@@ -56,6 +67,8 @@ export function EditWaitDialog({ step, open, onOpenChange, onSave }: EditWaitDia
   const [officeHoursEndTime, setOfficeHoursEndTime] = useState('17:00');
   const [officeHoursAction, setOfficeHoursAction] = useState<'wait' | 'proceed'>('wait');
   const [timestamp, setTimestamp] = useState('');
+  const [specificDay, setSpecificDay] = useState<SpecificDay>('any');
+  const [specificTime, setSpecificTime] = useState('09:00');
 
   useEffect(() => {
     if (open && step?.data) {
@@ -69,6 +82,8 @@ export function EditWaitDialog({ step, open, onOpenChange, onSave }: EditWaitDia
       setOfficeHoursEndTime(data.waitOfficeHoursEndTime || '17:00');
       setOfficeHoursAction(data.waitOfficeHoursAction || 'wait');
       setTimestamp(data.waitTimestamp || '');
+      setSpecificDay(data.waitSpecificDay || 'any');
+      setSpecificTime(data.waitSpecificTime || '09:00');
     }
   }, [open, step]);
 
@@ -88,6 +103,10 @@ export function EditWaitDialog({ step, open, onOpenChange, onSave }: EditWaitDia
               return `Until next office hours`;
           case 'timestamp':
               return `Until ${timestamp || 'custom timestamp'}`;
+          case 'specific_day': {
+              const dayLabel = specificDayOptions.find(d => d.value === specificDay)?.label || 'day';
+              return `Until next ${dayLabel.toLowerCase()} at ${specificTime}`;
+          }
           default:
               return 'Delay execution';
       }
@@ -110,6 +129,8 @@ export function EditWaitDialog({ step, open, onOpenChange, onSave }: EditWaitDia
         waitOfficeHoursEndTime: officeHoursEndTime,
         waitOfficeHoursAction: officeHoursAction,
         waitTimestamp: timestamp,
+        waitSpecificDay: specificDay,
+        waitSpecificTime: specificTime,
       },
     };
     onSave(updatedStep);
@@ -137,6 +158,10 @@ export function EditWaitDialog({ step, open, onOpenChange, onSave }: EditWaitDia
                 <div className="flex items-center space-x-2">
                     <RadioGroupItem value="datetime" id="datetime" />
                     <Label htmlFor="datetime">Wait until a specific date/time</Label>
+                </div>
+                 <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="specific_day" id="specific_day" />
+                    <Label htmlFor="specific_day">Wait until a specific day and time</Label>
                 </div>
                 <div className="flex items-center space-x-2">
                     <RadioGroupItem value="office_hours" id="office_hours" />
@@ -201,6 +226,28 @@ export function EditWaitDialog({ step, open, onOpenChange, onSave }: EditWaitDia
                         newDate.setHours(hours, minutes);
                         setDateTime(newDate);
                     }} />
+                </div>
+            )}
+
+            {mode === 'specific_day' && (
+                <div className="grid grid-cols-2 gap-4 pt-4">
+                    <div className="space-y-2">
+                        <Label htmlFor="specific-day-select">Day</Label>
+                        <Select value={specificDay} onValueChange={(v) => setSpecificDay(v as SpecificDay)}>
+                            <SelectTrigger id="specific-day-select">
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {specificDayOptions.map(opt => (
+                                    <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="specific-time-input">Time</Label>
+                        <Input id="specific-time-input" type="time" value={specificTime} onChange={e => setSpecificTime(e.target.value)} />
+                    </div>
                 </div>
             )}
 
