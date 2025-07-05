@@ -21,6 +21,7 @@ import {
 } from '@/components/ui/select';
 import { Card } from '@/components/ui/card';
 import { AppWindow, ArrowLeft, Bot, GitBranch, Github, LayoutList, MessageSquare, Sheet as SheetIcon } from 'lucide-react';
+import { AsanaIcon, HubSpotIcon, SalesforceIcon, ZohoIcon } from '@/components/icons';
 import type { WorkflowStepData } from '@/lib/types';
 import { cn } from '@/lib/utils';
 
@@ -78,6 +79,42 @@ const APP_DEFINITIONS = [
             { value: 'status_updated', label: 'Issue Status Updated' },
         ],
     },
+    { 
+        name: 'Asana', 
+        icon: AsanaIcon,
+        triggers: [
+            { value: 'new_task', label: 'New Task Created' },
+            { value: 'task_completed', label: 'Task Completed' },
+            { value: 'new_project', label: 'New Project Created' },
+        ],
+    },
+    { 
+        name: 'HubSpot', 
+        icon: HubSpotIcon,
+        triggers: [
+            { value: 'new_contact', label: 'New Contact Created' },
+            { value: 'contact_updated', label: 'Contact Updated' },
+            { value: 'new_deal', label: 'New Deal Created' },
+        ],
+    },
+    { 
+        name: 'Salesforce', 
+        icon: SalesforceIcon,
+        triggers: [
+            { value: 'new_lead', label: 'New Lead Created' },
+            { value: 'opportunity_stage_changed', label: 'Opportunity Stage Changed' },
+            { value: 'new_case', label: 'New Case Created' },
+        ],
+    },
+    { 
+        name: 'Zoho CRM', 
+        icon: ZohoIcon,
+        triggers: [
+            { value: 'new_lead', label: 'New Lead' },
+            { value: 'deal_stage_updated', label: 'Deal Stage Updated' },
+            { value: 'new_contact', label: 'New Contact' },
+        ],
+    },
 ];
 
 type EditAppTriggerDialogProps = {
@@ -133,7 +170,7 @@ export function EditAppTriggerDialog({ step, open, onOpenChange, onSave }: EditA
       <DialogDescription>
         Choose an application to trigger this workflow.
       </DialogDescription>
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 py-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 py-4 max-h-[60vh] overflow-y-auto">
         {APP_DEFINITIONS.map((app) => (
           <Card 
             key={app.name} 
