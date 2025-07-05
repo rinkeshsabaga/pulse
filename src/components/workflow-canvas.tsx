@@ -89,6 +89,7 @@ function SortableWorkflowStep({
     success: 'border-success',
     warning: 'border-accent',
     error: 'border-destructive',
+    default: 'border-border'
   };
 
   const Icon = step.icon;
@@ -98,8 +99,7 @@ function SortableWorkflowStep({
       <Card
         className={cn(
           'w-80 shrink-0 transition-shadow hover:shadow-lg relative group',
-          step.status &&
-            statusClasses[step.status as keyof typeof statusClasses]
+          statusClasses[step.status || 'default']
         )}
       >
         {!isTrigger && (
@@ -128,7 +128,6 @@ function SortableWorkflowStep({
                 </CardDescription>
               </div>
             </div>
-            {!isTrigger ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0">
@@ -149,9 +148,6 @@ function SortableWorkflowStep({
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
-            ) : (
-              <div className="h-8 w-8 shrink-0" /> // Placeholder to maintain layout
-            )}
           </div>
         </CardHeader>
         {(step.content || step.errorMessage) && (
@@ -206,10 +202,12 @@ export function WorkflowCanvas({
   steps,
   setSteps,
   onCreateNewWorkflow,
+  onEditStep,
 }: {
   steps: WorkflowStepData[];
   setSteps: (steps: WorkflowStepData[]) => void;
   onCreateNewWorkflow: () => void;
+  onEditStep: (step: WorkflowStepData) => void;
 }) {
   const { toast } = useToast();
   const [layout, setLayout] = React.useState<'horizontal' | 'vertical'>('horizontal');
@@ -248,10 +246,14 @@ export function WorkflowCanvas({
   };
 
   const handleEditStep = (stepToEdit: WorkflowStepData) => {
-    toast({
-      title: 'Coming Soon!',
-      description: `Editing for "${stepToEdit.title}" is not yet implemented.`,
-    });
+    if (stepToEdit.type === 'trigger') {
+      onEditStep(stepToEdit);
+    } else {
+      toast({
+        title: 'Coming Soon!',
+        description: `Editing for "${stepToEdit.title}" is not yet implemented.`,
+      });
+    }
   };
 
   return (

@@ -23,6 +23,10 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  DropdownMenuSub,
+  DropdownMenuSubTrigger,
+  DropdownMenuPortal,
+  DropdownMenuSubContent
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 import {
@@ -47,12 +51,17 @@ import {
   Webhook,
   ShoppingCart,
   GitMerge,
+  CreditCard,
+  LogOut,
+  User,
 } from 'lucide-react';
 
 import { Logo } from './icons';
 import { WorkflowCanvas } from './workflow-canvas';
 import { MonitoringPanel } from './monitoring-panel';
 import { AIFunctionGenerator } from './ai-function-generator';
+import { EditTriggerDialog } from './edit-trigger-dialog';
+import { ThemeToggle } from './theme-toggle';
 
 export type WorkflowStepData = {
   id: string;
@@ -60,6 +69,9 @@ export type WorkflowStepData = {
   icon: React.ElementType;
   title: string;
   description: string;
+  data?: {
+    webhookUrl?: string;
+  };
   content?: {
     code: string;
     language: string;
@@ -79,6 +91,9 @@ const initialSteps: WorkflowStepData[] = [
       title: 'HTTP Request Recieved',
       description: 'via Webhook',
       status: 'success',
+      data: {
+        webhookUrl: `https://api.sabagapulse.com/v1/webhooks/wf_init_abc123`
+      }
     },
     {
       id: 'step-2',
@@ -110,14 +125,19 @@ const initialSteps: WorkflowStepData[] = [
 export function DashboardLayout() {
   const [steps, setSteps] = React.useState<WorkflowStepData[]>(initialSteps);
   const [isAiGeneratorOpen, setIsAiGeneratorOpen] = React.useState(false);
+  const [editingStep, setEditingStep] = React.useState<WorkflowStepData | null>(null);
 
-  const handleAddStep = (step: Omit<WorkflowStepData, 'id' | 'status' | 'content' | 'errorMessage'>) => {
+  const handleAddStep = (step: Omit<WorkflowStepData, 'id' | 'status' | 'content' | 'errorMessage' | 'data'>) => {
     const newStep: WorkflowStepData = {
       id: `step-${Date.now()}`,
       ...step,
       status: 'default'
     };
     
+    if (newStep.type === 'trigger' && newStep.title === 'Webhook') {
+      newStep.data = { webhookUrl: `https://api.sabagapulse.com/v1/webhooks/wf_${Date.now()}`};
+    }
+
     if (newStep.type === 'trigger') {
       setSteps(prev => {
         const newSteps = [...prev];
@@ -262,14 +282,27 @@ export function DashboardLayout() {
                 <ChevronDown className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
+            <DropdownMenuContent align="end" className="w-56">
               <DropdownMenuLabel>My Account</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>Profile</DropdownMenuItem>
-              <DropdownMenuItem>Billing</DropdownMenuItem>
-              <DropdownMenuItem>Settings</DropdownMenuItem>
+              <DropdownMenuItem>
+                <User className="mr-2 h-4 w-4" />
+                <span>Profile</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem disabled>
+                <CreditCard className="mr-2 h-4 w-4" />
+                <span>Billing</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem disabled>
+                <Settings className="mr-2 h-4 w-4" />
+                <span>Settings</span>
+              </DropdownMenuItem>
+              <ThemeToggle />
               <DropdownMenuSeparator />
-              <DropdownMenuItem>Log out</DropdownMenuItem>
+              <DropdownMenuItem>
+                <LogOut className="mr-2 h-4 w-4" />
+                <span>Log out</span>
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </header>
@@ -285,6 +318,7 @@ export function DashboardLayout() {
                 steps={steps}
                 setSteps={setSteps}
                 onCreateNewWorkflow={handleCreateNewWorkflow}
+                onEditStep={setEditingStep}
               />
             </TabsContent>
             <TabsContent value="logs">
@@ -298,6 +332,13 @@ export function DashboardLayout() {
         onOpenChange={setIsAiGeneratorOpen}
         onFunctionGenerated={handleFunctionGenerated}
       />
+      {editingStep && editingStep.type === 'trigger' && (
+        <EditTriggerDialog
+          step={editingStep}
+          open={!!editingStep}
+          onOpenChange={(isOpen) => !isOpen && setEditingStep(null)}
+        />
+      )}
     </SidebarProvider>
   );
 }
