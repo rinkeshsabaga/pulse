@@ -11,7 +11,8 @@ export type IconName =
   | 'Clock'
   | 'ShoppingCart'
   | 'StopCircle'
-  | 'Code';
+  | 'Code'
+  | 'AppWindow';
 
 export type ApiRequestAuth = {
     type: 'none' | 'bearer' | 'basic' | 'apiKey';
@@ -59,6 +60,11 @@ export type ApiRequestData = {
     // for Shopify Trigger
     shopifyEvent?: ShopifyEvent;
     shopifySubEvent?: ShopifySubEvent;
+    // for App Trigger
+    appTrigger?: {
+      app: string;
+      event: string;
+    };
     // for API Request action
     apiUrl?: string;
     method?: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';

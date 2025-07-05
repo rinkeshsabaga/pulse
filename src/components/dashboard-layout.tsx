@@ -34,6 +34,7 @@ import {
   GitMerge,
   StopCircle,
   Code,
+  AppWindow,
 } from 'lucide-react';
 import * as icons from 'lucide-react';
 
@@ -46,6 +47,7 @@ import { EditShopifyTriggerDialog } from './edit-shopify-trigger-dialog';
 import { EditApiRequestDialog } from './edit-api-request-dialog';
 import { EditCustomCodeDialog } from './edit-custom-code-dialog';
 import { EditWaitDialog } from './edit-wait-dialog';
+import { EditAppTriggerDialog } from './edit-app-trigger-dialog';
 import type { Workflow as WorkflowType, WorkflowStepData, IconName } from '@/lib/types';
 import { updateWorkflow } from '@/lib/db';
 
@@ -60,6 +62,7 @@ const iconMap: Record<IconName, React.ElementType> = {
   ShoppingCart: icons.ShoppingCart,
   StopCircle: icons.StopCircle,
   Code: icons.Code,
+  AppWindow: icons.AppWindow,
 };
 
 export function DashboardLayout({ workflow }: { workflow: WorkflowType }) {
@@ -96,6 +99,11 @@ export function DashboardLayout({ workflow }: { workflow: WorkflowType }) {
         newStep.description = 'Click Edit to select an event';
         newStep.data = { shopifyEvent: 'order_placed' };
     }
+    
+    if (newStep.type === 'trigger' && newStep.title === 'App Event') {
+        newStep.description = 'Click Edit to select an app';
+        newStep.data = { appTrigger: { app: '', event: '' } };
+    }
 
     if (newStep.type === 'action' && newStep.title === 'API Request') {
         newStep.data = {
@@ -122,7 +130,7 @@ export function DashboardLayout({ workflow }: { workflow: WorkflowType }) {
     }
 
     handleSetSteps(prev => {
-      if (newStep.type === 'trigger' && newStep.title !== 'Shopify' && newStep.title !== 'Webhook' && newStep.title !== 'Cron Job') {
+      if (newStep.type === 'trigger' && newStep.title !== 'Shopify' && newStep.title !== 'Webhook' && newStep.title !== 'Cron Job' && newStep.title !== 'App Event') {
          // This logic handles replacing existing triggers, but Shopify can have multiple.
          // For now, let's simplify and just add it. Re-evaluation needed for multiple triggers.
       }
@@ -175,6 +183,7 @@ export function DashboardLayout({ workflow }: { workflow: WorkflowType }) {
   ];
 
   const triggerSteps = [
+    { type: 'trigger' as const, icon: 'AppWindow' as const, title: 'App Event', description: 'Trigger from an app' },
     { type: 'trigger' as const, icon: 'Webhook' as const, title: 'Webhook', description: 'Trigger via HTTP POST' },
     { type: 'trigger' as const, icon: 'Clock' as const, title: 'Cron Job', description: 'Run on a schedule' },
     { type: 'trigger' as const, icon: 'ShoppingCart' as const, title: 'Shopify', description: 'Trigger on a Shopify event' },
@@ -294,6 +303,14 @@ export function DashboardLayout({ workflow }: { workflow: WorkflowType }) {
       )}
       {editingStep && editingStep.title === 'Shopify' && (
         <EditShopifyTriggerDialog
+            step={editingStep}
+            open={!!editingStep}
+            onOpenChange={(isOpen) => !isOpen && setEditingStep(null)}
+            onSave={handleSaveAction}
+        />
+      )}
+      {editingStep && editingStep.title === 'App Event' && (
+        <EditAppTriggerDialog
             step={editingStep}
             open={!!editingStep}
             onOpenChange={(isOpen) => !isOpen && setEditingStep(null)}
