@@ -21,13 +21,24 @@ export type ApiRequestAuth = {
     apiKeyHeaderName?: string;
 };
 
+export type FormUrlEncodedPair = {
+  id: string;
+  key: string;
+  value: string;
+};
+
+export type RequestBody = {
+  type: 'none' | 'json' | 'form-urlencoded';
+  content: string | FormUrlEncodedPair[];
+};
+
 export type ApiRequestData = {
     webhookUrl?: string; // for trigger
     // for API Request action
     apiUrl?: string;
     method?: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
     headers?: { id: string; key: string; value: string }[];
-    body?: string; // stringified JSON
+    body?: RequestBody;
     auth?: ApiRequestAuth;
 }
 

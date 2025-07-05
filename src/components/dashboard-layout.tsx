@@ -91,7 +91,7 @@ export function DashboardLayout({ workflow }: { workflow: WorkflowType }) {
           apiUrl: 'https://api.example.com/data',
           auth: { type: 'none' },
           headers: [],
-          body: ''
+          body: { type: 'none', content: '' }
         };
     }
 

@@ -16,9 +16,10 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import type { WorkflowStepData } from '@/lib/types';
+import type { WorkflowStepData, RequestBody } from '@/lib/types';
 import { Plus, Trash2, ArrowRightLeft } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
+import { RadioGroup, RadioGroupItem } from './ui/radio-group';
 
 type EditApiRequestDialogProps = {
   step: WorkflowStepData;
@@ -32,7 +33,7 @@ export function EditApiRequestDialog({ step, open, onOpenChange, onSave }: EditA
   const [apiUrl, setApiUrl] = useState(step.data?.apiUrl || '');
   const [auth, setAuth] = useState(step.data?.auth || { type: 'none' });
   const [headers, setHeaders] = useState(step.data?.headers || []);
-  const [body, setBody] = useState(step.data?.body || '');
+  const [body, setBody] = useState<RequestBody>(step.data?.body || { type: 'none', content: '' });
   
   useEffect(() => {
     if (open) {
@@ -40,7 +41,7 @@ export function EditApiRequestDialog({ step, open, onOpenChange, onSave }: EditA
       setApiUrl(step.data?.apiUrl || '');
       setAuth(step.data?.auth || { type: 'none' });
       setHeaders(step.data?.headers?.map(h => ({...h, id: h.id || uuidv4()})) || []);
-      setBody(step.data?.body || '');
+      setBody(step.data?.body || { type: 'none', content: '' });
     }
   }, [open, step.data]);
 
@@ -71,6 +72,32 @@ export function EditApiRequestDialog({ step, open, onOpenChange, onSave }: EditA
   const handleHeaderChange = (id: string, field: 'key' | 'value', value: string) => {
     setHeaders(headers.map(h => h.id === id ? {...h, [field]: value} : h));
   }
+
+  const handleBodyTypeChange = (type: 'none' | 'json' | 'form-urlencoded') => {
+    if (type === 'form-urlencoded') {
+      setBody({ type, content: [] });
+    } else {
+      setBody({ type, content: '' });
+    }
+  };
+
+  const handleAddFormPair = () => {
+    const currentContent = Array.isArray(body.content) ? body.content : [];
+    setBody({ ...body, content: [...currentContent, { id: uuidv4(), key: '', value: '' }] });
+  };
+
+  const handleRemoveFormPair = (id: string) => {
+    if (Array.isArray(body.content)) {
+      setBody({ ...body, content: body.content.filter((p) => p.id !== id) });
+    }
+  };
+  
+  const handleFormPairChange = (id: string, field: 'key' | 'value', value: string) => {
+    if (Array.isArray(body.content)) {
+      setBody({ ...body, content: body.content.map(p => p.id === id ? {...p, [field]: value} : p) });
+    }
+  }
+
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -186,17 +213,62 @@ export function EditApiRequestDialog({ step, open, onOpenChange, onSave }: EditA
                      </Button>
                 </TabsContent>
                 <TabsContent value="body" className="pt-4">
-                     <p className="text-sm text-muted-foreground mb-2">Define the request body. Use JSON for POST, PUT, and PATCH requests.</p>
-                     <Textarea 
-                        placeholder='{ "key": "value" }'
-                        rows={10}
-                        value={body}
-                        onChange={e => setBody(e.target.value)}
-                        className="font-code text-sm"
+                     <RadioGroup
+                        value={body.type}
+                        onValueChange={(v) => handleBodyTypeChange(v as any)}
+                        className="flex items-center gap-6 mb-4"
                         disabled={method === 'GET' || method === 'DELETE'}
-                     />
-                     {(method === 'GET' || method === 'DELETE') && (
-                        <p className="text-xs text-muted-foreground mt-2">Body is not applicable for GET or DELETE requests.</p>
+                    >
+                        <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="none" id="body-none" />
+                            <Label htmlFor="body-none">None</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="json" id="body-json" />
+                            <Label htmlFor="body-json">JSON</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="form-urlencoded" id="body-form" />
+                            <Label htmlFor="body-form">x-www-form-urlencoded</Label>
+                        </div>
+                    </RadioGroup>
+                     
+                     {body.type === 'json' && (
+                        <>
+                           <p className="text-sm text-muted-foreground mb-2">Define the request body. Use JSON for POST, PUT, and PATCH requests.</p>
+                           <Textarea 
+                              placeholder='{ "key": "value" }'
+                              rows={10}
+                              value={typeof body.content === 'string' ? body.content : ''}
+                              onChange={e => setBody({ ...body, content: e.target.value })}
+                              className="font-code text-sm"
+                              disabled={method === 'GET' || method === 'DELETE'}
+                           />
+                        </>
+                     )}
+
+                     {body.type === 'form-urlencoded' && Array.isArray(body.content) && (
+                        <>
+                            <p className="text-sm text-muted-foreground mb-4">Add form data key-value pairs.</p>
+                            <div className="space-y-2">
+                                {body.content.map((pair) => (
+                                    <div key={pair.id} className="flex items-center gap-2">
+                                        <Input placeholder="Key" value={pair.key} onChange={e => handleFormPairChange(pair.id, 'key', e.target.value)} disabled={method === 'GET' || method === 'DELETE'} />
+                                        <Input placeholder="Value" value={pair.value} onChange={e => handleFormPairChange(pair.id, 'value', e.target.value)} disabled={method === 'GET' || method === 'DELETE'} />
+                                        <Button variant="ghost" size="icon" onClick={() => handleRemoveFormPair(pair.id)} disabled={method === 'GET' || method === 'DELETE'}>
+                                            <Trash2 className="h-4 w-4 text-destructive" />
+                                        </Button>
+                                    </div>
+                                ))}
+                            </div>
+                            <Button variant="outline" size="sm" className="mt-4" onClick={handleAddFormPair} disabled={method === 'GET' || method === 'DELETE'}>
+                                <Plus className="mr-2 h-4 w-4" /> Add Pair
+                            </Button>
+                        </>
+                     )}
+                     
+                     {(method === 'GET' || method === 'DELETE') && body.type !== 'none' && (
+                        <p className="text-xs text-muted-foreground mt-2">Body is not applicable for GET or DELETE requests. The selected body will be ignored.</p>
                      )}
                 </TabsContent>
             </Tabs>
