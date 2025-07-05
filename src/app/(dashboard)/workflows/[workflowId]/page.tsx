@@ -5,8 +5,9 @@ import { getWorkflowById } from '@/lib/db';
 import { notFound } from 'next/navigation';
 import type { Workflow } from '@/lib/types';
 
-export default async function WorkflowEditorPage({ params }: { params: { workflowId: string } }) {
-  const workflow = await getWorkflowById(params.workflowId);
+export default async function WorkflowEditorPage({ params }: { params: Promise<{ workflowId: string }> }) {
+  const { workflowId } = await params;
+  const workflow = await getWorkflowById(workflowId);
 
   if (!workflow) {
     notFound();
