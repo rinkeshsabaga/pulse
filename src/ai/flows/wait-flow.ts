@@ -23,7 +23,6 @@ import {
 } from 'date-fns';
 
 const OfficeHoursDaySchema = z.enum(['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat']);
-const SpecificDaySchema = z.enum(['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'any']);
 const WaitModeSchema = z.enum(['duration', 'datetime', 'office_hours', 'timestamp', 'specific_day']);
 
 export const WaitInputSchema = z.object({
@@ -36,7 +35,7 @@ export const WaitInputSchema = z.object({
   waitOfficeHoursEndTime: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, { message: "Invalid time format, expected HH:mm" }).optional(),
   waitOfficeHoursAction: z.enum(['wait', 'proceed']).optional(),
   waitTimestamp: z.string().optional(),
-  waitSpecificDay: SpecificDaySchema.optional(),
+  waitSpecificDays: z.array(OfficeHoursDaySchema).optional(),
   waitSpecificTime: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, { message: "Invalid time format, expected HH:mm" }).optional(),
 });
 export type WaitInput = z.infer<typeof WaitInputSchema>;
@@ -95,31 +94,31 @@ const waitFlow = ai.defineFlow(
         break;
       }
       case 'specific_day': {
-        if (!input.waitSpecificDay || !input.waitSpecificTime) {
+        if (!input.waitSpecificDays || input.waitSpecificDays.length === 0 || !input.waitSpecificTime) {
             break;
         }
 
         const [hours, minutes] = input.waitSpecificTime.split(':').map(Number);
-        let targetDateTime: Date;
         
-        if (input.waitSpecificDay === 'any') {
-            targetDateTime = set(now, { hours, minutes, seconds: 0, milliseconds: 0 });
-            if (isBefore(targetDateTime, now)) {
-                targetDateTime = addDays(targetDateTime, 1);
-            }
-        } else {
-            const targetDayIndex = dayMap[input.waitSpecificDay as keyof typeof dayMap];
-            const timeOnToday = set(now, { hours, minutes, seconds: 0, milliseconds: 0 });
-            
-            if (getDay(now) === targetDayIndex && isAfter(timeOnToday, now)) {
-                targetDateTime = timeOnToday;
+        const candidateDatetimes = input.waitSpecificDays.map(day => {
+            const targetDayIndex = dayMap[day];
+            let targetDateTime = set(now, { hours, minutes, seconds: 0, milliseconds: 0 });
+
+            // If the target time on the current day of the week is in the future, it's a candidate.
+            // Otherwise, we need to find the next occurrence of this day of the week.
+            if (getDay(now) === targetDayIndex && isAfter(targetDateTime, now)) {
+                return targetDateTime;
             } else {
-                targetDateTime = nextDay(now, targetDayIndex);
-                targetDateTime = set(targetDateTime, { hours, minutes, seconds: 0, milliseconds: 0 });
+                return set(nextDay(now, targetDayIndex), { hours, minutes, seconds: 0, milliseconds: 0 });
             }
+        });
+
+        // Find the soonest datetime from all candidates
+        if (candidateDatetimes.length > 0) {
+            candidateDatetimes.sort((a, b) => a.getTime() - b.getTime());
+            const nextTargetTime = candidateDatetimes[0];
+            waitMs = differenceInMilliseconds(nextTargetTime, now);
         }
-        
-        waitMs = differenceInMilliseconds(targetDateTime, now);
         break;
       }
       case 'office_hours': {

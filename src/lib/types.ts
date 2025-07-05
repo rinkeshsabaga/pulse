@@ -53,7 +53,6 @@ export type ShopifySubEvent =
 
 export type WaitMode = 'duration' | 'datetime' | 'office_hours' | 'timestamp' | 'specific_day';
 export type OfficeHoursDay = 'sun' | 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat';
-export type SpecificDay = OfficeHoursDay | 'any';
 
 export type ApiRequestData = {
     webhookUrl?: string; // for trigger
@@ -76,7 +75,7 @@ export type ApiRequestData = {
     waitOfficeHoursEndTime?: string; // HH:mm
     waitOfficeHoursAction?: 'wait' | 'proceed';
     waitTimestamp?: string;
-    waitSpecificDay?: SpecificDay;
+    waitSpecificDays?: OfficeHoursDay[];
     waitSpecificTime?: string; // HH:mm
 }
 

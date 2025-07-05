@@ -27,7 +27,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { Clock, CalendarDays } from 'lucide-react';
-import type { WorkflowStepData, WaitMode, OfficeHoursDay, SpecificDay } from '@/lib/types';
+import type { WorkflowStepData, WaitMode, OfficeHoursDay } from '@/lib/types';
 
 type EditWaitDialogProps = {
   step: WorkflowStepData | null;
@@ -46,17 +46,6 @@ const officeDays: { id: OfficeHoursDay; label: string }[] = [
   { id: 'sat', label: 'Saturday' },
 ];
 
-const specificDayOptions: { value: SpecificDay; label: string }[] = [
-    { value: 'any', label: 'Any Day' },
-    { value: 'mon', label: 'Monday' },
-    { value: 'tue', label: 'Tuesday' },
-    { value: 'wed', label: 'Wednesday' },
-    { value: 'thu', label: 'Thursday' },
-    { value: 'fri', label: 'Friday' },
-    { value: 'sat', label: 'Saturday' },
-    { value: 'sun', label: 'Sunday' },
-];
-
 export function EditWaitDialog({ step, open, onOpenChange, onSave }: EditWaitDialogProps) {
   const [mode, setMode] = useState<WaitMode>('duration');
   const [durationValue, setDurationValue] = useState(5);
@@ -67,7 +56,7 @@ export function EditWaitDialog({ step, open, onOpenChange, onSave }: EditWaitDia
   const [officeHoursEndTime, setOfficeHoursEndTime] = useState('17:00');
   const [officeHoursAction, setOfficeHoursAction] = useState<'wait' | 'proceed'>('wait');
   const [timestamp, setTimestamp] = useState('');
-  const [specificDay, setSpecificDay] = useState<SpecificDay>('any');
+  const [specificDays, setSpecificDays] = useState<OfficeHoursDay[]>(['mon']);
   const [specificTime, setSpecificTime] = useState('09:00');
 
   useEffect(() => {
@@ -82,16 +71,25 @@ export function EditWaitDialog({ step, open, onOpenChange, onSave }: EditWaitDia
       setOfficeHoursEndTime(data.waitOfficeHoursEndTime || '17:00');
       setOfficeHoursAction(data.waitOfficeHoursAction || 'wait');
       setTimestamp(data.waitTimestamp || '');
-      setSpecificDay(data.waitSpecificDay || 'any');
+      setSpecificDays(data.waitSpecificDays || ['mon']);
       setSpecificTime(data.waitSpecificTime || '09:00');
     }
   }, [open, step]);
 
-  const handleDayToggle = (day: OfficeHoursDay) => {
+  const handleOfficeDayToggle = (day: OfficeHoursDay) => {
     setOfficeHoursDays((prev) =>
       prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day]
     );
   };
+
+  const handleSpecificDayToggle = (day: OfficeHoursDay) => {
+    setSpecificDays((prev) => {
+        const newDays = prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day];
+        // Ensure at least one day is selected
+        return newDays.length > 0 ? newDays : prev;
+    });
+  };
+
 
   const generateDescription = () => {
       switch (mode) {
@@ -104,8 +102,8 @@ export function EditWaitDialog({ step, open, onOpenChange, onSave }: EditWaitDia
           case 'timestamp':
               return `Until ${timestamp || 'custom timestamp'}`;
           case 'specific_day': {
-              const dayLabel = specificDayOptions.find(d => d.value === specificDay)?.label || 'day';
-              return `Until next ${dayLabel.toLowerCase()} at ${specificTime}`;
+              const dayLabels = specificDays.map(d => officeDays.find(od => od.id === d)?.label.substring(0,3)).join(', ');
+              return `Until next ${dayLabels || 'selected day'} at ${specificTime}`;
           }
           default:
               return 'Delay execution';
@@ -129,7 +127,7 @@ export function EditWaitDialog({ step, open, onOpenChange, onSave }: EditWaitDia
         waitOfficeHoursEndTime: officeHoursEndTime,
         waitOfficeHoursAction: officeHoursAction,
         waitTimestamp: timestamp,
-        waitSpecificDay: specificDay,
+        waitSpecificDays: specificDays,
         waitSpecificTime: specificTime,
       },
     };
@@ -230,19 +228,21 @@ export function EditWaitDialog({ step, open, onOpenChange, onSave }: EditWaitDia
             )}
 
             {mode === 'specific_day' && (
-                <div className="grid grid-cols-2 gap-4 pt-4">
-                    <div className="space-y-2">
-                        <Label htmlFor="specific-day-select">Day</Label>
-                        <Select value={specificDay} onValueChange={(v) => setSpecificDay(v as SpecificDay)}>
-                            <SelectTrigger id="specific-day-select">
-                                <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {specificDayOptions.map(opt => (
-                                    <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
+                <div className="pt-4 space-y-6">
+                    <div className="space-y-3">
+                        <Label>Days of the Week</Label>
+                        <div className="grid grid-cols-4 gap-2">
+                            {officeDays.map((day) => (
+                                <div key={day.id} className="flex items-center space-x-2">
+                                    <Checkbox
+                                        id={`specific_${day.id}`}
+                                        checked={specificDays.includes(day.id)}
+                                        onCheckedChange={() => handleSpecificDayToggle(day.id)}
+                                    />
+                                    <Label htmlFor={`specific_${day.id}`} className="text-sm font-normal cursor-pointer">{day.label}</Label>
+                                </div>
+                            ))}
+                        </div>
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="specific-time-input">Time</Label>
@@ -259,11 +259,11 @@ export function EditWaitDialog({ step, open, onOpenChange, onSave }: EditWaitDia
                             {officeDays.map((day) => (
                                 <div key={day.id} className="flex items-center space-x-2">
                                     <Checkbox
-                                        id={day.id}
+                                        id={`office_${day.id}`}
                                         checked={officeHoursDays.includes(day.id)}
-                                        onCheckedChange={() => handleDayToggle(day.id)}
+                                        onCheckedChange={() => handleOfficeDayToggle(day.id)}
                                     />
-                                    <Label htmlFor={day.id} className="text-sm font-normal">{day.label}</Label>
+                                    <Label htmlFor={`office_${day.id}`} className="text-sm font-normal cursor-pointer">{day.label}</Label>
                                 </div>
                             ))}
                         </div>
