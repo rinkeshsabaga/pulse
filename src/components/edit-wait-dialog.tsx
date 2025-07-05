@@ -55,6 +55,7 @@ export function EditWaitDialog({ step, open, onOpenChange, onSave }: EditWaitDia
   const [officeHoursStartTime, setOfficeHoursStartTime] = useState('09:00');
   const [officeHoursEndTime, setOfficeHoursEndTime] = useState('17:00');
   const [officeHoursAction, setOfficeHoursAction] = useState<'wait' | 'proceed'>('wait');
+  const [timestamp, setTimestamp] = useState('');
 
   useEffect(() => {
     if (open && step?.data) {
@@ -67,6 +68,7 @@ export function EditWaitDialog({ step, open, onOpenChange, onSave }: EditWaitDia
       setOfficeHoursStartTime(data.waitOfficeHoursStartTime || '09:00');
       setOfficeHoursEndTime(data.waitOfficeHoursEndTime || '17:00');
       setOfficeHoursAction(data.waitOfficeHoursAction || 'wait');
+      setTimestamp(data.waitTimestamp || '');
     }
   }, [open, step]);
 
@@ -84,6 +86,8 @@ export function EditWaitDialog({ step, open, onOpenChange, onSave }: EditWaitDia
               return `Until ${format(dateTime || new Date(), "PPPp")}`;
           case 'office_hours':
               return `Until next office hours`;
+          case 'timestamp':
+              return `Until ${timestamp || 'custom timestamp'}`;
           default:
               return 'Delay execution';
       }
@@ -105,6 +109,7 @@ export function EditWaitDialog({ step, open, onOpenChange, onSave }: EditWaitDia
         waitOfficeHoursStartTime: officeHoursStartTime,
         waitOfficeHoursEndTime: officeHoursEndTime,
         waitOfficeHoursAction: officeHoursAction,
+        waitTimestamp: timestamp,
       },
     };
     onSave(updatedStep);
@@ -136,6 +141,10 @@ export function EditWaitDialog({ step, open, onOpenChange, onSave }: EditWaitDia
                 <div className="flex items-center space-x-2">
                     <RadioGroupItem value="office_hours" id="office_hours" />
                     <Label htmlFor="office_hours">Wait for office hours</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="timestamp" id="timestamp" />
+                    <Label htmlFor="timestamp">Wait until a custom timestamp</Label>
                 </div>
             </RadioGroup>
 
@@ -235,6 +244,21 @@ export function EditWaitDialog({ step, open, onOpenChange, onSave }: EditWaitDia
                             </div>
                         </RadioGroup>
                     </div>
+                </div>
+            )}
+
+            {mode === 'timestamp' && (
+                <div className="pt-4 space-y-2">
+                    <Label htmlFor="timestamp-value">Custom Timestamp</Label>
+                    <Input 
+                        id="timestamp-value" 
+                        value={timestamp} 
+                        onChange={e => setTimestamp(e.target.value)}
+                        placeholder="e.g., 2024-12-31T23:59:59Z or {{trigger.data.timestamp}}"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                        Provide a static ISO 8601 timestamp or a dynamic variable from a previous step.
+                    </p>
                 </div>
             )}
 
