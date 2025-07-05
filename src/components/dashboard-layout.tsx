@@ -35,7 +35,7 @@ import {
   StopCircle,
   Code,
   AppWindow,
-  GitMerge,
+  GitBranch,
 } from 'lucide-react';
 import * as icons from 'lucide-react';
 
@@ -50,7 +50,7 @@ import { EditCustomCodeDialog } from './edit-custom-code-dialog';
 import { EditWaitDialog } from './edit-wait-dialog';
 import { EditAppTriggerDialog } from './edit-app-trigger-dialog';
 import { EditAppActionDialog } from './edit-app-action-dialog';
-import { EditFilterDialog } from './edit-filter-dialog';
+import { EditConditionDialog } from './edit-condition-dialog';
 import type { Workflow as WorkflowType, WorkflowStepData, IconName } from '@/lib/types';
 import { updateWorkflow } from '@/lib/db';
 import { v4 as uuidv4 } from 'uuid';
@@ -61,7 +61,7 @@ const iconMap: Record<IconName, React.ElementType> = {
   FlaskConical: icons.FlaskConical,
   Database: icons.Database,
   ArrowRightLeft: icons.ArrowRightLeft,
-  GitMerge: icons.GitMerge,
+  GitBranch: icons.GitBranch,
   Filter: icons.Filter,
   Clock: icons.Clock,
   ShoppingCart: icons.ShoppingCart,
@@ -139,10 +139,10 @@ export function DashboardLayout({ workflow }: { workflow: WorkflowType }) {
         };
     }
 
-    if (newStep.title === 'Filter') {
+    if (newStep.title === 'Condition') {
         newStep.description = 'Click Edit to set conditions';
         newStep.data = {
-            filterData: {
+            conditionData: {
                 logicalOperator: 'AND',
                 conditions: [{ id: uuidv4(), variable: '', operator: 'equals', value: '' }]
             }
@@ -194,8 +194,8 @@ export function DashboardLayout({ workflow }: { workflow: WorkflowType }) {
 
   const actionSteps = [
     { type: 'action' as const, icon: 'AppWindow' as const, title: 'App Action', description: 'Perform an action in an app' },
+    { type: 'action' as const, icon: 'GitBranch' as const, title: 'Condition', description: 'Branch workflow on conditions' },
     { type: 'action' as const, icon: 'Clock' as const, title: 'Wait', description: 'Delay workflow execution' },
-    { type: 'action' as const, icon: 'Filter' as const, title: 'Filter', description: 'Branch workflow on conditions' },
     { type: 'action' as const, icon: 'Code' as const, title: 'Custom Code', description: 'Write and run custom code' },
     { type: 'action' as const, icon: 'ArrowRightLeft' as const, title: 'API Request', description: 'Make an HTTP request' },
     { type: 'action' as const, icon: 'Mail' as const, title: 'Send Email', description: 'Send an email' },
@@ -366,9 +366,9 @@ export function DashboardLayout({ workflow }: { workflow: WorkflowType }) {
         onOpenChange={(isOpen) => !isOpen && setEditingStep(null)}
         onSave={handleSaveAction}
       />
-      <EditFilterDialog
+      <EditConditionDialog
         step={editingStep}
-        open={!!editingStep && editingStep.title === 'Filter'}
+        open={!!editingStep && editingStep.title === 'Condition'}
         onOpenChange={(isOpen) => !isOpen && setEditingStep(null)}
         onSave={handleSaveAction}
       />

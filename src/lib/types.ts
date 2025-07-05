@@ -7,7 +7,7 @@ export type IconName =
   | 'FlaskConical'
   | 'Database'
   | 'ArrowRightLeft'
-  | 'GitMerge'
+  | 'GitBranch'
   | 'Filter'
   | 'Clock'
   | 'ShoppingCart'
@@ -62,15 +62,15 @@ export type AppActionData = {
   params?: Record<string, any>;
 };
 
-export type FilterCondition = {
+export type Condition = {
   id: string;
   variable: string;
   operator: 'equals' | 'not_equals' | 'contains' | 'not_contains' | 'starts_with' | 'ends_with' | 'is_empty' | 'is_not_empty' | 'greater_than' | 'less_than';
   value: string;
 };
 
-export type FilterData = {
-  conditions: FilterCondition[];
+export type ConditionData = {
+  conditions: Condition[];
   logicalOperator: 'AND' | 'OR';
 };
 
@@ -104,8 +104,8 @@ export type ApiRequestData = {
     waitTimestamp?: string;
     waitSpecificDays?: OfficeHoursDay[];
     waitSpecificTime?: string; // HH:mm
-    // for Filter action
-    filterData?: FilterData;
+    // for Condition action
+    conditionData?: ConditionData;
 }
 
 

@@ -14,11 +14,11 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from './ui/radio-group';
-import type { WorkflowStepData, FilterData, FilterCondition } from '@/lib/types';
-import { Plus, Trash2, Filter as FilterIcon } from 'lucide-react';
+import type { WorkflowStepData, ConditionData, Condition } from '@/lib/types';
+import { Plus, Trash2, GitBranch } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 
-type EditFilterDialogProps = {
+type EditConditionDialogProps = {
   step: WorkflowStepData | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -38,15 +38,15 @@ const operatorOptions = [
     { value: 'less_than', label: 'Less than' },
 ];
 
-export function EditFilterDialog({ step, open, onOpenChange, onSave }: EditFilterDialogProps) {
-  const [filterData, setFilterData] = useState<FilterData>({ conditions: [], logicalOperator: 'AND' });
+export function EditConditionDialog({ step, open, onOpenChange, onSave }: EditConditionDialogProps) {
+  const [conditionData, setConditionData] = useState<ConditionData>({ conditions: [], logicalOperator: 'AND' });
   
   useEffect(() => {
-    if (open && step?.data?.filterData) {
-      setFilterData(step.data.filterData);
+    if (open && step?.data?.conditionData) {
+      setConditionData(step.data.conditionData);
     } else if (open) {
       // Default state if no data is present
-      setFilterData({
+      setConditionData({
         conditions: [{ id: uuidv4(), variable: '', operator: 'equals', value: '' }],
         logicalOperator: 'AND',
       });
@@ -60,7 +60,7 @@ export function EditFilterDialog({ step, open, onOpenChange, onSave }: EditFilte
       description: `Runs if conditions are met`,
       data: {
         ...step.data,
-        filterData,
+        conditionData,
       },
     };
     onSave(updatedStep);
@@ -68,21 +68,21 @@ export function EditFilterDialog({ step, open, onOpenChange, onSave }: EditFilte
   };
 
   const handleAddCondition = () => {
-    setFilterData(prev => ({
+    setConditionData(prev => ({
       ...prev,
       conditions: [...prev.conditions, { id: uuidv4(), variable: '', operator: 'equals', value: '' }]
     }));
   };
 
   const handleRemoveCondition = (id: string) => {
-    setFilterData(prev => ({
+    setConditionData(prev => ({
       ...prev,
       conditions: prev.conditions.filter((c) => c.id !== id)
     }));
   };
   
-  const handleConditionChange = (id: string, field: keyof Omit<FilterCondition, 'id'>, value: string) => {
-    setFilterData(prev => ({
+  const handleConditionChange = (id: string, field: keyof Omit<Condition, 'id'>, value: string) => {
+    setConditionData(prev => ({
       ...prev,
       conditions: prev.conditions.map(c => c.id === id ? {...c, [field]: value} : c)
     }));
@@ -95,17 +95,17 @@ export function EditFilterDialog({ step, open, onOpenChange, onSave }: EditFilte
       <DialogContent className="sm:max-w-3xl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 font-headline">
-            <FilterIcon className="text-primary" />
+            <GitBranch className="text-primary" />
             Edit Action: {step.title}
           </DialogTitle>
           <DialogDescription>
-            Define conditions to control the workflow path. The workflow will only continue if these conditions are met.
+            Define conditions to control the workflow path. The workflow will only continue down the 'true' path if these conditions are met, otherwise it will follow the 'false' path.
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-6 py-4 max-h-[70vh] overflow-y-auto pr-2">
             <RadioGroup
-                value={filterData.logicalOperator}
-                onValueChange={(v) => setFilterData(prev => ({ ...prev, logicalOperator: v as 'AND' | 'OR' }))}
+                value={conditionData.logicalOperator}
+                onValueChange={(v) => setConditionData(prev => ({ ...prev, logicalOperator: v as 'AND' | 'OR' }))}
                 className="flex items-center gap-4"
             >
                 <Label>Conditions must match:</Label>
@@ -120,7 +120,7 @@ export function EditFilterDialog({ step, open, onOpenChange, onSave }: EditFilte
             </RadioGroup>
 
             <div className="space-y-3">
-                {filterData.conditions.map((condition) => (
+                {conditionData.conditions.map((condition) => (
                    <div key={condition.id} className="flex items-end gap-2 p-3 bg-muted/50 rounded-lg">
                        <div className="flex-1 space-y-2">
                            <Label htmlFor={`var-${condition.id}`}>Variable</Label>
@@ -161,7 +161,7 @@ export function EditFilterDialog({ step, open, onOpenChange, onSave }: EditFilte
                             variant="ghost" 
                             size="icon" 
                             onClick={() => handleRemoveCondition(condition.id)}
-                            disabled={filterData.conditions.length <= 1}
+                            disabled={conditionData.conditions.length <= 1}
                         >
                            <Trash2 className="h-4 w-4 text-destructive" />
                        </Button>

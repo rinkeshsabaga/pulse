@@ -2,33 +2,33 @@
 /**
  * @fileOverview A flow to evaluate conditions and branch workflows.
  *
- * - filter - A function that evaluates a set of conditions against a data context.
- * - FilterInput - The input type for the filter function.
- * - FilterOutput - The return type for the filter function.
+ * - condition - A function that evaluates a set of conditions against a data context.
+ * - ConditionInput - The input type for the condition function.
+ * - ConditionOutput - The return type for the condition function.
  */
 
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 
-const FilterConditionSchema = z.object({
+const ConditionSchema = z.object({
   id: z.string(),
   variable: z.string().describe("The variable from the context to check, e.g., 'trigger.data.name'."),
   operator: z.enum(['equals', 'not_equals', 'contains', 'not_contains', 'starts_with', 'ends_with', 'is_empty', 'is_not_empty', 'greater_than', 'less_than']),
   value: z.string().describe("The value to compare against."),
 });
-type FilterCondition = z.infer<typeof FilterConditionSchema>;
+type Condition = z.infer<typeof ConditionSchema>;
 
-export const FilterInputSchema = z.object({
-  conditions: z.array(FilterConditionSchema),
+export const ConditionInputSchema = z.object({
+  conditions: z.array(ConditionSchema),
   logicalOperator: z.enum(['AND', 'OR']),
   dataContext: z.record(z.any()).describe('The data context from previous steps to evaluate against.'),
 });
-export type FilterInput = z.infer<typeof FilterInputSchema>;
+export type ConditionInput = z.infer<typeof ConditionInputSchema>;
 
-export const FilterOutputSchema = z.object({
+export const ConditionOutputSchema = z.object({
   match: z.boolean().describe('Whether the data matches the filter conditions.'),
 });
-export type FilterOutput = z.infer<typeof FilterOutputSchema>;
+export type ConditionOutput = z.infer<typeof ConditionOutputSchema>;
 
 /**
  * Safely resolves a dot-notation path from a nested object.
@@ -48,7 +48,7 @@ function resolvePath(obj: Record<string, any>, path: string): any {
  * @param dataContext The data context.
  * @returns True if the condition is met, false otherwise.
  */
-function evaluateCondition(condition: FilterCondition, dataContext: Record<string, any>): boolean {
+function evaluateSingleCondition(condition: Condition, dataContext: Record<string, any>): boolean {
     const actualValue = resolvePath(dataContext, condition.variable);
     const expectedValue = condition.value;
 
@@ -96,11 +96,11 @@ function evaluateCondition(condition: FilterCondition, dataContext: Record<strin
 }
 
 
-const filterFlow = ai.defineFlow(
+const conditionFlow = ai.defineFlow(
   {
-    name: 'filterFlow',
-    inputSchema: FilterInputSchema,
-    outputSchema: FilterOutputSchema,
+    name: 'conditionFlow',
+    inputSchema: ConditionInputSchema,
+    outputSchema: ConditionOutputSchema,
   },
   async (input) => {
     if (!input.conditions || input.conditions.length === 0) {
@@ -111,8 +111,8 @@ const filterFlow = ai.defineFlow(
     // of all previous steps in the workflow. For this prototype, it's passed directly.
     console.log('Evaluating filter with data context:', input.dataContext);
 
-    const conditionResults = input.conditions.map(condition =>
-      evaluateCondition(condition, input.dataContext)
+    const conditionResults = input.conditions.map(c =>
+      evaluateSingleCondition(c, input.dataContext)
     );
     
     let match = false;
@@ -122,11 +122,11 @@ const filterFlow = ai.defineFlow(
       match = conditionResults.some(result => result);
     }
 
-    console.log(`Filter result (${input.logicalOperator}): ${match}`);
+    console.log(`Condition result (${input.logicalOperator}): ${match}`);
     return { match };
   }
 );
 
-export async function filter(input: FilterInput): Promise<FilterOutput> {
-  return filterFlow(input);
+export async function condition(input: ConditionInput): Promise<ConditionOutput> {
+  return conditionFlow(input);
 }

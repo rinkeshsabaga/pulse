@@ -68,10 +68,21 @@ const getNodePositions = (steps: WorkflowStepData[], layout: 'horizontal' | 'ver
     });
 
     if (i > 0) {
+      const prevStep = steps[i-1];
+      // Default connection from the primary output handle
+      let sourceHandle = null;
+      // If previous node was a condition, you might connect from a specific handle
+      // This logic would need to be stored in the edge data itself in a real app
+      // For now, we connect from the default handle or the 'true' handle of a condition.
+      if (prevStep.title === 'Condition') {
+        sourceHandle = 'true';
+      }
+
       edges.push({
         id: `e${steps[i-1].id}-${step.id}`,
         source: steps[i-1].id,
         target: step.id,
+        sourceHandle: sourceHandle,
         type: 'smoothstep',
         animated: step.status === 'success'
       });
@@ -110,7 +121,7 @@ function WorkflowCanvasComponent({
   }, [setSteps, toast]);
 
   const handleEditStep = useCallback((stepToEdit: WorkflowStepData) => {
-    if (stepToEdit.type === 'trigger' || stepToEdit.title.includes('Action') || stepToEdit.title === 'API Request' || stepToEdit.title === 'Custom Code' || stepToEdit.title === 'Wait' || stepToEdit.title === 'Filter') {
+    if (stepToEdit.type === 'trigger' || stepToEdit.title.includes('Action') || stepToEdit.title === 'API Request' || stepToEdit.title === 'Custom Code' || stepToEdit.title === 'Wait' || stepToEdit.title === 'Condition') {
       onEditStep(stepToEdit);
     } else {
       toast({

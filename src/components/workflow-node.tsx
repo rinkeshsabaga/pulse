@@ -29,7 +29,7 @@ const iconMap: Record<IconName, React.ElementType> = {
   FlaskConical: icons.FlaskConical,
   Database: icons.Database,
   ArrowRightLeft: icons.ArrowRightLeft,
-  GitMerge: icons.GitMerge,
+  GitBranch: icons.GitBranch,
   Filter: icons.Filter,
   Clock: icons.Clock,
   ShoppingCart: icons.ShoppingCart,
@@ -43,6 +43,7 @@ const WorkflowNode = memo(({ data }: NodeProps<{ step: WorkflowStepData; onEdit:
   const { step, onEdit, onDelete } = data;
   const isTrigger = step.type === 'trigger';
   const isEndNode = step.title === 'End Automation';
+  const isConditional = step.title === 'Condition';
 
   const statusClasses = {
     success: 'border-success',
@@ -136,12 +137,32 @@ const WorkflowNode = memo(({ data }: NodeProps<{ step: WorkflowStepData; onEdit:
           </CardContent>
         )}
       </Card>
-      <Handle
-        type="source"
-        position={Position.Right}
-        className="!bg-muted-foreground/80"
-        style={{ visibility: isEndNode ? 'hidden' : 'visible' }}
-      />
+      
+      {isConditional ? (
+        <>
+            <Handle
+                type="source"
+                position={Position.Right}
+                id="true"
+                style={{ top: '40%', background: 'hsl(var(--success))' }}
+            />
+             <div className="absolute right-[-50px] top-[40%] -translate-y-1/2 text-xs text-success font-semibold">True</div>
+            <Handle
+                type="source"
+                position={Position.Right}
+                id="false"
+                style={{ top: '60%', background: 'hsl(var(--destructive))' }}
+            />
+            <div className="absolute right-[-55px] top-[60%] -translate-y-1/2 text-xs text-destructive font-semibold">False</div>
+        </>
+      ) : (
+        <Handle
+          type="source"
+          position={Position.Right}
+          className="!bg-muted-foreground/80"
+          style={{ visibility: isEndNode ? 'hidden' : 'visible' }}
+        />
+      )}
     </>
   );
 });
