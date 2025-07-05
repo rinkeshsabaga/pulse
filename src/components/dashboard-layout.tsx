@@ -32,6 +32,7 @@ import {
   Webhook,
   ShoppingCart,
   GitMerge,
+  StopCircle,
 } from 'lucide-react';
 import * as icons from 'lucide-react';
 
@@ -54,6 +55,7 @@ const iconMap: Record<IconName, React.ElementType> = {
   GitMerge: icons.GitMerge,
   Clock: icons.Clock,
   ShoppingCart: icons.ShoppingCart,
+  StopCircle: icons.StopCircle,
 };
 
 export function DashboardLayout({ workflow }: { workflow: WorkflowType }) {
@@ -149,6 +151,7 @@ export function DashboardLayout({ workflow }: { workflow: WorkflowType }) {
     { type: 'action' as const, icon: 'Mail' as const, title: 'Send Email', description: 'Send an email' },
     { type: 'action' as const, icon: 'Database' as const, title: 'Database Query', description: 'Interact with a database' },
     { type: 'action' as const, icon: 'GitMerge' as const, title: 'Condition', description: 'If/Else, Switch logic' },
+    { type: 'action' as const, icon: 'StopCircle' as const, title: 'End Automation', description: 'Stops the workflow execution' },
   ];
 
   const triggerSteps = [

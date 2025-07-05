@@ -32,12 +32,14 @@ const iconMap: Record<IconName, React.ElementType> = {
   GitMerge: icons.GitMerge,
   Clock: icons.Clock,
   ShoppingCart: icons.ShoppingCart,
+  StopCircle: icons.StopCircle,
 };
 
 // Using memo to prevent unnecessary re-renders
 const WorkflowNode = memo(({ data }: NodeProps<{ step: WorkflowStepData; onEdit: () => void; onDelete: () => void; }>) => {
   const { step, onEdit, onDelete } = data;
   const isTrigger = step.type === 'trigger';
+  const isEndNode = step.title === 'End Automation';
 
   const statusClasses = {
     success: 'border-success',
@@ -88,7 +90,7 @@ const WorkflowNode = memo(({ data }: NodeProps<{ step: WorkflowStepData; onEdit:
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={onEdit}>
+                <DropdownMenuItem onClick={onEdit} disabled={isEndNode}>
                   <Pencil className="mr-2 h-4 w-4" />
                   Edit
                 </DropdownMenuItem>
@@ -135,6 +137,7 @@ const WorkflowNode = memo(({ data }: NodeProps<{ step: WorkflowStepData; onEdit:
         type="source"
         position={Position.Right}
         className="!bg-muted-foreground/80"
+        style={{ visibility: isEndNode ? 'hidden' : 'visible' }}
       />
     </>
   );
