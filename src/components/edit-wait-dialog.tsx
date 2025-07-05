@@ -36,7 +36,7 @@ type EditWaitDialogProps = {
   onSave: (step: WorkflowStepData) => void;
 };
 
-const officeDays: { id: OfficeHoursDay; label: string }[] = [
+const dayOptions: { id: OfficeHoursDay; label: string }[] = [
   { id: 'sun', label: 'Sunday' },
   { id: 'mon', label: 'Monday' },
   { id: 'tue', label: 'Tuesday' },
@@ -45,6 +45,8 @@ const officeDays: { id: OfficeHoursDay; label: string }[] = [
   { id: 'fri', label: 'Friday' },
   { id: 'sat', label: 'Saturday' },
 ];
+
+const allDays = dayOptions.map(d => d.id as OfficeHoursDay);
 
 export function EditWaitDialog({ step, open, onOpenChange, onSave }: EditWaitDialogProps) {
   const [mode, setMode] = useState<WaitMode>('duration');
@@ -81,13 +83,17 @@ export function EditWaitDialog({ step, open, onOpenChange, onSave }: EditWaitDia
       prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day]
     );
   };
+  
+  const isAllSpecificDays = specificDays.length === allDays.length;
+
+  const handleAllSpecificDaysToggle = (checked: boolean) => {
+    setSpecificDays(checked ? allDays : []);
+  };
 
   const handleSpecificDayToggle = (day: OfficeHoursDay) => {
-    setSpecificDays((prev) => {
-        const newDays = prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day];
-        // Ensure at least one day is selected
-        return newDays.length > 0 ? newDays : prev;
-    });
+    setSpecificDays((prev) =>
+      prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day]
+    );
   };
 
 
@@ -102,7 +108,10 @@ export function EditWaitDialog({ step, open, onOpenChange, onSave }: EditWaitDia
           case 'timestamp':
               return `Until ${timestamp || 'custom timestamp'}`;
           case 'specific_day': {
-              const dayLabels = specificDays.map(d => officeDays.find(od => od.id === d)?.label.substring(0,3)).join(', ');
+              if (isAllSpecificDays) {
+                return `Until any day at ${specificTime}`;
+              }
+              const dayLabels = specificDays.map(d => dayOptions.find(od => od.id === d)?.label.substring(0,3)).join(', ');
               return `Until next ${dayLabels || 'selected day'} at ${specificTime}`;
           }
           default:
@@ -228,18 +237,26 @@ export function EditWaitDialog({ step, open, onOpenChange, onSave }: EditWaitDia
             )}
 
             {mode === 'specific_day' && (
-                <div className="pt-4 space-y-6">
+                <div className="pt-4 space-y-4">
                     <div className="space-y-3">
                         <Label>Days of the Week</Label>
-                        <div className="grid grid-cols-4 gap-2">
-                            {officeDays.map((day) => (
+                         <div className="grid grid-cols-3 gap-2">
+                            <div className="flex items-center space-x-2 col-span-3">
+                                <Checkbox
+                                    id="specific_any"
+                                    checked={isAllSpecificDays}
+                                    onCheckedChange={handleAllSpecificDaysToggle}
+                                />
+                                <Label htmlFor="specific_any" className="text-sm font-semibold cursor-pointer">Any Day</Label>
+                            </div>
+                            {dayOptions.map((day) => (
                                 <div key={day.id} className="flex items-center space-x-2">
                                     <Checkbox
                                         id={`specific_${day.id}`}
                                         checked={specificDays.includes(day.id)}
                                         onCheckedChange={() => handleSpecificDayToggle(day.id)}
                                     />
-                                    <Label htmlFor={`specific_${day.id}`} className="text-sm font-normal cursor-pointer">{day.label}</Label>
+                                    <Label htmlFor={`specific_${day.id}`} className="text-sm font-normal cursor-pointer">{`Next ${day.label}`}</Label>
                                 </div>
                             ))}
                         </div>
@@ -256,7 +273,7 @@ export function EditWaitDialog({ step, open, onOpenChange, onSave }: EditWaitDia
                     <div className="space-y-3">
                         <Label>Office Days</Label>
                         <div className="grid grid-cols-4 gap-2">
-                            {officeDays.map((day) => (
+                            {dayOptions.map((day) => (
                                 <div key={day.id} className="flex items-center space-x-2">
                                     <Checkbox
                                         id={`office_${day.id}`}
@@ -314,7 +331,7 @@ export function EditWaitDialog({ step, open, onOpenChange, onSave }: EditWaitDia
           <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
-          <Button type="button" onClick={handleSave}>
+          <Button type="button" onClick={handleSave} disabled={mode === 'specific_day' && specificDays.length === 0}>
             Save Changes
           </Button>
         </DialogFooter>
