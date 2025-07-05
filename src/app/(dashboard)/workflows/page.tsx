@@ -72,105 +72,107 @@ export default function WorkflowsPage() {
 
   return (
     <>
-      <div className="flex flex-col gap-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold font-headline">Workflows</h1>
-            <p className="text-muted-foreground">Manage your workflows</p>
+      <div className="p-4 sm:p-6">
+        <div className="flex flex-col gap-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold font-headline">Workflows</h1>
+              <p className="text-muted-foreground">Manage your workflows</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" onClick={() => showNotImplementedToast('Create Folder')}>
+                <FolderPlus className="mr-2 h-4 w-4" />
+                Create Folder
+              </Button>
+              <Button onClick={() => setIsCreateDialogOpen(true)}>
+                <Plus className="mr-2 h-4 w-4" />
+                Create Workflow
+              </Button>
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-             <Button variant="outline" onClick={() => showNotImplementedToast('Create Folder')}>
-              <FolderPlus className="mr-2 h-4 w-4" />
-              Create Folder
-            </Button>
-            <Button onClick={() => setIsCreateDialogOpen(true)}>
-              <Plus className="mr-2 h-4 w-4" />
-              Create Workflow
-            </Button>
-          </div>
-        </div>
-        
-        <div className="flex flex-col gap-4">
-          {isLoading ? (
-            Array.from({ length: 3 }).map((_, i) => (
-              <Card key={i}>
-                <CardContent className="p-4 flex items-center justify-between">
-                  <div className="flex items-center gap-4 w-full">
-                    <Skeleton className="h-12 w-12 rounded-lg" />
-                    <div className="space-y-2 flex-1">
-                      <Skeleton className="h-5 w-1/4" />
-                      <Skeleton className="h-4 w-1/2" />
+          
+          <div className="flex flex-col gap-4">
+            {isLoading ? (
+              Array.from({ length: 3 }).map((_, i) => (
+                <Card key={i}>
+                  <CardContent className="p-4 flex items-center justify-between">
+                    <div className="flex items-center gap-4 w-full">
+                      <Skeleton className="h-12 w-12 rounded-lg" />
+                      <div className="space-y-2 flex-1">
+                        <Skeleton className="h-5 w-1/4" />
+                        <Skeleton className="h-4 w-1/2" />
+                      </div>
                     </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Skeleton className="h-9 w-20" />
-                    <Skeleton className="h-8 w-8" />
-                  </div>
-                </CardContent>
-              </Card>
-            ))
-          ) : (
-            workflows.map((workflow) => (
-              <Card key={workflow.id} className="hover:bg-card/95">
-                <CardContent className="p-4 flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <div className="p-3 bg-primary/10 rounded-lg">
-                      <Workflow className="h-5 w-5 text-primary" />
+                    <div className="flex items-center gap-2">
+                      <Skeleton className="h-9 w-20" />
+                      <Skeleton className="h-8 w-8" />
                     </div>
-                    <div>
-                      <Link href={`/workflows/${workflow.id}`} className="font-semibold hover:underline">
-                        {workflow.name}
-                      </Link>
-                      {workflow.description && (
-                        <p className="text-sm text-muted-foreground">{workflow.description}</p>
-                      )}
-                      <Badge variant={workflow.status === 'Draft' ? 'secondary' : 'default'} className="mt-1">
-                        {workflow.status}
-                      </Badge>
+                  </CardContent>
+                </Card>
+              ))
+            ) : (
+              workflows.map((workflow) => (
+                <Card key={workflow.id} className="hover:bg-card/95">
+                  <CardContent className="p-4 flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <div className="p-3 bg-primary/10 rounded-lg">
+                        <Workflow className="h-5 w-5 text-primary" />
+                      </div>
+                      <div>
+                        <Link href={`/workflows/${workflow.id}`} className="font-semibold hover:underline">
+                          {workflow.name}
+                        </Link>
+                        {workflow.description && (
+                          <p className="text-sm text-muted-foreground">{workflow.description}</p>
+                        )}
+                        <Badge variant={workflow.status === 'Draft' ? 'secondary' : 'default'} className="mt-1">
+                          {workflow.status}
+                        </Badge>
+                      </div>
                     </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Button variant="outline" size="sm" asChild>
-                      <Link href={`/workflows/${workflow.id}`}>
-                        <Edit className="mr-2 h-4 w-4" />
-                        Edit
-                      </Link>
-                    </Button>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-8 w-8">
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem asChild>
-                          <Link href={`/workflows/${workflow.id}`}>
-                              <Eye className="mr-2 h-4 w-4" />
-                              View
-                          </Link>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => showNotImplementedToast('Rename')}>
+                    <div className="flex items-center gap-2">
+                      <Button variant="outline" size="sm" asChild>
+                        <Link href={`/workflows/${workflow.id}`}>
                           <Edit className="mr-2 h-4 w-4" />
-                          Rename
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => showNotImplementedToast('Duplicate')}>
-                          <Copy className="mr-2 h-4 w-4" />
-                          Duplicate
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          className="text-destructive focus:text-destructive"
-                          onClick={() => setWorkflowToDelete(workflow)}
-                        >
-                          <Trash2 className="mr-2 h-4 w-4" />
-                          Delete
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
-                </CardContent>
-              </Card>
-            ))
-          )}
+                          Edit
+                        </Link>
+                      </Button>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-8 w-8">
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem asChild>
+                            <Link href={`/workflows/${workflow.id}`}>
+                                <Eye className="mr-2 h-4 w-4" />
+                                View
+                            </Link>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => showNotImplementedToast('Rename')}>
+                            <Edit className="mr-2 h-4 w-4" />
+                            Rename
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => showNotImplementedToast('Duplicate')}>
+                            <Copy className="mr-2 h-4 w-4" />
+                            Duplicate
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            className="text-destructive focus:text-destructive"
+                            onClick={() => setWorkflowToDelete(workflow)}
+                          >
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))
+            )}
+          </div>
         </div>
       </div>
       <CreateWorkflowDialog 
