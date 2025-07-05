@@ -31,7 +31,7 @@ import {
   Clock,
   Webhook,
   ShoppingCart,
-  GitMerge,
+  Filter,
   StopCircle,
   Code,
   AppWindow,
@@ -49,8 +49,10 @@ import { EditCustomCodeDialog } from './edit-custom-code-dialog';
 import { EditWaitDialog } from './edit-wait-dialog';
 import { EditAppTriggerDialog } from './edit-app-trigger-dialog';
 import { EditAppActionDialog } from './edit-app-action-dialog';
+import { EditFilterDialog } from './edit-filter-dialog';
 import type { Workflow as WorkflowType, WorkflowStepData, IconName } from '@/lib/types';
 import { updateWorkflow } from '@/lib/db';
+import { v4 as uuidv4 } from 'uuid';
 
 const iconMap: Record<IconName, React.ElementType> = {
   Webhook: icons.Webhook,
@@ -59,6 +61,7 @@ const iconMap: Record<IconName, React.ElementType> = {
   Database: icons.Database,
   ArrowRightLeft: icons.ArrowRightLeft,
   GitMerge: icons.GitMerge,
+  Filter: icons.Filter,
   Clock: icons.Clock,
   ShoppingCart: icons.ShoppingCart,
   StopCircle: icons.StopCircle,
@@ -135,6 +138,16 @@ export function DashboardLayout({ workflow }: { workflow: WorkflowType }) {
         };
     }
 
+    if (newStep.title === 'Filter') {
+        newStep.description = 'Click Edit to set conditions';
+        newStep.data = {
+            filterData: {
+                logicalOperator: 'AND',
+                conditions: [{ id: uuidv4(), variable: '', operator: 'equals', value: '' }]
+            }
+        };
+    }
+
     handleSetSteps(prev => {
       if (newStep.type === 'trigger' && newStep.title !== 'Shopify' && newStep.title !== 'Webhook' && newStep.title !== 'Cron Job' && newStep.title !== 'App Event') {
          // This logic handles replacing existing triggers, but Shopify can have multiple.
@@ -181,11 +194,11 @@ export function DashboardLayout({ workflow }: { workflow: WorkflowType }) {
   const actionSteps = [
     { type: 'action' as const, icon: 'AppWindow' as const, title: 'App Action', description: 'Perform an action in an app' },
     { type: 'action' as const, icon: 'Clock' as const, title: 'Wait', description: 'Delay workflow execution' },
+    { type: 'action' as const, icon: 'Filter' as const, title: 'Filter', description: 'Branch workflow on conditions' },
     { type: 'action' as const, icon: 'Code' as const, title: 'Custom Code', description: 'Write and run custom code' },
     { type: 'action' as const, icon: 'ArrowRightLeft' as const, title: 'API Request', description: 'Make an HTTP request' },
     { type: 'action' as const, icon: 'Mail' as const, title: 'Send Email', description: 'Send an email' },
     { type: 'action' as const, icon: 'Database' as const, title: 'Database Query', description: 'Interact with a database' },
-    { type: 'action' as const, icon: 'GitMerge' as const, title: 'Condition', description: 'If/Else, Switch logic' },
     { type: 'action' as const, icon: 'StopCircle' as const, title: 'End Automation', description: 'Stops the workflow execution' },
   ];
 
@@ -349,6 +362,12 @@ export function DashboardLayout({ workflow }: { workflow: WorkflowType }) {
       <EditWaitDialog
         step={editingStep}
         open={!!editingStep && editingStep.title === 'Wait'}
+        onOpenChange={(isOpen) => !isOpen && setEditingStep(null)}
+        onSave={handleSaveAction}
+      />
+      <EditFilterDialog
+        step={editingStep}
+        open={!!editingStep && editingStep.title === 'Filter'}
         onOpenChange={(isOpen) => !isOpen && setEditingStep(null)}
         onSave={handleSaveAction}
       />

@@ -8,6 +8,7 @@ export type IconName =
   | 'Database'
   | 'ArrowRightLeft'
   | 'GitMerge'
+  | 'Filter'
   | 'Clock'
   | 'ShoppingCart'
   | 'StopCircle'
@@ -61,6 +62,18 @@ export type AppActionData = {
   params?: Record<string, any>;
 };
 
+export type FilterCondition = {
+  id: string;
+  variable: string;
+  operator: 'equals' | 'not_equals' | 'contains' | 'not_contains' | 'starts_with' | 'ends_with' | 'is_empty' | 'is_not_empty' | 'greater_than' | 'less_than';
+  value: string;
+};
+
+export type FilterData = {
+  conditions: FilterCondition[];
+  logicalOperator: 'AND' | 'OR';
+};
+
 export type ApiRequestData = {
     webhookUrl?: string; // for trigger
     // for Shopify Trigger
@@ -91,6 +104,8 @@ export type ApiRequestData = {
     waitTimestamp?: string;
     waitSpecificDays?: OfficeHoursDay[];
     waitSpecificTime?: string; // HH:mm
+    // for Filter action
+    filterData?: FilterData;
 }
 
 
