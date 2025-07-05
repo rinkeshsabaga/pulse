@@ -196,7 +196,6 @@ export function DashboardLayout({ workflow }: { workflow: WorkflowType }) {
     { type: 'action' as const, icon: 'AppWindow' as const, title: 'App Action', description: 'Perform an action in an app' },
     { type: 'action' as const, icon: 'Clock' as const, title: 'Wait', description: 'Delay workflow execution' },
     { type: 'action' as const, icon: 'Filter' as const, title: 'Filter', description: 'Branch workflow on conditions' },
-    { type: 'action' as const, icon: 'GitMerge' as const, title: 'Merge', description: 'Combine multiple workflow paths' },
     { type: 'action' as const, icon: 'Code' as const, title: 'Custom Code', description: 'Write and run custom code' },
     { type: 'action' as const, icon: 'ArrowRightLeft' as const, title: 'API Request', description: 'Make an HTTP request' },
     { type: 'action' as const, icon: 'Mail' as const, title: 'Send Email', description: 'Send an email' },
