@@ -120,6 +120,7 @@ export type CredentialAuthData = {
   // For OAuth, these would be populated by the OAuth flow.
   accessToken?: string;
   refreshToken?: string;
+  expiresAt?: number; // Unix timestamp in milliseconds
   // Other potential fields
   instanceUrl?: string; // e.g., for Salesforce
   clientId?: string;

@@ -1,7 +1,7 @@
 // This is a mock database. In a real application, you would use a real database.
 'use server';
 
-import type { Credential, Workflow } from './types';
+import type { Credential, Workflow, CredentialAuthData } from './types';
 import { initialSteps } from './initial-data';
 
 // To persist the mock database across hot reloads in development,
@@ -99,8 +99,10 @@ const initialCredentials: Credential[] = [
         type: 'OAuth',
         accountName: 'my-github-user',
         authData: {
-            accessToken: 'gho_mock_access_token_for_my_github_user',
-            refreshToken: 'ghr_mock_refresh_token'
+            accessToken: 'gho_mock_access_token_for_my_github_user_EXPIRED',
+            refreshToken: 'ghr_mock_refresh_token',
+            // Set to have expired 1 minute ago for demonstration
+            expiresAt: Date.now() - 60 * 1000,
         },
     },
     {
@@ -111,7 +113,9 @@ const initialCredentials: Credential[] = [
         authData: {
             accessToken: 'sf_mock_access_token',
             refreshToken: 'sf_mock_refresh_token',
-            instanceUrl: 'https://my-sales-org.my.salesforce.com'
+            instanceUrl: 'https://my-sales-org.my.salesforce.com',
+            // Set to expire in 1 hour
+            expiresAt: Date.now() + 60 * 60 * 1000,
         },
     },
 ];
@@ -162,4 +166,56 @@ export async function deleteCredential(id: string): Promise<{ success: boolean }
     return { success: true };
   }
   return { success: false };
+}
+
+/**
+ * Gets a valid access token for a credential, refreshing it if necessary.
+ * This function simulates the OAuth 2.0 token refresh flow.
+ * @param credentialId The ID of the credential.
+ * @returns A valid access token, or the API key if not an OAuth credential.
+ */
+export async function getValidAccessToken(credentialId: string): Promise<string | null> {
+    const credential = await getCredentialById(credentialId);
+
+    if (!credential) {
+        console.error(`Credential with ID ${credentialId} not found.`);
+        return null;
+    }
+
+    if (credential.type !== 'OAuth') {
+        // For non-OAuth credentials, return the API key if it exists.
+        return credential.authData.apiKey || null;
+    }
+
+    const { authData } = credential;
+    const isExpired = authData.expiresAt ? Date.now() > authData.expiresAt : false;
+
+    if (isExpired && authData.refreshToken) {
+        console.log(`Token for ${credential.appName} (${credential.accountName}) has expired. Refreshing...`);
+
+        // --- MOCK REFRESH LOGIC ---
+        // In a real application, you would make an API call to the service's
+        // token endpoint with the refreshToken.
+        // For this prototype, we'll just simulate it.
+        const newAccessToken = `refreshed_${credential.appName.toLowerCase()}_token_${Date.now()}`;
+        const newAuthData: CredentialAuthData = {
+            ...authData,
+            accessToken: newAccessToken,
+            // Set new token to expire in 1 hour
+            expiresAt: Date.now() + 60 * 60 * 1000,
+        };
+
+        await updateCredential(credential.id, { authData: newAuthData });
+
+        console.log(`Token for ${credential.appName} (${credential.accountName}) refreshed successfully.`);
+        return newAccessToken;
+    }
+
+    if (isExpired && !authData.refreshToken) {
+        console.warn(`Token for ${credential.appName} (${credential.accountName}) has expired, but no refresh token is available.`);
+        return null; // or throw an error
+    }
+
+    // Token is valid or not refreshable, return the current access token
+    return authData.accessToken || null;
 }
