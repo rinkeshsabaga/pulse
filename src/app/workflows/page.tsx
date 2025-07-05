@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
@@ -195,13 +194,12 @@ export default function WorkflowsPage() {
                 This action cannot be undone. This will permanently delete the
                 <span className="font-semibold"> {workflowToDelete?.name} </span>
                 workflow.
-                 <div className="pt-4">
-                  Please type <strong className="text-destructive font-bold">{workflowToDelete?.name}</strong> to confirm.
-                </div>
             </AlertDialogDescription>
             </AlertDialogHeader>
-            <div className="space-y-2">
-              <Label htmlFor="delete-confirm" className="sr-only">Confirm delete</Label>
+            <div className="space-y-2 pt-4">
+              <Label htmlFor="delete-confirm" className="text-sm text-muted-foreground">
+                Please type <strong className="text-destructive font-bold">{workflowToDelete?.name}</strong> to confirm.
+              </Label>
               <Input
                 id="delete-confirm"
                 value={deleteConfirmationInput}
