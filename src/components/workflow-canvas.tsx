@@ -44,8 +44,6 @@ import {
 import {
   Play,
   MoreVertical,
-  ArrowRight,
-  ArrowDown,
   Plus,
   Workflow,
   GripVertical,
@@ -198,14 +196,14 @@ function SortableWorkflowStep({
 const FlowConnector = ({ direction = 'horizontal' }: { direction?: 'horizontal' | 'vertical' }) => {
     if (direction === 'vertical') {
         return (
-            <div className="flex items-center justify-center w-full py-4 shrink-0">
-                <ArrowDown className="h-5 w-5 text-muted-foreground" />
+            <div className="flex items-center justify-center w-full py-4 shrink-0" aria-hidden="true">
+                <div className="h-8 w-px bg-muted-foreground/30" />
             </div>
         );
     }
     return (
-        <div className="flex items-center justify-center h-full px-4 shrink-0">
-            <ArrowRight className="h-5 w-5 text-muted-foreground" />
+        <div className="flex items-center justify-center h-full px-4 shrink-0" aria-hidden="true">
+            <div className="w-8 h-px bg-muted-foreground/30" />
         </div>
     );
 };
