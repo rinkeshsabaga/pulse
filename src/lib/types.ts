@@ -55,6 +55,12 @@ export type ShopifySubEvent =
 export type WaitMode = 'duration' | 'datetime' | 'office_hours' | 'timestamp' | 'specific_day';
 export type OfficeHoursDay = 'sun' | 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat';
 
+export type AppActionData = {
+  app: string;
+  action: string;
+  params?: Record<string, any>;
+};
+
 export type ApiRequestData = {
     webhookUrl?: string; // for trigger
     // for Shopify Trigger
@@ -65,6 +71,8 @@ export type ApiRequestData = {
       app: string;
       event: string;
     };
+    // for App Action
+    appAction?: AppActionData;
     // for API Request action
     apiUrl?: string;
     method?: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';

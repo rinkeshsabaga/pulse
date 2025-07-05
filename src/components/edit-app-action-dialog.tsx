@@ -24,22 +24,25 @@ import { AppWindow, ArrowLeft } from 'lucide-react';
 import type { WorkflowStepData } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { APP_DEFINITIONS } from '@/lib/app-definitions';
+import { Textarea } from './ui/textarea';
 
-type EditAppTriggerDialogProps = {
+type EditAppActionDialogProps = {
   step: WorkflowStepData;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSave: (step: WorkflowStepData) => void;
 };
 
-export function EditAppTriggerDialog({ step, open, onOpenChange, onSave }: EditAppTriggerDialogProps) {
+export function EditAppActionDialog({ step, open, onOpenChange, onSave }: EditAppActionDialogProps) {
   const [selectedApp, setSelectedApp] = useState<string | null>(null);
-  const [selectedEvent, setSelectedEvent] = useState<string | null>(null);
+  const [selectedAction, setSelectedAction] = useState<string | null>(null);
+  const [params, setParams] = useState<Record<string, any>>({});
 
   useEffect(() => {
     if (open) {
-      setSelectedApp(step.data?.appTrigger?.app || null);
-      setSelectedEvent(step.data?.appTrigger?.event || null);
+      setSelectedApp(step.data?.appAction?.app || null);
+      setSelectedAction(step.data?.appAction?.action || null);
+      setParams(step.data?.appAction?.params || {});
     }
   }, [open, step.data]);
 
@@ -48,19 +51,20 @@ export function EditAppTriggerDialog({ step, open, onOpenChange, onSave }: EditA
   }, [selectedApp]);
 
   const handleSave = () => {
-    if (!selectedApp || !selectedEvent) return;
+    if (!selectedApp || !selectedAction) return;
 
-    const eventLabel = appDefinition?.triggers.find(t => t.value === selectedEvent)?.label || 'App Event';
+    const actionLabel = appDefinition?.actions.find(a => a.value === selectedAction)?.label || 'App Action';
     
     const updatedStep: WorkflowStepData = {
       ...step,
-      title: `${selectedApp} Event`,
-      description: eventLabel,
+      title: `${selectedApp} Action`,
+      description: actionLabel,
       data: {
         ...step.data,
-        appTrigger: {
+        appAction: {
           app: selectedApp,
-          event: selectedEvent,
+          action: selectedAction,
+          params: params,
         },
       },
     };
@@ -70,13 +74,14 @@ export function EditAppTriggerDialog({ step, open, onOpenChange, onSave }: EditA
 
   const handleAppSelect = (appName: string) => {
     setSelectedApp(appName);
-    setSelectedEvent(null); // Reset event when app changes
+    setSelectedAction(null); // Reset action when app changes
+    setParams({});
   };
 
   const renderAppSelection = () => (
     <>
       <DialogDescription>
-        Choose an application to trigger this workflow.
+        Choose an application to perform an action.
       </DialogDescription>
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 py-4 max-h-[60vh] overflow-y-auto">
         {APP_DEFINITIONS.map((app) => (
@@ -93,7 +98,7 @@ export function EditAppTriggerDialog({ step, open, onOpenChange, onSave }: EditA
     </>
   );
 
-  const renderEventSelection = () => {
+  const renderActionSelection = () => {
     if (!appDefinition) return null;
     const AppIcon = appDefinition.icon;
 
@@ -106,23 +111,46 @@ export function EditAppTriggerDialog({ step, open, onOpenChange, onSave }: EditA
           <div className="flex items-center gap-3">
             <AppIcon className={cn("h-8 w-8", appDefinition.iconClassName)} />
             <div>
-                <DialogTitle className='text-lg'>Configure Trigger for {appDefinition.name}</DialogTitle>
-                <DialogDescription>Select the specific event that will start the workflow.</DialogDescription>
+                <DialogTitle className='text-lg'>Configure Action for {appDefinition.name}</DialogTitle>
+                <DialogDescription>Select the action to perform in the workflow.</DialogDescription>
             </div>
           </div>
         </div>
-        <div className="py-4 space-y-2">
-            <Label htmlFor="app-event">Trigger Event</Label>
-            <Select value={selectedEvent || ''} onValueChange={(v) => setSelectedEvent(v)}>
-                <SelectTrigger id="app-event">
-                    <SelectValue placeholder="Select an event" />
-                </SelectTrigger>
-                <SelectContent>
-                    {appDefinition.triggers.map(trigger => (
-                        <SelectItem key={trigger.value} value={trigger.value}>{trigger.label}</SelectItem>
-                    ))}
-                </SelectContent>
-            </Select>
+        <div className="py-4 space-y-4">
+            <div className="space-y-2">
+                <Label htmlFor="app-action">Action</Label>
+                <Select value={selectedAction || ''} onValueChange={(v) => setSelectedAction(v)}>
+                    <SelectTrigger id="app-action">
+                        <SelectValue placeholder="Select an action" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        {appDefinition.actions.map(action => (
+                            <SelectItem key={action.value} value={action.value}>{action.label}</SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
+            </div>
+            {selectedAction && (
+                <div className="space-y-2">
+                    <Label>Parameters (as JSON)</Label>
+                    <Textarea 
+                        placeholder={'{\n  "channel": "#general",\n  "text": "Hello, World!"\n}'}
+                        rows={6}
+                        value={JSON.stringify(params, null, 2)}
+                        onChange={(e) => {
+                            try {
+                                setParams(JSON.parse(e.target.value));
+                            } catch (error) {
+                                // Maybe show an error to the user in the future
+                            }
+                        }}
+                        className="font-code text-sm"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                        Provide action parameters in JSON format. This will be replaced with a dynamic form later.
+                    </p>
+                </div>
+            )}
         </div>
       </>
     );
@@ -134,17 +162,17 @@ export function EditAppTriggerDialog({ step, open, onOpenChange, onSave }: EditA
         <DialogHeader>
           <DialogTitle className={cn("flex items-center gap-2 font-headline", selectedApp && 'hidden')}>
             <AppWindow className="text-primary" />
-            Configure App Trigger
+            Configure App Action
           </DialogTitle>
         </DialogHeader>
         
-        {selectedApp ? renderEventSelection() : renderAppSelection()}
+        {selectedApp ? renderActionSelection() : renderAppSelection()}
 
         <DialogFooter>
           <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
-          <Button type="button" onClick={handleSave} disabled={!selectedApp || !selectedEvent}>
+          <Button type="button" onClick={handleSave} disabled={!selectedApp || !selectedAction}>
             Save Changes
           </Button>
         </DialogFooter>
