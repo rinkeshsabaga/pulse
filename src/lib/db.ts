@@ -37,7 +37,8 @@ const initialWorkflows: Workflow[] = [
 // In a real app, you'd use a proper database.
 // For this dev environment, we'll use a global variable to persist the data.
 if (!global.__workflows__) {
-    global.__workflows__ = initialWorkflows;
+    // Use a deep copy to prevent mutation of the initial data array.
+    global.__workflows__ = JSON.parse(JSON.stringify(initialWorkflows));
 }
 
 const workflows: Workflow[] = global.__workflows__;
@@ -65,7 +66,7 @@ export async function addWorkflow(workflowData: { name: string; description?: st
     steps: [],
   };
   workflows.push(newWorkflow);
-  return newWorkflow;
+  return JSON.parse(JSON.stringify(newWorkflow));
 }
 
 export async function deleteWorkflow(id: string): Promise<{ success: boolean }> {
@@ -81,7 +82,7 @@ export async function updateWorkflow(id: string, updatedData: Partial<Omit<Workf
     const index = workflows.findIndex(wf => wf.id === id);
     if (index !== -1) {
         workflows[index] = { ...workflows[index], ...updatedData };
-        return workflows[index];
+        return JSON.parse(JSON.stringify(workflows[index]));
     }
     return undefined;
 }
