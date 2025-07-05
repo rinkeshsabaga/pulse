@@ -49,6 +49,10 @@ export function DashboardLayout({ workflow }: { workflow: WorkflowType }) {
   const [isAiGeneratorOpen, setIsAiGeneratorOpen] = React.useState(false);
   const [editingStep, setEditingStep] = React.useState<WorkflowStepData | null>(null);
 
+  React.useEffect(() => {
+    setSteps(workflow.steps);
+  }, [workflow]);
+
   const persistSteps = (newSteps: WorkflowStepData[]) => {
     updateWorkflow(workflow.id, { steps: newSteps });
   };

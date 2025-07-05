@@ -1,3 +1,4 @@
+
 // src/components/edit-trigger-dialog.tsx
 'use client';
 
@@ -14,7 +15,7 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Copy } from 'lucide-react';
-import type { WorkflowStepData } from './dashboard-layout';
+import type { WorkflowStepData } from '@/lib/types';
 
 type EditTriggerDialogProps = {
   step: WorkflowStepData;
