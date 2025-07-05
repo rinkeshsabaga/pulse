@@ -28,12 +28,15 @@ import { getWorkflows, deleteWorkflow } from '@/lib/db';
 import type { Workflow as WorkflowType } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 export default function WorkflowsPage() {
   const [workflows, setWorkflows] = useState<WorkflowType[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [workflowToDelete, setWorkflowToDelete] = useState<WorkflowType | null>(null);
+  const [deleteConfirmationInput, setDeleteConfirmationInput] = useState('');
   const { toast } = useToast();
 
   const loadWorkflows = useCallback(async () => {
@@ -48,7 +51,7 @@ export default function WorkflowsPage() {
   }, [loadWorkflows]);
 
   const handleDelete = async () => {
-    if (!workflowToDelete) return;
+    if (!workflowToDelete || deleteConfirmationInput !== workflowToDelete.name) return;
 
     await deleteWorkflow(workflowToDelete.id);
     setWorkflows(prev => prev.filter((wf) => wf.id !== workflowToDelete.id));
@@ -58,6 +61,7 @@ export default function WorkflowsPage() {
       description: `"${workflowToDelete.name}" has been successfully deleted.`,
     });
     setWorkflowToDelete(null);
+    setDeleteConfirmationInput('');
   };
 
   const showNotImplementedToast = (feature: string) => {
@@ -175,7 +179,15 @@ export default function WorkflowsPage() {
         onOpenChange={setIsCreateDialogOpen} 
         onWorkflowCreated={loadWorkflows}
       />
-      <AlertDialog open={!!workflowToDelete} onOpenChange={(open) => !open && setWorkflowToDelete(null)}>
+      <AlertDialog 
+        open={!!workflowToDelete} 
+        onOpenChange={(open) => {
+          if (!open) {
+            setWorkflowToDelete(null);
+            setDeleteConfirmationInput('');
+          }
+        }}
+      >
         <AlertDialogContent>
             <AlertDialogHeader>
             <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
@@ -183,11 +195,30 @@ export default function WorkflowsPage() {
                 This action cannot be undone. This will permanently delete the
                 <span className="font-semibold"> {workflowToDelete?.name} </span>
                 workflow.
+                 <div className="pt-4">
+                  Please type <strong className="text-destructive font-bold">{workflowToDelete?.name}</strong> to confirm.
+                </div>
             </AlertDialogDescription>
             </AlertDialogHeader>
+            <div className="space-y-2">
+              <Label htmlFor="delete-confirm" className="sr-only">Confirm delete</Label>
+              <Input
+                id="delete-confirm"
+                value={deleteConfirmationInput}
+                onChange={(e) => setDeleteConfirmationInput(e.target.value)}
+                autoComplete="off"
+                autoFocus
+              />
+            </div>
             <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
+            <AlertDialogAction 
+              onClick={handleDelete} 
+              className="bg-destructive hover:bg-destructive/90"
+              disabled={deleteConfirmationInput !== workflowToDelete?.name}
+            >
+              Delete
+            </AlertDialogAction>
             </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
