@@ -1,3 +1,4 @@
+
 'use client';
 
 import React from 'react';
@@ -264,7 +265,7 @@ export function WorkflowCanvas({
   };
 
   const handleEditStep = (stepToEdit: WorkflowStepData) => {
-    if (stepToEdit.type === 'trigger') {
+    if (stepToEdit.type === 'trigger' || stepToEdit.title === 'API Request') {
       onEditStep(stepToEdit);
     } else {
       toast({

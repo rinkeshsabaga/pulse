@@ -40,6 +40,7 @@ import { WorkflowCanvas } from './workflow-canvas';
 import { MonitoringPanel } from './monitoring-panel';
 import { AIFunctionGenerator } from './ai-function-generator';
 import { EditTriggerDialog } from './edit-trigger-dialog';
+import { EditApiRequestDialog } from './edit-api-request-dialog';
 import type { Workflow as WorkflowType, WorkflowStepData, IconName } from '@/lib/types';
 import { updateWorkflow } from '@/lib/db';
 
@@ -84,6 +85,16 @@ export function DashboardLayout({ workflow }: { workflow: WorkflowType }) {
       newStep.data = { webhookUrl: `https://api.sabagapulse.com/v1/webhooks/wf_${Date.now()}`};
     }
 
+    if (newStep.type === 'action' && newStep.title === 'API Request') {
+        newStep.data = {
+          method: 'GET',
+          apiUrl: 'https://api.example.com/data',
+          auth: { type: 'none' },
+          headers: [],
+          body: ''
+        };
+    }
+
     handleSetSteps(prev => {
       if (newStep.type === 'trigger') {
         const newSteps = [...prev];
@@ -120,8 +131,13 @@ export function DashboardLayout({ workflow }: { workflow: WorkflowType }) {
     handleSetSteps([]);
   };
 
+  const handleSaveAction = (updatedStep: WorkflowStepData) => {
+    handleSetSteps(prev => prev.map(s => s.id === updatedStep.id ? updatedStep : s));
+    setEditingStep(null);
+  }
+
   const actionSteps = [
-    { type: 'action' as const, icon: 'ArrowRightLeft' as const, title: 'Data Transform', description: 'Transform data structure' },
+    { type: 'action' as const, icon: 'ArrowRightLeft' as const, title: 'API Request', description: 'Make an HTTP request' },
     { type: 'action' as const, icon: 'Mail' as const, title: 'Send Email', description: 'Send an email' },
     { type: 'action' as const, icon: 'Database' as const, title: 'Database Query', description: 'Interact with a database' },
     { type: 'action' as const, icon: 'GitMerge' as const, title: 'Condition', description: 'If/Else, Switch logic' },
@@ -243,6 +259,14 @@ export function DashboardLayout({ workflow }: { workflow: WorkflowType }) {
           step={editingStep}
           open={!!editingStep}
           onOpenChange={(isOpen) => !isOpen && setEditingStep(null)}
+        />
+      )}
+      {editingStep && editingStep.title === 'API Request' && (
+        <EditApiRequestDialog
+            step={editingStep}
+            open={!!editingStep}
+            onOpenChange={(isOpen) => !isOpen && setEditingStep(null)}
+            onSave={handleSaveAction}
         />
       )}
     </SidebarProvider>
