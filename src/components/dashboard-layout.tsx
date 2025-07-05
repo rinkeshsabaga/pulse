@@ -139,7 +139,7 @@ export function DashboardLayout({ workflow }: { workflow: WorkflowType }) {
         };
     }
 
-    if (newStep.title === 'Condition') {
+    if (newStep.title === 'Filter') {
         newStep.description = 'Click Edit to set conditions';
         newStep.data = {
             filterData: {
@@ -195,7 +195,7 @@ export function DashboardLayout({ workflow }: { workflow: WorkflowType }) {
   const actionSteps = [
     { type: 'action' as const, icon: 'AppWindow' as const, title: 'App Action', description: 'Perform an action in an app' },
     { type: 'action' as const, icon: 'Clock' as const, title: 'Wait', description: 'Delay workflow execution' },
-    { type: 'action' as const, icon: 'Filter' as const, title: 'Condition', description: 'Branch workflow on conditions' },
+    { type: 'action' as const, icon: 'Filter' as const, title: 'Filter', description: 'Branch workflow on conditions' },
     { type: 'action' as const, icon: 'GitMerge' as const, title: 'Merge', description: 'Combine multiple workflow paths' },
     { type: 'action' as const, icon: 'Code' as const, title: 'Custom Code', description: 'Write and run custom code' },
     { type: 'action' as const, icon: 'ArrowRightLeft' as const, title: 'API Request', description: 'Make an HTTP request' },
@@ -369,7 +369,7 @@ export function DashboardLayout({ workflow }: { workflow: WorkflowType }) {
       />
       <EditFilterDialog
         step={editingStep}
-        open={!!editingStep && editingStep.title === 'Condition'}
+        open={!!editingStep && editingStep.title === 'Filter'}
         onOpenChange={(isOpen) => !isOpen && setEditingStep(null)}
         onSave={handleSaveAction}
       />
