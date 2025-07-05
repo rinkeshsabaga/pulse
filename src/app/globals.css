@@ -89,3 +89,10 @@
     @apply bg-background text-foreground;
   }
 }
+
+@layer components {
+  .dot-grid {
+    background-image: radial-gradient(hsl(var(--muted-foreground)/0.25) 1px, transparent 1px);
+    background-size: 1.5rem 1.5rem;
+  }
+}

@@ -75,11 +75,17 @@ function SortableWorkflowStep({
   isTrigger,
   onEdit,
   onDelete,
+  layout,
+  isFirst,
+  isLast,
 }: {
   step: WorkflowStepData;
   isTrigger: boolean;
   onEdit: () => void;
   onDelete: () => void;
+  layout: 'horizontal' | 'vertical';
+  isFirst: boolean;
+  isLast: boolean;
 }) {
   const {
     attributes,
@@ -106,7 +112,7 @@ function SortableWorkflowStep({
   const Icon = iconMap[step.icon];
 
   return (
-    <div ref={setNodeRef} style={style} {...attributes}>
+    <div ref={setNodeRef} style={style} {...attributes} className="relative">
       <Card
         className={cn(
           'w-80 shrink-0 transition-shadow hover:shadow-lg relative group',
@@ -189,21 +195,51 @@ function SortableWorkflowStep({
           </CardContent>
         )}
       </Card>
+      {/* Connection points */}
+      {layout === 'horizontal' && !isFirst && (
+        <div className="absolute top-1/2 -left-[5px] w-2.5 h-2.5 bg-background border border-muted-foreground/80 rounded-full -translate-y-1/2" />
+      )}
+      {layout === 'horizontal' && !isLast && (
+        <div className="absolute top-1/2 -right-[5px] w-2.5 h-2.5 bg-background border border-muted-foreground/80 rounded-full -translate-y-1/2" />
+      )}
+      {layout === 'vertical' && !isFirst && (
+        <div className="absolute left-1/2 -top-[5px] w-2.5 h-2.5 bg-background border border-muted-foreground/80 rounded-full -translate-x-1/2" />
+      )}
+      {layout === 'vertical' && !isLast && (
+        <div className="absolute left-1/2 -bottom-[5px] w-2.5 h-2.5 bg-background border border-muted-foreground/80 rounded-full -translate-x-1/2" />
+      )}
     </div>
   );
 }
 
 const FlowConnector = ({ direction = 'horizontal' }: { direction?: 'horizontal' | 'vertical' }) => {
+    const pathClass = "stroke-muted-foreground/30";
+    const strokeWidth = 1.5;
+
+    // For vertical layout, the curve goes from top-center to bottom-center
     if (direction === 'vertical') {
         return (
-            <div className="flex items-center justify-center w-full py-4 shrink-0" aria-hidden="true">
-                <div className="h-8 w-px bg-muted-foreground/30" />
+            <div className="flex justify-center w-full h-16 shrink-0" aria-hidden="true">
+                <svg width="100%" height="100%" viewBox="0 0 320 64" fill="none" preserveAspectRatio="none">
+                    <path
+                        d="M 160 0 Q 120 32, 160 64"
+                        className={pathClass}
+                        strokeWidth={strokeWidth}
+                    />
+                </svg>
             </div>
         );
     }
+    // For horizontal layout, the curve goes from left-center to right-center
     return (
-        <div className="flex items-center justify-center h-full px-4 shrink-0" aria-hidden="true">
-            <div className="w-8 h-px bg-muted-foreground/30" />
+        <div className="flex items-center justify-center h-full w-16 shrink-0" aria-hidden="true">
+             <svg width="100%" height="100%" viewBox="0 0 64 200" fill="none" preserveAspectRatio="none">
+                <path
+                    d="M 0 100 Q 32 60, 64 100"
+                    className={pathClass}
+                    strokeWidth={strokeWidth}
+                />
+            </svg>
         </div>
     );
 };
@@ -333,8 +369,7 @@ export function WorkflowCanvas({
       <Separator />
 
       <div className={cn(
-        "flex min-h-[400px]",
-        layout === 'horizontal' ? 'items-start' : 'items-center justify-center'
+        "relative flex min-h-[500px] w-full items-center justify-center rounded-lg border dot-grid p-4"
       )}>
         {steps.length > 0 ? (
           <DndContext
@@ -347,12 +382,12 @@ export function WorkflowCanvas({
               strategy={layout === 'horizontal' ? horizontalListSortingStrategy : verticalListSortingStrategy}
             >
               <div className={cn(
-                "w-full pb-4",
-                layout === 'horizontal' && 'overflow-x-auto -mx-6 px-6'
+                "w-full h-full",
+                layout === 'horizontal' && 'overflow-x-auto'
               )}>
                 <div className={cn(
-                  "gap-4",
-                  layout === 'horizontal' ? "inline-flex items-start" : "flex flex-col items-center"
+                  "gap-4 h-full",
+                  layout === 'horizontal' ? "inline-flex items-center" : "flex flex-col items-center"
                 )}>
                   {steps.map((step, index) => (
                     <React.Fragment key={step.id}>
@@ -361,6 +396,9 @@ export function WorkflowCanvas({
                         isTrigger={step.type === 'trigger'}
                         onEdit={() => handleEditStep(step)}
                         onDelete={() => handleDeleteStep(step.id)}
+                        layout={layout}
+                        isFirst={index === 0}
+                        isLast={index === steps.length - 1}
                       />
                       {index < steps.length - 1 && <FlowConnector direction={layout} />}
                     </React.Fragment>
@@ -371,7 +409,7 @@ export function WorkflowCanvas({
           </DndContext>
         ) : (
           <div className="flex-1 flex items-center justify-center">
-            <Card className="w-full max-w-lg border-dashed bg-muted/30 hover:border-primary/50 transition-colors">
+            <Card className="w-full max-w-lg border-dashed bg-transparent hover:border-primary/50 transition-colors">
               <CardContent className="p-10 text-center flex flex-col items-center">
                 <div className="p-3 bg-primary/10 rounded-full mb-4">
                   <Workflow className="h-8 w-8 text-primary" />
