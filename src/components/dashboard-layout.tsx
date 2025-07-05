@@ -32,6 +32,10 @@ import {
   Webhook,
   ShoppingCart,
   GitMerge,
+  ShoppingBag,
+  UserPlus,
+  PackagePlus,
+  Truck,
 } from 'lucide-react';
 import * as icons from 'lucide-react';
 
@@ -53,6 +57,10 @@ const iconMap: Record<IconName, React.ElementType> = {
   GitMerge: icons.GitMerge,
   Clock: icons.Clock,
   ShoppingCart: icons.ShoppingCart,
+  ShoppingBag: icons.ShoppingBag,
+  UserPlus: icons.UserPlus,
+  PackagePlus: icons.PackagePlus,
+  Truck: icons.Truck,
 };
 
 export function DashboardLayout({ workflow }: { workflow: WorkflowType }) {
@@ -146,7 +154,14 @@ export function DashboardLayout({ workflow }: { workflow: WorkflowType }) {
   const triggerSteps = [
     { type: 'trigger' as const, icon: 'Webhook' as const, title: 'Webhook', description: 'Trigger via HTTP POST' },
     { type: 'trigger' as const, icon: 'Clock' as const, title: 'Cron Job', description: 'Run on a schedule' },
-    { type: 'trigger' as const, icon: 'ShoppingCart' as const, title: 'Shopify Event', description: 'Trigger on a Shopify event' },
+  ];
+  
+  const shopifyTriggers = [
+    { type: 'trigger' as const, icon: 'ShoppingBag' as const, title: 'New Order', description: 'Trigger on a new Shopify order' },
+    { type: 'trigger' as const, icon: 'UserPlus' as const, title: 'New Customer', description: 'Trigger when a customer signs up' },
+    { type: 'trigger' as const, icon: 'PackagePlus' as const, title: 'New Product', description: 'Trigger when a product is added' },
+    { type: 'trigger' as const, icon: 'Truck' as const, title: 'Order Fulfilled', description: 'Trigger when an order is fulfilled' },
+    { type: 'trigger' as const, icon: 'ShoppingCart' as const, title: 'Cart Updated', description: 'Trigger when a cart is updated' },
   ];
 
   return (
@@ -165,6 +180,25 @@ export function DashboardLayout({ workflow }: { workflow: WorkflowType }) {
             <SidebarGroupLabel>Triggers</SidebarGroupLabel>
             <SidebarMenu>
               {triggerSteps.map((trigger) => {
+                const TriggerIcon = iconMap[trigger.icon];
+                return (
+                  <SidebarMenuItem key={trigger.title}>
+                    <SidebarMenuButton
+                      onClick={() => handleAddStep(trigger)}
+                      tooltip={trigger.description}
+                    >
+                      <TriggerIcon />
+                      <span>{trigger.title}</span>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                );
+              })}
+            </SidebarMenu>
+          </SidebarGroup>
+          <SidebarGroup>
+            <SidebarGroupLabel>Shopify</SidebarGroupLabel>
+            <SidebarMenu>
+              {shopifyTriggers.map((trigger) => {
                 const TriggerIcon = iconMap[trigger.icon];
                 return (
                   <SidebarMenuItem key={trigger.title}>
