@@ -111,3 +111,25 @@ export type Workflow = {
   status: 'Draft' | 'Published';
   steps: WorkflowStepData[];
 };
+
+export type CredentialType = 'OAuth' | 'API_KEY';
+
+export type CredentialAuthData = {
+  apiKey?: string;
+  apiSecret?: string;
+  // For OAuth, these would be populated by the OAuth flow.
+  accessToken?: string;
+  refreshToken?: string;
+  // Other potential fields
+  instanceUrl?: string; // e.g., for Salesforce
+  clientId?: string;
+  clientSecret?: string;
+};
+
+export type Credential = {
+  id: string;
+  appName: string;
+  type: CredentialType;
+  accountName: string;
+  authData: CredentialAuthData;
+};

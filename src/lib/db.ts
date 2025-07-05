@@ -1,13 +1,14 @@
 // This is a mock database. In a real application, you would use a real database.
 'use server';
 
-import type { Workflow } from './types';
+import type { Credential, Workflow } from './types';
 import { initialSteps } from './initial-data';
 
 // To persist the mock database across hot reloads in development,
 // we attach it to the global object.
 declare global {
   var __workflows__: Workflow[] | undefined;
+  var __credentials__: Credential[] | undefined;
 }
 
 const initialWorkflows: Workflow[] = [
@@ -85,4 +86,80 @@ export async function updateWorkflow(id: string, updatedData: Partial<Omit<Workf
         return JSON.parse(JSON.stringify(workflows[index]));
     }
     return undefined;
+}
+
+// =================================================================
+// CREDENTIALS MOCK DATABASE
+// =================================================================
+
+const initialCredentials: Credential[] = [
+    {
+        id: 'cred_1',
+        appName: 'GitHub',
+        type: 'OAuth',
+        accountName: 'my-github-user',
+        authData: {
+            accessToken: 'gho_mock_access_token_for_my_github_user',
+            refreshToken: 'ghr_mock_refresh_token'
+        },
+    },
+    {
+        id: 'cred_2',
+        appName: 'Salesforce',
+        type: 'OAuth',
+        accountName: 'my-sales-org',
+        authData: {
+            accessToken: 'sf_mock_access_token',
+            refreshToken: 'sf_mock_refresh_token',
+            instanceUrl: 'https://my-sales-org.my.salesforce.com'
+        },
+    },
+];
+
+if (!global.__credentials__) {
+    global.__credentials__ = JSON.parse(JSON.stringify(initialCredentials));
+}
+
+const credentials = global.__credentials__;
+
+export async function getCredentials(): Promise<Credential[]> {
+  // In a real app, you'd fetch this from a database and decrypt secrets
+  // For prototyping, we'll store them in-memory, but this is NOT secure for production.
+  return JSON.parse(JSON.stringify(credentials));
+}
+
+export async function getCredentialById(id: string): Promise<Credential | undefined> {
+  const credential = credentials.find((cred) => cred.id === id);
+  if (!credential) {
+    return undefined;
+  }
+  return JSON.parse(JSON.stringify(credential));
+}
+
+export async function addCredential(credentialData: Omit<Credential, 'id'>): Promise<Credential> {
+  const newCredential: Credential = {
+    id: `cred_${Date.now()}`,
+    ...credentialData
+  };
+  credentials.push(newCredential);
+  return JSON.parse(JSON.stringify(newCredential));
+}
+
+export async function updateCredential(id: string, updatedData: Partial<Omit<Credential, 'id'>>): Promise<Credential | undefined> {
+    const index = credentials.findIndex(cred => cred.id === id);
+    if (index !== -1) {
+        credentials[index] = { ...credentials[index], ...updatedData };
+        return JSON.parse(JSON.stringify(credentials[index]));
+    }
+    return undefined;
+}
+
+
+export async function deleteCredential(id: string): Promise<{ success: boolean }> {
+  const index = credentials.findIndex((cred) => cred.id === id);
+  if (index > -1) {
+    credentials.splice(index, 1);
+    return { success: true };
+  }
+  return { success: false };
 }
