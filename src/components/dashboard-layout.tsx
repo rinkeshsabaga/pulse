@@ -43,6 +43,9 @@ import {
   Search,
   ChevronDown,
   Zap,
+  Clock,
+  Webhook,
+  ShoppingCart,
 } from 'lucide-react';
 
 import { Logo } from './icons';
@@ -52,6 +55,7 @@ import { AIFunctionGenerator } from './ai-function-generator';
 
 export type WorkflowStepData = {
   id: string;
+  type: 'trigger' | 'action';
   icon: React.ElementType;
   title: string;
   description: string;
@@ -69,13 +73,15 @@ export type WorkflowStepData = {
 const initialSteps: WorkflowStepData[] = [
     {
       id: 'step-1',
-      icon: Zap,
-      title: 'Trigger',
-      description: 'On new user signup',
+      type: 'trigger',
+      icon: Webhook,
+      title: 'HTTP Request Recieved',
+      description: 'via Webhook',
       status: 'success',
     },
     {
       id: 'step-2',
+      type: 'action',
       icon: FlaskConical,
       title: 'Generate Welcome Email',
       description: 'AI-powered content generation',
@@ -87,6 +93,7 @@ const initialSteps: WorkflowStepData[] = [
     },
     {
       id: 'step-3',
+      type: 'action',
       icon: Mail,
       title: 'Send Email',
       description: 'via SendGrid',
@@ -103,9 +110,33 @@ export function DashboardLayout() {
   const [steps, setSteps] = React.useState<WorkflowStepData[]>(initialSteps);
   const [isAiGeneratorOpen, setIsAiGeneratorOpen] = React.useState(false);
 
+  const handleAddStep = (step: Omit<WorkflowStepData, 'id' | 'status' | 'content' | 'errorMessage'>) => {
+    const newStep: WorkflowStepData = {
+      id: `step-${Date.now()}`,
+      ...step,
+      status: 'default'
+    };
+    
+    if (newStep.type === 'trigger') {
+      setSteps(prev => {
+        const newSteps = [...prev];
+        const triggerIndex = newSteps.findIndex(s => s.type === 'trigger');
+        if (triggerIndex !== -1) {
+          newSteps[triggerIndex] = newStep;
+        } else {
+          newSteps.unshift(newStep);
+        }
+        return newSteps;
+      });
+    } else {
+      setSteps(prev => [...prev, newStep]);
+    }
+  };
+
   const handleFunctionGenerated = (code: string, language: string, intent: string) => {
     const newStep: WorkflowStepData = {
         id: `step-${Date.now()}`,
+        type: 'action',
         icon: FlaskConical,
         title: 'Custom AI Function',
         description: intent.length > 50 ? intent.substring(0, 47) + '...' : intent,
@@ -122,6 +153,18 @@ export function DashboardLayout() {
     setSteps([]);
   };
 
+  const actionSteps = [
+    { type: 'action' as const, icon: ArrowRightLeft, title: 'Data Transform', description: 'Transform data structure' },
+    { type: 'action' as const, icon: Mail, title: 'Send Email', description: 'Send an email' },
+    { type: 'action' as const, icon: Database, title: 'Database Query', description: 'Interact with a database' },
+  ];
+
+  const triggerSteps = [
+    { type: 'trigger' as const, icon: Webhook, title: 'Webhook', description: 'Trigger via HTTP POST' },
+    { type: 'trigger' as const, icon: Clock, title: 'Cron Job', description: 'Run on a schedule' },
+    { type: 'trigger' as const, icon: ShoppingCart, title: 'Shopify Event', description: 'Trigger on a Shopify event' },
+  ];
+
   return (
     <SidebarProvider>
       <Sidebar>
@@ -134,8 +177,24 @@ export function DashboardLayout() {
           </div>
         </SidebarHeader>
         <SidebarContent>
+           <SidebarGroup>
+            <SidebarGroupLabel>Triggers</SidebarGroupLabel>
+            <SidebarMenu>
+              {triggerSteps.map((trigger) => (
+                <SidebarMenuItem key={trigger.title}>
+                  <SidebarMenuButton
+                    onClick={() => handleAddStep(trigger)}
+                    tooltip={trigger.description}
+                  >
+                    <trigger.icon />
+                    <span>{trigger.title}</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroup>
           <SidebarGroup>
-            <SidebarGroupLabel>Components</SidebarGroupLabel>
+            <SidebarGroupLabel>Actions</SidebarGroupLabel>
             <SidebarMenu>
               <SidebarMenuItem>
                 <SidebarMenuButton
@@ -146,30 +205,17 @@ export function DashboardLayout() {
                   <span>AI Function</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Trigger workflow execution">
-                  <Workflow />
-                  <span>HTTP Request</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Transform data structure">
-                  <ArrowRightLeft />
-                  <span>Data Transform</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Send an email">
-                  <Mail />
-                  <span>Send Email</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Interact with a database">
-                  <Database />
-                  <span>Database Query</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
+               {actionSteps.map((action) => (
+                <SidebarMenuItem key={action.title}>
+                  <SidebarMenuButton
+                    onClick={() => handleAddStep(action)}
+                    tooltip={action.description}
+                  >
+                    <action.icon />
+                    <span>{action.title}</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
             </SidebarMenu>
           </SidebarGroup>
         </SidebarContent>

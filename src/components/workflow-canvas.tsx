@@ -27,12 +27,13 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from './ui/separator';
 import type { WorkflowStepData } from './dashboard-layout';
 
-const WorkflowStep = ({ icon: Icon, title, description, children, status }: {
+const WorkflowStep = ({ icon: Icon, title, description, children, status, type }: {
   icon: React.ElementType,
   title: string,
   description: string,
   children?: React.ReactNode,
-  status?: 'success' | 'warning' | 'error'
+  status?: 'success' | 'warning' | 'error',
+  type: 'trigger' | 'action'
 }) => {
   const statusClasses = {
     success: 'border-success',
@@ -48,7 +49,10 @@ const WorkflowStep = ({ icon: Icon, title, description, children, status }: {
                      <Icon className="h-6 w-6 text-primary" />
                 </div>
                 <div>
-                    <CardTitle className="text-md font-semibold font-headline">{title}</CardTitle>
+                    <CardTitle className="text-md font-semibold font-headline flex items-center gap-2">
+                        {title}
+                        <Badge variant="outline" className="capitalize font-medium">{type}</Badge>
+                    </CardTitle>
                     <CardDescription className="text-sm">{description}</CardDescription>
                 </div>
             </div>
@@ -123,6 +127,7 @@ export function WorkflowCanvas({ steps, onCreateNewWorkflow }: { steps: Workflow
                     title={step.title}
                     description={step.description}
                     status={(step.status === 'default' ? undefined : step.status)}
+                    type={step.type}
                   >
                     {step.content && (
                       <div className='text-sm text-muted-foreground p-4 bg-muted/50 rounded-md'>
