@@ -3,6 +3,7 @@
 
 import React from 'react';
 import {
+  SidebarProvider,
   SidebarHeader,
   SidebarContent,
   SidebarFooter,
@@ -48,7 +49,7 @@ import { EditWaitDialog } from './edit-wait-dialog';
 import { EditAppTriggerDialog } from './edit-app-trigger-dialog';
 import { EditAppActionDialog } from './edit-app-action-dialog';
 import { EditConditionDialog } from './edit-condition-dialog';
-import type { Workflow as WorkflowType, WorkflowStepData, IconName } from '@/lib/types';
+import type { Workflow as WorkflowType, WorkflowStepData, IconName, Case } from '@/lib/types';
 import { updateWorkflow } from '@/lib/db';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -207,7 +208,7 @@ export function DashboardLayout({ workflow }: { workflow: WorkflowType }) {
   ];
 
   return (
-    <>
+    <SidebarProvider>
       <div className="flex flex-row flex-1 w-full h-full">
         <div className="w-64 flex-shrink-0 border-r bg-sidebar text-sidebar-foreground flex flex-col">
           <SidebarHeader>
@@ -361,6 +362,6 @@ export function DashboardLayout({ workflow }: { workflow: WorkflowType }) {
         onOpenChange={(isOpen) => !isOpen && setEditingStep(null)}
         onSave={handleSaveAction}
       />
-    </>
+    </SidebarProvider>
   );
 }
