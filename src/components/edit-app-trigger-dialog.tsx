@@ -25,11 +25,19 @@ import { AsanaIcon, HubSpotIcon, SalesforceIcon, ZohoIcon } from '@/components/i
 import type { WorkflowStepData } from '@/lib/types';
 import { cn } from '@/lib/utils';
 
+type AppDefinition = {
+    name: string;
+    icon: React.ElementType;
+    iconClassName?: string;
+    triggers: { value: string; label: string }[];
+};
+
 // Define apps and their triggers
-const APP_DEFINITIONS = [
+const APP_DEFINITIONS: AppDefinition[] = [
     { 
         name: 'Slack', 
         icon: MessageSquare,
+        iconClassName: 'text-[#4A154B]',
         triggers: [
             { value: 'new_message', label: 'New Message in Channel' },
             { value: 'new_mention', label: 'New Mention' },
@@ -39,6 +47,7 @@ const APP_DEFINITIONS = [
     { 
         name: 'Google Sheets', 
         icon: SheetIcon,
+        iconClassName: 'text-[#188038]',
         triggers: [
             { value: 'new_row', label: 'New Row Added' },
             { value: 'row_updated', label: 'Row Updated' },
@@ -48,6 +57,7 @@ const APP_DEFINITIONS = [
     { 
         name: 'GitHub', 
         icon: Github,
+        iconClassName: 'text-neutral-900 dark:text-neutral-100',
         triggers: [
             { value: 'new_commit', label: 'New Commit on Branch' },
             { value: 'pr_opened', label: 'Pull Request Opened' },
@@ -57,6 +67,7 @@ const APP_DEFINITIONS = [
     { 
         name: 'Trello', 
         icon: LayoutList,
+        iconClassName: 'text-[#0052CC]',
         triggers: [
             { value: 'card_created', label: 'New Card Created' },
             { value: 'card_moved', label: 'Card Moved to List' },
@@ -66,6 +77,7 @@ const APP_DEFINITIONS = [
     { 
         name: 'Discord', 
         icon: Bot,
+        iconClassName: 'text-[#5865F2]',
         triggers: [
             { value: 'new_message', label: 'New Message in Channel' },
             { value: 'member_joined', label: 'New Member Joined Server' },
@@ -74,6 +86,7 @@ const APP_DEFINITIONS = [
     { 
         name: 'Jira', 
         icon: GitBranch,
+        iconClassName: 'text-[#0052CC]',
         triggers: [
             { value: 'issue_created', label: 'Issue Created' },
             { value: 'status_updated', label: 'Issue Status Updated' },
@@ -177,7 +190,7 @@ export function EditAppTriggerDialog({ step, open, onOpenChange, onSave }: EditA
             className="p-4 flex flex-col items-center justify-center gap-2 cursor-pointer hover:bg-accent hover:border-primary transition-colors"
             onClick={() => handleAppSelect(app.name)}
           >
-            <app.icon className="h-8 w-8 text-muted-foreground" />
+            <app.icon className={cn("h-8 w-8", app.iconClassName)} />
             <span className="font-semibold text-sm">{app.name}</span>
           </Card>
         ))}
@@ -196,7 +209,7 @@ export function EditAppTriggerDialog({ step, open, onOpenChange, onSave }: EditA
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <div className="flex items-center gap-3">
-            <AppIcon className="h-8 w-8 text-muted-foreground" />
+            <AppIcon className={cn("h-8 w-8", appDefinition.iconClassName)} />
             <div>
                 <DialogTitle className='text-lg'>Configure Trigger for {appDefinition.name}</DialogTitle>
                 <DialogDescription>Select the specific event that will start the workflow.</DialogDescription>
