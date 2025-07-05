@@ -1,5 +1,5 @@
-import { DashboardLayout } from '@/components/dashboard-layout';
+import { redirect } from 'next/navigation';
 
 export default function Home() {
-  return <DashboardLayout />;
+  redirect('/workflows');
 }

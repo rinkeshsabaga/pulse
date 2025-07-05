@@ -1,3 +1,4 @@
+
 'use client';
 
 import React from 'react';
@@ -15,20 +16,6 @@ import {
   SidebarGroup,
   SidebarGroupLabel,
 } from '@/components/ui/sidebar';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-  DropdownMenuSub,
-  DropdownMenuSubTrigger,
-  DropdownMenuPortal,
-  DropdownMenuSubContent
-} from '@/components/ui/dropdown-menu';
-import { Button } from '@/components/ui/button';
 import {
   Tabs,
   TabsContent,
@@ -36,7 +23,6 @@ import {
   TabsTrigger,
 } from '@/components/ui/tabs';
 import {
-  Code,
   Mail,
   Workflow,
   Settings,
@@ -44,16 +30,10 @@ import {
   FlaskConical,
   Database,
   ArrowRightLeft,
-  Search,
-  ChevronDown,
-  Zap,
   Clock,
   Webhook,
   ShoppingCart,
   GitMerge,
-  CreditCard,
-  LogOut,
-  User,
 } from 'lucide-react';
 
 import { Logo } from './icons';
@@ -61,7 +41,6 @@ import { WorkflowCanvas } from './workflow-canvas';
 import { MonitoringPanel } from './monitoring-panel';
 import { AIFunctionGenerator } from './ai-function-generator';
 import { EditTriggerDialog } from './edit-trigger-dialog';
-import { ThemeToggle } from './theme-toggle';
 
 export type WorkflowStepData = {
   id: string;
@@ -194,7 +173,7 @@ export function DashboardLayout() {
           <div className="flex items-center gap-2">
             <Logo className="w-8 h-8 text-primary" />
             <span className="text-lg font-semibold font-headline text-primary">
-              SabagaPulse
+              Tools
             </span>
           </div>
         </SidebarHeader>
@@ -259,55 +238,7 @@ export function DashboardLayout() {
         </SidebarFooter>
       </Sidebar>
       <SidebarInset>
-        <header className="flex items-center justify-between p-4 border-b">
-          <div className="flex items-center gap-2">
-            <SidebarTrigger className="md:hidden" />
-            <div className="relative flex-1 max-w-xs">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <input
-                type="search"
-                placeholder="Search workflows..."
-                className="w-full pl-8 pr-4 py-2 rounded-lg border bg-background"
-              />
-            </div>
-          </div>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="flex items-center gap-2">
-                <Avatar className="h-8 w-8">
-                  <AvatarImage src="https://placehold.co/100x100.png" alt="@user" data-ai-hint="profile picture" />
-                  <AvatarFallback>SP</AvatarFallback>
-                </Avatar>
-                <span className="hidden md:inline">Sabaga User</span>
-                <ChevronDown className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
-              <DropdownMenuLabel>My Account</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem>
-                <User className="mr-2 h-4 w-4" />
-                <span>Profile</span>
-              </DropdownMenuItem>
-              <DropdownMenuItem disabled>
-                <CreditCard className="mr-2 h-4 w-4" />
-                <span>Billing</span>
-              </DropdownMenuItem>
-              <DropdownMenuItem disabled>
-                <Settings className="mr-2 h-4 w-4" />
-                <span>Settings</span>
-              </DropdownMenuItem>
-              <ThemeToggle />
-              <DropdownMenuSeparator />
-              <DropdownMenuItem>
-                <LogOut className="mr-2 h-4 w-4" />
-                <span>Log out</span>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </header>
-
-        <main className="p-4 md:p-6">
+        <div className="flex-1 p-4 md:p-6">
           <Tabs defaultValue="designer" className="w-full">
             <TabsList className="mb-4">
               <TabsTrigger value="designer">Designer</TabsTrigger>
@@ -325,7 +256,7 @@ export function DashboardLayout() {
               <MonitoringPanel />
             </TabsContent>
           </Tabs>
-        </main>
+        </div>
       </SidebarInset>
       <AIFunctionGenerator
         open={isAiGeneratorOpen}
