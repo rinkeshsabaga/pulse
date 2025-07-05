@@ -19,8 +19,9 @@ import {
 import {
   Play,
   MoreVertical,
-  ArrowDown,
-  Plus
+  ArrowRight,
+  Plus,
+  Workflow
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from './ui/separator';
@@ -39,19 +40,19 @@ const WorkflowStep = ({ icon: Icon, title, description, children, status }: {
     error: 'border-destructive',
   }
   return (
-    <Card className={`w-full max-w-sm ${status ? statusClasses[status] : ''}`}>
+    <Card className={`w-80 shrink-0 transition-shadow hover:shadow-lg ${status ? statusClasses[status] : ''}`}>
       <CardHeader>
         <div className="flex justify-between items-start">
             <div className='flex items-center gap-3'>
-                <div className='p-2 bg-accent/20 rounded-lg'>
-                     <Icon className="h-6 w-6 text-accent-foreground" />
+                <div className='p-3 bg-primary/10 rounded-lg'>
+                     <Icon className="h-6 w-6 text-primary" />
                 </div>
                 <div>
-                    <CardTitle className="text-base font-headline">{title}</CardTitle>
-                    <CardDescription>{description}</CardDescription>
+                    <CardTitle className="text-md font-semibold font-headline">{title}</CardTitle>
+                    <CardDescription className="text-sm">{description}</CardDescription>
                 </div>
             </div>
-          <Button variant="ghost" size="icon" className="h-8 w-8">
+          <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0">
             <MoreVertical className="h-4 w-4" />
           </Button>
         </div>
@@ -65,12 +66,11 @@ const WorkflowStep = ({ icon: Icon, title, description, children, status }: {
   )
 };
 
-const FlowArrow = () => (
-    <div className="flex flex-col items-center my-2">
-        <div className="h-4 w-px bg-border" />
-        <ArrowDown className="h-5 w-5 text-muted-foreground" />
+const FlowConnector = () => (
+    <div className="flex items-center justify-center h-full px-4 shrink-0">
+        <ArrowRight className="h-5 w-5 text-muted-foreground" />
     </div>
-)
+);
 
 export function WorkflowCanvas({ steps, onCreateNewWorkflow }: { steps: WorkflowStepData[], onCreateNewWorkflow: () => void }) {
   return (
@@ -81,7 +81,7 @@ export function WorkflowCanvas({ steps, onCreateNewWorkflow }: { steps: Workflow
             {steps.length > 0 ? 'Onboarding Email Sequence' : 'Untitled Workflow'}
           </h1>
           <p className="text-muted-foreground">
-            {steps.length > 0 ? 'Automate sending welcome emails to new users.' : 'Start building your new workflow.'}
+            {steps.length > 0 ? 'A sequence of automated actions.' : 'Start building your new workflow by adding steps.'}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -112,48 +112,57 @@ export function WorkflowCanvas({ steps, onCreateNewWorkflow }: { steps: Workflow
       
       <Separator />
 
-      <div className="flex flex-col items-center">
+      <div className="flex min-h-[400px] items-center">
         {steps.length > 0 ? (
-          steps.map((step, index) => (
-            <React.Fragment key={step.id}>
-              <WorkflowStep 
-                icon={step.icon}
-                title={step.title}
-                description={step.description}
-                status={(step.status === 'default' ? undefined : step.status)}
-              >
-                {step.content && (
-                  <div className='text-sm text-muted-foreground p-4 bg-muted/50 rounded-md'>
-                    <pre className="overflow-x-auto">
-                      <code className={`language-${step.content.language} font-code text-xs`}>
-                        {step.content.code}
-                      </code>
-                    </pre>
-                    <div className='mt-2 flex gap-2'>
-                        {step.title.includes('AI') && <Badge variant='outline'>AI Generated</Badge>}
-                        <Badge variant='outline'>{step.content.language}</Badge>
-                    </div>
-                  </div>
-                )}
-                {step.errorMessage && (
-                   <div className='text-sm text-destructive-foreground p-4 bg-destructive/80 rounded-md'>
-                    <p className='font-semibold'>{step.errorMessage.title}</p>
-                    <p className='opacity-80'>{step.errorMessage.description}</p>
-                  </div>
-                )}
-              </WorkflowStep>
-              {index < steps.length - 1 && <FlowArrow />}
-            </React.Fragment>
-          ))
+          <div className="overflow-x-auto w-full pb-4 -mx-6 px-6">
+            <div className="inline-flex items-start gap-4">
+              {steps.map((step, index) => (
+                <React.Fragment key={step.id}>
+                  <WorkflowStep 
+                    icon={step.icon}
+                    title={step.title}
+                    description={step.description}
+                    status={(step.status === 'default' ? undefined : step.status)}
+                  >
+                    {step.content && (
+                      <div className='text-sm text-muted-foreground p-4 bg-muted/50 rounded-md'>
+                        <pre className="overflow-x-auto">
+                          <code className={`language-${step.content.language} font-code text-xs`}>
+                            {step.content.code}
+                          </code>
+                        </pre>
+                        <div className='mt-2 flex gap-2'>
+                            {step.title.includes('AI') && <Badge variant='outline'>AI Generated</Badge>}
+                            <Badge variant='outline'>{step.content.language}</Badge>
+                        </div>
+                      </div>
+                    )}
+                    {step.errorMessage && (
+                       <div className='text-sm text-destructive-foreground p-4 bg-destructive/80 rounded-md'>
+                        <p className='font-semibold'>{step.errorMessage.title}</p>
+                        <p className='opacity-80'>{step.errorMessage.description}</p>
+                      </div>
+                    )}
+                  </WorkflowStep>
+                  {index < steps.length - 1 && <FlowConnector />}
+                </React.Fragment>
+              ))}
+            </div>
+          </div>
         ) : (
-           <Card className="w-full max-w-sm border-dashed">
-            <CardContent className="p-10 text-center">
-              <p className="text-muted-foreground font-semibold">Your workflow is empty</p>
-              <p className="text-sm text-muted-foreground mt-2">
-                Add a step from the sidebar to get started.
-              </p>
-            </CardContent>
-          </Card>
+           <div className="flex-1 flex items-center justify-center">
+             <Card className="w-full max-w-lg border-dashed bg-muted/30 hover:border-primary/50 transition-colors">
+                <CardContent className="p-10 text-center flex flex-col items-center">
+                    <div className="p-3 bg-primary/10 rounded-full mb-4">
+                        <Workflow className="h-8 w-8 text-primary" />
+                    </div>
+                    <p className="text-foreground font-semibold">Your workflow canvas is empty</p>
+                    <p className="text-sm text-muted-foreground mt-2 max-w-sm">
+                        Use the sidebar to add steps and build out your automation.
+                    </p>
+                </CardContent>
+              </Card>
+           </div>
         )}
       </div>
     </div>
