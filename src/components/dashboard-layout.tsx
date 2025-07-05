@@ -227,13 +227,13 @@ export function DashboardLayout({ workflow }: { workflow: WorkflowType }) {
         </SidebarFooter>
       </Sidebar>
       <SidebarInset>
-        <div className="flex-1 p-4 md:p-6">
-          <Tabs defaultValue="designer" className="w-full">
+        <div className="flex h-full flex-col p-4 md:p-6">
+          <Tabs defaultValue="designer" className="flex h-full w-full flex-col">
             <TabsList className="mb-4">
               <TabsTrigger value="designer">Designer</TabsTrigger>
               <TabsTrigger value="logs">Monitoring & Logs</TabsTrigger>
             </TabsList>
-            <TabsContent value="designer">
+            <TabsContent value="designer" className="flex-1">
               <WorkflowCanvas 
                 steps={steps}
                 setSteps={handleSetSteps}
@@ -243,7 +243,7 @@ export function DashboardLayout({ workflow }: { workflow: WorkflowType }) {
                 workflowDescription={workflow.description}
               />
             </TabsContent>
-            <TabsContent value="logs">
+            <TabsContent value="logs" className="flex-1">
               <MonitoringPanel />
             </TabsContent>
           </Tabs>

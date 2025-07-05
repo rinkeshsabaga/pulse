@@ -143,7 +143,7 @@ function WorkflowCanvasComponent({
   );
 
   return (
-    <div className="space-y-6">
+    <div className="flex h-full flex-col space-y-6">
       <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
         <div className="flex-1 space-y-1">
           <h1 className="text-2xl font-bold font-headline">
@@ -201,7 +201,7 @@ function WorkflowCanvasComponent({
 
       <Separator />
 
-      <div className="h-[60vh] rounded-lg border bg-background">
+      <div className="flex-1 rounded-lg border bg-background">
         {steps.length > 0 ? (
           <ReactFlow
             nodes={nodes}

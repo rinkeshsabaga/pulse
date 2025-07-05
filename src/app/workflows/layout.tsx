@@ -48,6 +48,8 @@ export default function WorkflowsLayout({
 }) {
   const pathname = usePathname();
   const pathParts = pathname.split('/').filter(Boolean);
+  const isEditorPage = pathParts.length > 1 && pathParts[0] === 'workflows';
+
 
   return (
     <SidebarProvider>
@@ -188,7 +190,9 @@ export default function WorkflowsLayout({
               </DropdownMenu>
             </div>
           </header>
-          <main className="flex-1 p-4 sm:p-6">{children}</main>
+          <main className={cn('flex-1', !isEditorPage && 'p-4 sm:p-6')}>
+            {children}
+          </main>
         </SidebarInset>
       </div>
     </SidebarProvider>
