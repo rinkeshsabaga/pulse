@@ -82,6 +82,8 @@ export type ConditionData = {
 
 export type ApiRequestData = {
     webhookUrl?: string; // for trigger
+    // for Cron Job trigger
+    cronString?: string;
     // for Shopify Trigger
     shopifyEvent?: ShopifyEvent;
     shopifySubEvent?: ShopifySubEvent;

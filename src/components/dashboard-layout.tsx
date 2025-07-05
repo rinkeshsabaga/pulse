@@ -33,7 +33,6 @@ import {
   Code,
   AppWindow,
   GitBranch,
-  Filter,
 } from 'lucide-react';
 import * as icons from 'lucide-react';
 
@@ -49,6 +48,7 @@ import { EditWaitDialog } from './edit-wait-dialog';
 import { EditAppTriggerDialog } from './edit-app-trigger-dialog';
 import { EditAppActionDialog } from './edit-app-action-dialog';
 import { EditConditionDialog } from './edit-condition-dialog';
+import { EditCronJobDialog } from './edit-cron-job-dialog';
 import type { Workflow as WorkflowType, WorkflowStepData, IconName, Case } from '@/lib/types';
 import { updateWorkflow } from '@/lib/db';
 import { v4 as uuidv4 } from 'uuid';
@@ -60,7 +60,6 @@ const iconMap: Record<IconName, React.ElementType> = {
   Database: icons.Database,
   ArrowRightLeft: icons.ArrowRightLeft,
   GitBranch: icons.GitBranch,
-  Filter: icons.Filter,
   Clock: icons.Clock,
   ShoppingCart: icons.ShoppingCart,
   StopCircle: icons.StopCircle,
@@ -106,6 +105,13 @@ export function DashboardLayout({ workflow }: { workflow: WorkflowType }) {
     if (newStep.type === 'trigger' && newStep.title === 'App Event') {
         newStep.description = 'Click Edit to select an app';
         newStep.data = { appTrigger: { app: '', event: '' } };
+    }
+
+    if (newStep.type === 'trigger' && newStep.title === 'Cron Job') {
+        newStep.description = 'Every minute (* * * * *)';
+        newStep.data = {
+            cronString: '* * * * *'
+        };
     }
 
     if (newStep.type === 'action' && newStep.title === 'App Action') {
@@ -310,6 +316,14 @@ export function DashboardLayout({ workflow }: { workflow: WorkflowType }) {
           step={editingStep}
           open={!!editingStep}
           onOpenChange={(isOpen) => !isOpen && setEditingStep(null)}
+        />
+      )}
+      {editingStep && editingStep.title === 'Cron Job' && (
+        <EditCronJobDialog
+            step={editingStep}
+            open={!!editingStep}
+            onOpenChange={(isOpen) => !isOpen && setEditingStep(null)}
+            onSave={handleSaveAction}
         />
       )}
       {editingStep && editingStep.title === 'Shopify' && (
