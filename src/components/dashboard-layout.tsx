@@ -46,6 +46,7 @@ import {
   Clock,
   Webhook,
   ShoppingCart,
+  GitMerge,
 } from 'lucide-react';
 
 import { Logo } from './icons';
@@ -157,6 +158,7 @@ export function DashboardLayout() {
     { type: 'action' as const, icon: ArrowRightLeft, title: 'Data Transform', description: 'Transform data structure' },
     { type: 'action' as const, icon: Mail, title: 'Send Email', description: 'Send an email' },
     { type: 'action' as const, icon: Database, title: 'Database Query', description: 'Interact with a database' },
+    { type: 'action' as const, icon: GitMerge, title: 'Condition', description: 'If/Else, Switch logic' },
   ];
 
   const triggerSteps = [
@@ -202,7 +204,7 @@ export function DashboardLayout() {
                   tooltip="Generate function from text"
                 >
                   <FlaskConical />
-                  <span>AI Function</span>
+                  <span>Custom AI Function</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
                {actionSteps.map((action) => (
@@ -281,6 +283,7 @@ export function DashboardLayout() {
             <TabsContent value="designer">
               <WorkflowCanvas 
                 steps={steps}
+                setSteps={setSteps}
                 onCreateNewWorkflow={handleCreateNewWorkflow}
               />
             </TabsContent>
