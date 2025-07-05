@@ -4,7 +4,13 @@
 import type { Workflow } from './types';
 import { initialSteps } from './initial-data';
 
-let workflows: Workflow[] = [
+// To persist the mock database across hot reloads in development,
+// we attach it to the global object.
+declare global {
+  var __workflows__: Workflow[] | undefined;
+}
+
+const initialWorkflows: Workflow[] = [
   { 
     id: 'wf_1', 
     name: 'Onboarding Email Sequence', 
@@ -27,6 +33,14 @@ let workflows: Workflow[] = [
     steps: [] 
   },
 ];
+
+// In a real app, you'd use a proper database.
+// For this dev environment, we'll use a global variable to persist the data.
+if (!global.__workflows__) {
+    global.__workflows__ = initialWorkflows;
+}
+
+const workflows: Workflow[] = global.__workflows__;
 
 
 export async function getWorkflows(): Promise<Workflow[]> {
@@ -55,9 +69,12 @@ export async function addWorkflow(workflowData: { name: string; description?: st
 }
 
 export async function deleteWorkflow(id: string): Promise<{ success: boolean }> {
-  const initialLength = workflows.length;
-  workflows = workflows.filter((wf) => wf.id !== id);
-  return { success: workflows.length < initialLength };
+  const index = workflows.findIndex((wf) => wf.id === id);
+  if (index > -1) {
+    workflows.splice(index, 1);
+    return { success: true };
+  }
+  return { success: false };
 }
 
 export async function updateWorkflow(id: string, updatedData: Partial<Omit<Workflow, 'id'>>): Promise<Workflow | undefined> {
