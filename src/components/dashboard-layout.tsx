@@ -32,10 +32,6 @@ import {
   Webhook,
   ShoppingCart,
   GitMerge,
-  ShoppingBag,
-  UserPlus,
-  PackagePlus,
-  Truck,
 } from 'lucide-react';
 import * as icons from 'lucide-react';
 
@@ -44,6 +40,7 @@ import { WorkflowCanvas } from './workflow-canvas';
 import { MonitoringPanel } from './monitoring-panel';
 import { AIFunctionGenerator } from './ai-function-generator';
 import { EditTriggerDialog } from './edit-trigger-dialog';
+import { EditShopifyTriggerDialog } from './edit-shopify-trigger-dialog';
 import { EditApiRequestDialog } from './edit-api-request-dialog';
 import type { Workflow as WorkflowType, WorkflowStepData, IconName } from '@/lib/types';
 import { updateWorkflow } from '@/lib/db';
@@ -57,10 +54,6 @@ const iconMap: Record<IconName, React.ElementType> = {
   GitMerge: icons.GitMerge,
   Clock: icons.Clock,
   ShoppingCart: icons.ShoppingCart,
-  ShoppingBag: icons.ShoppingBag,
-  UserPlus: icons.UserPlus,
-  PackagePlus: icons.PackagePlus,
-  Truck: icons.Truck,
 };
 
 export function DashboardLayout({ workflow }: { workflow: WorkflowType }) {
@@ -93,6 +86,11 @@ export function DashboardLayout({ workflow }: { workflow: WorkflowType }) {
       newStep.data = { webhookUrl: `https://api.sabagapulse.com/v1/webhooks/wf_${Date.now()}`};
     }
 
+    if (newStep.type === 'trigger' && newStep.title === 'Shopify') {
+        newStep.description = 'Click Edit to select an event';
+        newStep.data = { shopifyEvent: 'order_placed' };
+    }
+
     if (newStep.type === 'action' && newStep.title === 'API Request') {
         newStep.data = {
           method: 'GET',
@@ -104,18 +102,20 @@ export function DashboardLayout({ workflow }: { workflow: WorkflowType }) {
     }
 
     handleSetSteps(prev => {
-      if (newStep.type === 'trigger') {
-        const newSteps = [...prev];
-        const triggerIndex = newSteps.findIndex(s => s.type === 'trigger');
-        if (triggerIndex !== -1) {
-          newSteps[triggerIndex] = newStep;
-        } else {
-          newSteps.unshift(newStep);
-        }
-        return newSteps;
-      } else {
-        return [...prev, newStep];
+      if (newStep.type === 'trigger' && newStep.title !== 'Shopify' && newStep.title !== 'Webhook' && newStep.title !== 'Cron Job') {
+         // This logic handles replacing existing triggers, but Shopify can have multiple.
+         // For now, let's simplify and just add it. Re-evaluation needed for multiple triggers.
       }
+      
+      const triggerIndex = prev.findIndex(s => s.type === 'trigger');
+      if (newStep.type === 'trigger' && triggerIndex !== -1 && newStep.title === 'Webhook') {
+          // Replace existing non-shopify trigger
+          const newSteps = [...prev];
+          newSteps[triggerIndex] = newStep;
+          return newSteps;
+      }
+
+      return [...prev, newStep];
     });
   };
 
@@ -154,14 +154,7 @@ export function DashboardLayout({ workflow }: { workflow: WorkflowType }) {
   const triggerSteps = [
     { type: 'trigger' as const, icon: 'Webhook' as const, title: 'Webhook', description: 'Trigger via HTTP POST' },
     { type: 'trigger' as const, icon: 'Clock' as const, title: 'Cron Job', description: 'Run on a schedule' },
-  ];
-  
-  const shopifyTriggers = [
-    { type: 'trigger' as const, icon: 'ShoppingBag' as const, title: 'New Order', description: 'Trigger on a new Shopify order' },
-    { type: 'trigger' as const, icon: 'UserPlus' as const, title: 'New Customer', description: 'Trigger when a customer signs up' },
-    { type: 'trigger' as const, icon: 'PackagePlus' as const, title: 'New Product', description: 'Trigger when a product is added' },
-    { type: 'trigger' as const, icon: 'Truck' as const, title: 'Order Fulfilled', description: 'Trigger when an order is fulfilled' },
-    { type: 'trigger' as const, icon: 'ShoppingCart' as const, title: 'Cart Updated', description: 'Trigger when a cart is updated' },
+    { type: 'trigger' as const, icon: 'ShoppingCart' as const, title: 'Shopify', description: 'Trigger on a Shopify event' },
   ];
 
   return (
@@ -180,25 +173,6 @@ export function DashboardLayout({ workflow }: { workflow: WorkflowType }) {
             <SidebarGroupLabel>Triggers</SidebarGroupLabel>
             <SidebarMenu>
               {triggerSteps.map((trigger) => {
-                const TriggerIcon = iconMap[trigger.icon];
-                return (
-                  <SidebarMenuItem key={trigger.title}>
-                    <SidebarMenuButton
-                      onClick={() => handleAddStep(trigger)}
-                      tooltip={trigger.description}
-                    >
-                      <TriggerIcon />
-                      <span>{trigger.title}</span>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                );
-              })}
-            </SidebarMenu>
-          </SidebarGroup>
-          <SidebarGroup>
-            <SidebarGroupLabel>Shopify</SidebarGroupLabel>
-            <SidebarMenu>
-              {shopifyTriggers.map((trigger) => {
                 const TriggerIcon = iconMap[trigger.icon];
                 return (
                   <SidebarMenuItem key={trigger.title}>
@@ -288,11 +262,19 @@ export function DashboardLayout({ workflow }: { workflow: WorkflowType }) {
         onOpenChange={setIsAiGeneratorOpen}
         onFunctionGenerated={handleFunctionGenerated}
       />
-      {editingStep && editingStep.type === 'trigger' && (
+      {editingStep && editingStep.title === 'Webhook' && (
         <EditTriggerDialog
           step={editingStep}
           open={!!editingStep}
           onOpenChange={(isOpen) => !isOpen && setEditingStep(null)}
+        />
+      )}
+      {editingStep && editingStep.title === 'Shopify' && (
+        <EditShopifyTriggerDialog
+            step={editingStep}
+            open={!!editingStep}
+            onOpenChange={(isOpen) => !isOpen && setEditingStep(null)}
+            onSave={handleSaveAction}
         />
       )}
       {editingStep && editingStep.title === 'API Request' && (

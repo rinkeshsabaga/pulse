@@ -32,10 +32,6 @@ const iconMap: Record<IconName, React.ElementType> = {
   GitMerge: icons.GitMerge,
   Clock: icons.Clock,
   ShoppingCart: icons.ShoppingCart,
-  ShoppingBag: icons.ShoppingBag,
-  UserPlus: icons.UserPlus,
-  PackagePlus: icons.PackagePlus,
-  Truck: icons.Truck,
 };
 
 // Using memo to prevent unnecessary re-renders

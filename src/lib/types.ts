@@ -9,11 +9,7 @@ export type IconName =
   | 'ArrowRightLeft'
   | 'GitMerge'
   | 'Clock'
-  | 'ShoppingCart'
-  | 'ShoppingBag'
-  | 'UserPlus'
-  | 'PackagePlus'
-  | 'Truck';
+  | 'ShoppingCart';
 
 export type ApiRequestAuth = {
     type: 'none' | 'bearer' | 'basic' | 'apiKey';
@@ -36,8 +32,28 @@ export type RequestBody = {
   content: string | FormUrlEncodedPair[];
 };
 
+export type ShopifyEvent =
+  | 'abandoned_checkout'
+  | 'order_placed'
+  | 'order_fulfilled'
+  | 'order_cancelled'
+  | 'refund_initiated'
+  | 'order_shipment'
+  | 'order_updated';
+
+export type ShopifySubEvent =
+  | 'shipment_in_transit'
+  | 'shipment_out_for_delivery'
+  | 'shipment_delivered'
+  | 'update_tags_added'
+  | 'update_tags_removed'
+  | 'update_line_items_changed';
+
 export type ApiRequestData = {
     webhookUrl?: string; // for trigger
+    // for Shopify Trigger
+    shopifyEvent?: ShopifyEvent;
+    shopifySubEvent?: ShopifySubEvent;
     // for API Request action
     apiUrl?: string;
     method?: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
