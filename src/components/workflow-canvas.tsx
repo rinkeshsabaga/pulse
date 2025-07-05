@@ -55,7 +55,7 @@ import {
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from './ui/separator';
-import type { WorkflowStepData } from './dashboard-layout';
+import type { WorkflowStepData } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 
@@ -203,11 +203,13 @@ export function WorkflowCanvas({
   setSteps,
   onCreateNewWorkflow,
   onEditStep,
+  workflowName,
 }: {
   steps: WorkflowStepData[];
-  setSteps: (steps: WorkflowStepData[]) => void;
+  setSteps: (steps: React.SetStateAction<WorkflowStepData[]>) => void;
   onCreateNewWorkflow: () => void;
   onEditStep: (step: WorkflowStepData) => void;
+  workflowName: string;
 }) {
   const { toast } = useToast();
   const [layout, setLayout] = React.useState<'horizontal' | 'vertical'>('horizontal');
@@ -223,22 +225,24 @@ export function WorkflowCanvas({
     const { active, over } = event;
 
     if (over && active.id !== over.id) {
-      const oldIndex = steps.findIndex((s) => s.id === active.id);
-      const newIndex = steps.findIndex((s) => s.id === over.id);
+      setSteps((currentSteps) => {
+        const oldIndex = currentSteps.findIndex((s) => s.id === active.id);
+        const newIndex = currentSteps.findIndex((s) => s.id === over.id);
 
-      if (
-        steps[oldIndex].type === 'trigger' ||
-        (steps[newIndex] && steps[newIndex].type === 'trigger')
-      ) {
-        return;
-      }
+        if (
+          currentSteps[oldIndex].type === 'trigger' ||
+          (currentSteps[newIndex] && currentSteps[newIndex].type === 'trigger')
+        ) {
+          return currentSteps;
+        }
 
-      setSteps(arrayMove(steps, oldIndex, newIndex));
+        return arrayMove(currentSteps, oldIndex, newIndex);
+      });
     }
   }
 
   const handleDeleteStep = (stepIdToDelete: string) => {
-    setSteps(steps.filter((step) => step.id !== stepIdToDelete));
+    setSteps((prevSteps) => prevSteps.filter((step) => step.id !== stepIdToDelete));
     toast({
       title: 'Step Deleted',
       description: 'The step has been removed from your workflow.',
@@ -261,7 +265,7 @@ export function WorkflowCanvas({
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold font-headline">
-            {steps.length > 0 ? 'Onboarding Email Sequence' : 'Untitled Workflow'}
+            {workflowName || 'Untitled Workflow'}
           </h1>
           <p className="text-muted-foreground">
             {steps.length > 0
@@ -272,14 +276,12 @@ export function WorkflowCanvas({
         <div className="flex items-center gap-2">
           {steps.length > 0 && (
             <>
-              <Select defaultValue="1.3">
+              <Select defaultValue="1.0">
                 <SelectTrigger className="w-[180px]">
                   <SelectValue placeholder="Version" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="1.3">Version 1.3 (latest)</SelectItem>
-                  <SelectItem value="1.2">Version 1.2</SelectItem>
-                  <SelectItem value="1.1">Version 1.1</SelectItem>
+                  <SelectItem value="1.0">Version 1.0 (latest)</SelectItem>
                 </SelectContent>
               </Select>
               <Button>
@@ -310,7 +312,7 @@ export function WorkflowCanvas({
           </div>
           <Button variant="outline" onClick={onCreateNewWorkflow}>
             <Plus className="mr-2 h-4 w-4" />
-            New Workflow
+            Clear Canvas
           </Button>
         </div>
       </div>

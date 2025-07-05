@@ -12,7 +12,6 @@ import {
   SidebarMenuItem,
   SidebarMenuButton,
   SidebarInset,
-  SidebarTrigger,
   SidebarGroup,
   SidebarGroupLabel,
 } from '@/components/ui/sidebar';
@@ -41,70 +40,24 @@ import { WorkflowCanvas } from './workflow-canvas';
 import { MonitoringPanel } from './monitoring-panel';
 import { AIFunctionGenerator } from './ai-function-generator';
 import { EditTriggerDialog } from './edit-trigger-dialog';
-
-export type WorkflowStepData = {
-  id: string;
-  type: 'trigger' | 'action';
-  icon: React.ElementType;
-  title: string;
-  description: string;
-  data?: {
-    webhookUrl?: string;
-  };
-  content?: {
-    code: string;
-    language: string;
-  };
-  errorMessage?: {
-    title: string;
-    description: string;
-  };
-  status?: 'success' | 'warning' | 'error' | 'default';
-};
-
-const initialSteps: WorkflowStepData[] = [
-    {
-      id: 'step-1',
-      type: 'trigger',
-      icon: Webhook,
-      title: 'HTTP Request Recieved',
-      description: 'via Webhook',
-      status: 'success',
-      data: {
-        webhookUrl: `https://api.sabagapulse.com/v1/webhooks/wf_init_abc123`
-      }
-    },
-    {
-      id: 'step-2',
-      type: 'action',
-      icon: FlaskConical,
-      title: 'Generate Welcome Email',
-      description: 'AI-powered content generation',
-      content: {
-          code: 'function generateEmail(username) {\n  // ...\n}',
-          language: 'typescript'
-      },
-      status: 'success',
-    },
-    {
-      id: 'step-3',
-      type: 'action',
-      icon: Mail,
-      title: 'Send Email',
-      description: 'via SendGrid',
-      status: 'error',
-      errorMessage: {
-        title: 'Error: SMTP connection failed',
-        description: 'Could not connect to SendGrid API.'
-      }
-    },
-];
+import type { Workflow as WorkflowType, WorkflowStepData } from '@/lib/types';
+import { updateWorkflow } from '@/lib/db';
 
 
-export function DashboardLayout() {
-  const [steps, setSteps] = React.useState<WorkflowStepData[]>(initialSteps);
+export function DashboardLayout({ workflow }: { workflow: WorkflowType }) {
+  const [steps, setSteps] = React.useState<WorkflowStepData[]>(workflow.steps);
   const [isAiGeneratorOpen, setIsAiGeneratorOpen] = React.useState(false);
   const [editingStep, setEditingStep] = React.useState<WorkflowStepData | null>(null);
+
+  const persistSteps = (newSteps: WorkflowStepData[]) => {
+    updateWorkflow(workflow.id, { steps: newSteps });
+  };
+  
+  const handleSetSteps = (newStepsOrFn: React.SetStateAction<WorkflowStepData[]>) => {
+    const newSteps = typeof newStepsOrFn === 'function' ? newStepsOrFn(steps) : newStepsOrFn;
+    setSteps(newSteps);
+    persistSteps(newSteps);
+  };
 
   const handleAddStep = (step: Omit<WorkflowStepData, 'id' | 'status' | 'content' | 'errorMessage' | 'data'>) => {
     const newStep: WorkflowStepData = {
@@ -117,8 +70,8 @@ export function DashboardLayout() {
       newStep.data = { webhookUrl: `https://api.sabagapulse.com/v1/webhooks/wf_${Date.now()}`};
     }
 
-    if (newStep.type === 'trigger') {
-      setSteps(prev => {
+    handleSetSteps(prev => {
+      if (newStep.type === 'trigger') {
         const newSteps = [...prev];
         const triggerIndex = newSteps.findIndex(s => s.type === 'trigger');
         if (triggerIndex !== -1) {
@@ -127,10 +80,10 @@ export function DashboardLayout() {
           newSteps.unshift(newStep);
         }
         return newSteps;
-      });
-    } else {
-      setSteps(prev => [...prev, newStep]);
-    }
+      } else {
+        return [...prev, newStep];
+      }
+    });
   };
 
   const handleFunctionGenerated = (code: string, language: string, intent: string) => {
@@ -146,11 +99,11 @@ export function DashboardLayout() {
         },
         status: 'default'
     }
-    setSteps(prevSteps => [...prevSteps, newStep]);
+    handleSetSteps(prevSteps => [...prevSteps, newStep]);
   };
 
   const handleCreateNewWorkflow = () => {
-    setSteps([]);
+    handleSetSteps([]);
   };
 
   const actionSteps = [
@@ -247,9 +200,10 @@ export function DashboardLayout() {
             <TabsContent value="designer">
               <WorkflowCanvas 
                 steps={steps}
-                setSteps={setSteps}
+                setSteps={handleSetSteps}
                 onCreateNewWorkflow={handleCreateNewWorkflow}
                 onEditStep={setEditingStep}
+                workflowName={workflow.name}
               />
             </TabsContent>
             <TabsContent value="logs">
