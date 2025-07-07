@@ -8,13 +8,26 @@ export function cn(...inputs: ClassValue[]) {
 /**
  * Safely resolves a dot-notation path from a nested object.
  * @param obj The object to resolve the path from.
- * @param path The dot-notation path string (e.g., 'trigger.body.name').
+ * @param path The dot-notation path string (e.g., 'trigger.body.name' or '{{trigger.body.name}}').
  * @returns The value at the specified path, or undefined if not found.
  */
-function resolvePath(obj: Record<string, any>, path: string): any {
+export function resolvePath(obj: Record<string, any>, path: string): any {
   if (!path) return undefined;
-  const properties = path.split('.');
-  return properties.reduce((prev, curr) => (prev && prev[curr] !== undefined ? prev[curr] : undefined), obj);
+  
+  const pathWithoutBraces = path.replace(/^{{|}}$/g, '').trim();
+  if (!pathWithoutBraces) return undefined;
+
+  const properties = pathWithoutBraces.split('.');
+  
+  let current: any = obj;
+  for (let i = 0; i < properties.length; i++) {
+    if (current === null || current === undefined) {
+      return undefined;
+    }
+    const prop = properties[i];
+    current = current[prop];
+  }
+  return current;
 }
 
 /**

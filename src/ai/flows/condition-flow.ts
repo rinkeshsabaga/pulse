@@ -9,6 +9,7 @@
  */
 
 import { ai } from '@/ai/genkit';
+import { resolvePath } from '@/lib/utils';
 import { z } from 'zod';
 
 const RuleSchema = z.object({
@@ -38,20 +39,6 @@ export const ConditionOutputSchema = z.object({
   outcome: z.string().describe('The name of the first matching case, or "default" if none match.'),
 });
 export type ConditionOutput = z.infer<typeof ConditionOutputSchema>;
-
-/**
- * Safely resolves a dot-notation path from a nested object.
- * @param obj The object to resolve the path from.
- * @param path The dot-notation path string (e.g., 'trigger.body.name').
- * @returns The value at the specified path, or undefined if not found.
- */
-function resolvePath(obj: Record<string, any>, path: string): any {
-  if (!path) return undefined;
-  // Strip {{...}} if present
-  const pathWithoutBraces = path.replace(/^{{|}}$/g, '').trim();
-  const properties = pathWithoutBraces.split('.');
-  return properties.reduce((prev, curr) => (prev && prev[curr] !== undefined ? prev[curr] : undefined), obj);
-}
 
 /**
  * Evaluates a single rule against the data context.
