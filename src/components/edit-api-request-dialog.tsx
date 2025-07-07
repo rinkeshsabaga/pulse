@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -21,10 +22,13 @@ import {
 } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
-import { ArrowRightLeft, Plus, Trash2 } from 'lucide-react';
+import { ArrowRightLeft, Plus, Trash2, Play, Loader2 } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 import type { WorkflowStepData, ApiRequestAuth, RequestBody, FormUrlEncodedPair } from '@/lib/types';
 import { VariableExplorer } from './variable-explorer';
+import { resolveVariables } from '@/lib/utils';
+import { JsonTreeView } from './json-tree-view';
+import { ScrollArea } from './ui/scroll-area';
 
 type EditApiRequestDialogProps = {
   step: WorkflowStepData;
@@ -41,6 +45,9 @@ export function EditApiRequestDialog({ open, onOpenChange, onSave, step, dataCon
   const [body, setBody] = useState<RequestBody>({ type: 'none', content: '' });
   const [auth, setAuth] = useState<ApiRequestAuth>({ type: 'none' });
 
+  const [isTesting, setIsTesting] = useState(false);
+  const [testOutput, setTestOutput] = useState<Record<string, any> | null>(null);
+
   useEffect(() => {
     if (open && step.data) {
       const data = step.data;
@@ -49,8 +56,54 @@ export function EditApiRequestDialog({ open, onOpenChange, onSave, step, dataCon
       setHeaders(data.headers || []);
       setBody(data.body || { type: 'none', content: '' });
       setAuth(data.auth || { type: 'none' });
+      setTestOutput(null); // Reset test output when dialog opens
     }
   }, [open, step.data]);
+  
+  const handleTestAction = async () => {
+    setIsTesting(true);
+    setTestOutput(null);
+
+    // Simulate async action
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
+    const resolvedUrl = resolveVariables(url, dataContext);
+    const resolvedHeaders = headers.map(h => ({ ...h, value: resolveVariables(h.value, dataContext) }));
+    
+    let resolvedBody: any = null;
+    if (body.type === 'json' && typeof body.content === 'string') {
+        resolvedBody = JSON.parse(resolveVariables(body.content, dataContext));
+    } else if (body.type === 'form-urlencoded' && Array.isArray(body.content)) {
+        resolvedBody = body.content.reduce((acc, pair) => {
+            acc[pair.key] = resolveVariables(pair.value, dataContext);
+            return acc;
+        }, {} as Record<string, string>);
+    }
+
+    const mockResponse = {
+      status: 200,
+      statusText: 'OK',
+      headers: {
+        'content-type': 'application/json; charset=utf-8',
+        'x-powered-by': 'SabagaPulse Mock Engine',
+      },
+      body: {
+        message: 'This is a successful mock response.',
+        requestConfig: {
+          method,
+          url: resolvedUrl,
+          headers: resolvedHeaders.reduce((acc, h) => {
+            if (h.key) acc[h.key] = h.value;
+            return acc;
+          }, {} as Record<string, string>),
+          body: resolvedBody,
+        }
+      }
+    };
+    
+    setTestOutput(mockResponse);
+    setIsTesting(false);
+  };
 
   const handleHeaderChange = (id: string, field: 'key' | 'value', value: string) => {
     setHeaders(headers.map(h => (h.id === id ? { ...h, [field]: value } : h)));
@@ -159,139 +212,173 @@ export function EditApiRequestDialog({ open, onOpenChange, onSave, step, dataCon
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-2xl max-h-[90vh] flex flex-col">
+      <DialogContent className="sm:max-w-4xl max-h-[90vh] flex flex-col">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 font-headline">
             <ArrowRightLeft className="text-primary" />
             Edit Action: API Request
           </DialogTitle>
           <DialogDescription>
-            Configure an HTTP request to an external service. Click the icon to browse available variables from previous steps.
+            Configure an HTTP request. Use the variable explorer to reference data from previous steps.
           </DialogDescription>
         </DialogHeader>
 
-        <div className="flex flex-col gap-4 py-4 flex-1 min-h-0">
-            <div className="flex gap-2">
-              <Select value={method} onValueChange={v => setMethod(v as any)}>
-                <SelectTrigger className="w-[120px]">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="GET">GET</SelectItem>
-                  <SelectItem value="POST">POST</SelectItem>
-                  <SelectItem value="PUT">PUT</SelectItem>
-                  <SelectItem value="PATCH">PATCH</SelectItem>
-                  <SelectItem value="DELETE">DELETE</SelectItem>
-                </SelectContent>
-              </Select>
-              <div className="relative flex-1">
-                <Input placeholder="https://api.example.com/users" value={url} onChange={e => setUrl(e.target.value)} className="pr-10" />
-                <div className="absolute top-1/2 -translate-y-1/2 right-1">
-                    <VariableExplorer dataContext={dataContext} />
+        <div className="grid md:grid-cols-2 gap-6 py-4 flex-1 min-h-0">
+          {/* Left Column: Configuration */}
+          <div className="flex flex-col gap-4">
+              <div className="flex gap-2">
+                <Select value={method} onValueChange={v => setMethod(v as any)}>
+                  <SelectTrigger className="w-[120px]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="GET">GET</SelectItem>
+                    <SelectItem value="POST">POST</SelectItem>
+                    <SelectItem value="PUT">PUT</SelectItem>
+                    <SelectItem value="PATCH">PATCH</SelectItem>
+                    <SelectItem value="DELETE">DELETE</SelectItem>
+                  </SelectContent>
+                </Select>
+                <div className="relative flex-1">
+                  <Input placeholder="https://api.example.com/users" value={url} onChange={e => setUrl(e.target.value)} className="pr-10" />
+                  <div className="absolute top-1/2 -translate-y-1/2 right-1">
+                      <VariableExplorer dataContext={dataContext} />
+                  </div>
                 </div>
               </div>
-            </div>
 
-            <Tabs defaultValue="body" className="flex-1 flex flex-col">
-              <TabsList>
-                <TabsTrigger value="auth">Auth</TabsTrigger>
-                <TabsTrigger value="headers">Headers</TabsTrigger>
-                <TabsTrigger value="body">Body</TabsTrigger>
-              </TabsList>
-              
-              <div className="mt-4 flex-1">
-                  <TabsContent value="auth" className="space-y-4">
-                    <Label>Authentication Method</Label>
-                    <Select value={auth.type} onValueChange={v => setAuth({ type: v as any })}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="none">None</SelectItem>
-                        <SelectItem value="bearer">Bearer Token</SelectItem>
-                        <SelectItem value="apiKey">API Key</SelectItem>
-                        <SelectItem value="basic">Basic Auth</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    {auth.type === 'bearer' && (
-                      <div className="space-y-2">
-                        <Label htmlFor="bearer-token">Bearer Token</Label>
-                        <Input id="bearer-token" type="password" placeholder="{{credential.my_api_key}}" value={auth.token || ''} onChange={e => setAuth({ ...auth, token: e.target.value })} />
-                      </div>
-                    )}
-                    {auth.type === 'apiKey' && (
-                      <div className="space-y-4">
+              <Tabs defaultValue="body" className="flex-1 flex flex-col">
+                <TabsList>
+                  <TabsTrigger value="auth">Auth</TabsTrigger>
+                  <TabsTrigger value="headers">Headers</TabsTrigger>
+                  <TabsTrigger value="body">Body</TabsTrigger>
+                </TabsList>
+                
+                <div className="mt-4 flex-1">
+                    <TabsContent value="auth" className="space-y-4">
+                      <Label>Authentication Method</Label>
+                      <Select value={auth.type} onValueChange={v => setAuth({ type: v as any })}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">None</SelectItem>
+                          <SelectItem value="bearer">Bearer Token</SelectItem>
+                          <SelectItem value="apiKey">API Key</SelectItem>
+                          <SelectItem value="basic">Basic Auth</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      {auth.type === 'bearer' && (
                         <div className="space-y-2">
-                          <Label htmlFor="api-key-val">API Key</Label>
-                          <Input id="api-key-val" type="password" placeholder="Enter your API key or use a variable" value={auth.apiKey || ''} onChange={e => setAuth({ ...auth, apiKey: e.target.value })} />
+                          <Label htmlFor="bearer-token">Bearer Token</Label>
+                          <Input id="bearer-token" type="password" placeholder="{{credential.my_api_key}}" value={auth.token || ''} onChange={e => setAuth({ ...auth, token: e.target.value })} />
                         </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="api-key-header">Header Name</Label>
-                          <Input id="api-key-header" placeholder="X-API-KEY" value={auth.apiKeyHeaderName || ''} onChange={e => setAuth({ ...auth, apiKeyHeaderName: e.target.value })} />
-                        </div>
-                        <div className="space-y-2">
-                          <Label>Add to</Label>
-                          <Select value={auth.apiKeyLocation || 'header'} onValueChange={v => setAuth({ ...auth, apiKeyLocation: v as any })}>
-                            <SelectTrigger>
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="header">Request Header</SelectItem>
-                              <SelectItem value="query">Query Params</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </div>
-                    )}
-                    {auth.type === 'basic' && (
-                      <div className="space-y-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="username">Username</Label>
-                          <Input id="username" placeholder="Username or variable" value={auth.username || ''} onChange={e => setAuth({ ...auth, username: e.target.value })} />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="password">Password</Label>
-                          <Input type="password" id="password" placeholder="Password or variable" value={auth.password || ''} onChange={e => setAuth({ ...auth, password: e.target.value })} />
-                        </div>
-                      </div>
-                    )}
-                  </TabsContent>
-
-                  <TabsContent value="headers" className="space-y-2">
-                    {headers.map(header => (
-                      <div key={header.id} className="flex gap-2 items-center">
-                        <Input placeholder="Key" value={header.key} onChange={e => handleHeaderChange(header.id, 'key', e.target.value)} />
-                        <div className="relative flex-1">
-                          <Input placeholder="Value" value={header.value} onChange={e => handleHeaderChange(header.id, 'value', e.target.value)} className="pr-10" />
-                          <div className="absolute top-1/2 -translate-y-1/2 right-1">
-                            <VariableExplorer dataContext={dataContext} />
+                      )}
+                      {auth.type === 'apiKey' && (
+                        <div className="space-y-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="api-key-val">API Key</Label>
+                            <Input id="api-key-val" type="password" placeholder="Enter your API key or use a variable" value={auth.apiKey || ''} onChange={e => setAuth({ ...auth, apiKey: e.target.value })} />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="api-key-header">Header Name</Label>
+                            <Input id="api-key-header" placeholder="X-API-KEY" value={auth.apiKeyHeaderName || ''} onChange={e => setAuth({ ...auth, apiKeyHeaderName: e.target.value })} />
+                          </div>
+                          <div className="space-y-2">
+                            <Label>Add to</Label>
+                            <Select value={auth.apiKeyLocation || 'header'} onValueChange={v => setAuth({ ...auth, apiKeyLocation: v as any })}>
+                              <SelectTrigger>
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="header">Request Header</SelectItem>
+                                <SelectItem value="query">Query Params</SelectItem>
+                              </SelectContent>
+                            </Select>
                           </div>
                         </div>
-                        <Button variant="ghost" size="icon" onClick={() => removeHeader(header.id)}>
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
-                      </div>
-                    ))}
-                    <Button variant="outline" size="sm" onClick={addHeader}>
-                      <Plus className="mr-2 h-4 w-4" /> Add header
-                    </Button>
-                  </TabsContent>
+                      )}
+                      {auth.type === 'basic' && (
+                        <div className="space-y-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="username">Username</Label>
+                            <Input id="username" placeholder="Username or variable" value={auth.username || ''} onChange={e => setAuth({ ...auth, username: e.target.value })} />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="password">Password</Label>
+                            <Input type="password" id="password" placeholder="Password or variable" value={auth.password || ''} onChange={e => setAuth({ ...auth, password: e.target.value })} />
+                          </div>
+                        </div>
+                      )}
+                    </TabsContent>
 
-                  <TabsContent value="body" className="space-y-4">
-                     <Select value={body.type} onValueChange={handleBodyTypeChange}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="none">None</SelectItem>
-                        <SelectItem value="json">JSON (application/json)</SelectItem>
-                        <SelectItem value="form-urlencoded">Form URL-Encoded</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <div>{renderBodyInputs()}</div>
-                  </TabsContent>
-              </div>
-            </Tabs>
+                    <TabsContent value="headers" className="space-y-2">
+                      {headers.map(header => (
+                        <div key={header.id} className="flex gap-2 items-center">
+                          <Input placeholder="Key" value={header.key} onChange={e => handleHeaderChange(header.id, 'key', e.target.value)} />
+                          <div className="relative flex-1">
+                            <Input placeholder="Value" value={header.value} onChange={e => handleHeaderChange(header.id, 'value', e.target.value)} className="pr-10" />
+                            <div className="absolute top-1/2 -translate-y-1/2 right-1">
+                              <VariableExplorer dataContext={dataContext} />
+                            </div>
+                          </div>
+                          <Button variant="ghost" size="icon" onClick={() => removeHeader(header.id)}>
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </div>
+                      ))}
+                      <Button variant="outline" size="sm" onClick={addHeader}>
+                        <Plus className="mr-2 h-4 w-4" /> Add header
+                      </Button>
+                    </TabsContent>
+
+                    <TabsContent value="body" className="space-y-4">
+                       <Select value={body.type} onValueChange={handleBodyTypeChange}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">None</SelectItem>
+                          <SelectItem value="json">JSON (application/json)</SelectItem>
+                          <SelectItem value="form-urlencoded">Form URL-Encoded</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <div>{renderBodyInputs()}</div>
+                    </TabsContent>
+                </div>
+              </Tabs>
+          </div>
+          {/* Right Column: Testing */}
+          <div className="flex flex-col gap-4">
+            <div className="space-y-2">
+                <Label>Test Action</Label>
+                <p className="text-sm text-muted-foreground">
+                    Click the button to simulate this request using the available variables.
+                </p>
+                <Button onClick={handleTestAction} disabled={isTesting} className="w-full">
+                    {isTesting ? <Loader2 className="animate-spin" /> : <Play />}
+                    Test Action
+                </Button>
+            </div>
+            <div className="space-y-2 flex-1 flex flex-col min-h-0">
+                <Label>Test Output</Label>
+                <ScrollArea className="border rounded-md flex-1 bg-muted/30">
+                   <div className="p-4">
+                     {testOutput ? (
+                        <JsonTreeView data={testOutput} />
+                     ) : (
+                        <div className="flex items-center justify-center h-full text-sm text-muted-foreground p-10 text-center">
+                           {isTesting ? (
+                                <p>Running simulation...</p>
+                           ) : (
+                                <p>Click "Test Action" to see a mock response.</p>
+                           )}
+                        </div>
+                     )}
+                   </div>
+                </ScrollArea>
+            </div>
+          </div>
         </div>
 
         <DialogFooter>
