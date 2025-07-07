@@ -16,7 +16,7 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import type { WorkflowStepData, RequestBody } from '@/lib/types';
+import type { WorkflowStepData, RequestBody, ApiRequestAuth, FormUrlEncodedPair } from '@/lib/types';
 import { Plus, Trash2, ArrowRightLeft, Loader2 } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -32,12 +32,12 @@ type EditApiRequestDialogProps = {
 };
 
 export function EditApiRequestDialog({ step, open, onOpenChange, onSave, dataContext = {} }: EditApiRequestDialogProps) {
-  const [method, setMethod] = useState(step.data?.method || 'GET');
-  const [apiUrl, setApiUrl] = useState(step.data?.apiUrl || '');
-  const [auth, setAuth] = useState(step.data?.auth || { type: 'none' });
-  const [headers, setHeaders] = useState(step.data?.headers || []);
+  const [method, setMethod] = useState<'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'>(step.data?.method || 'GET');
+  const [apiUrl, setApiUrl] = useState<string>(step.data?.apiUrl || '');
+  const [auth, setAuth] = useState<ApiRequestAuth>(step.data?.auth || { type: 'none' });
+  const [headers, setHeaders] = useState<{ id: string; key: string; value: string }[]>(step.data?.headers || []);
   const [body, setBody] = useState<RequestBody>(step.data?.body || { type: 'none', content: '' });
-  const [isTesting, setIsTesting] = useState(false);
+  const [isTesting, setIsTesting] = useState<boolean>(false);
   const [testResult, setTestResult] = useState<any>(null);
   
   useEffect(() => {
@@ -138,21 +138,21 @@ export function EditApiRequestDialog({ step, open, onOpenChange, onSave, dataCon
 
   const handleAddFormPair = () => {
     const currentContent = Array.isArray(body.content) ? body.content : [];
-    setBody({ ...body, content: [...currentContent, { id: uuidv4(), key: '', value: '' }] });
+    setBody({ ...body, type: 'form-urlencoded', content: [...currentContent, { id: uuidv4(), key: '', value: '' }] });
   };
 
   const handleRemoveFormPair = (id: string) => {
     if (Array.isArray(body.content)) {
-      setBody({ ...body, content: body.content.filter((p) => p.id !== id) });
+      setBody({ ...body, type: 'form-urlencoded', content: body.content.filter((p) => p.id !== id) });
     }
   };
   
   const handleFormPairChange = (id: string, field: 'key' | 'value', value: string) => {
     if (Array.isArray(body.content)) {
-      setBody({ ...body, content: body.content.map(p => p.id === id ? {...p, [field]: value} : p) });
+      const newContent = body.content.map(p => p.id === id ? { ...p, [field]: value } : p);
+      setBody({ ...body, type: 'form-urlencoded', content: newContent });
     }
   };
-
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
