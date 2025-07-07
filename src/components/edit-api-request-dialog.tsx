@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -22,12 +21,10 @@ import {
 } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { ArrowRightLeft, Plus, Trash2, Loader2, Play } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { ArrowRightLeft, Plus, Trash2 } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 import type { WorkflowStepData, ApiRequestAuth, RequestBody, FormUrlEncodedPair } from '@/lib/types';
-import { resolveVariables } from '@/lib/utils';
+import { VariableExplorer } from './variable-explorer';
 
 type EditApiRequestDialogProps = {
   step: WorkflowStepData;
@@ -37,26 +34,21 @@ type EditApiRequestDialogProps = {
   dataContext?: Record<string, any>;
 };
 
-export function EditApiRequestDialog({ open, onOpenChange, onSave, step, dataContext }: EditApiRequestDialogProps) {
+export function EditApiRequestDialog({ open, onOpenChange, onSave, step, dataContext = {} }: EditApiRequestDialogProps) {
   const [method, setMethod] = useState<'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH'>('GET');
-  const [url, setUrl] = useState('https://api.example.com/data');
+  const [url, setUrl] = useState('');
   const [headers, setHeaders] = useState<{ id: string; key: string; value: string }[]>([]);
   const [body, setBody] = useState<RequestBody>({ type: 'none', content: '' });
   const [auth, setAuth] = useState<ApiRequestAuth>({ type: 'none' });
 
-  const [testResponse, setTestResponse] = useState<Record<string, any> | null>(null);
-  const [isTesting, setIsTesting] = useState(false);
-  const { toast } = useToast();
-
   useEffect(() => {
     if (open && step.data) {
       const data = step.data;
-      setMethod(data?.method || 'GET');
-      setUrl(data?.apiUrl || 'https://api.example.com/data');
-      setHeaders(data?.headers || []);
-      setBody(data?.body || { type: 'none', content: '' });
-      setAuth(data?.auth || { type: 'none' });
-      setTestResponse(null); // Reset test response on open
+      setMethod(data.method || 'GET');
+      setUrl(data.apiUrl || '');
+      setHeaders(data.headers || []);
+      setBody(data.body || { type: 'none', content: '' });
+      setAuth(data.auth || { type: 'none' });
     }
   }, [open, step.data]);
 
@@ -94,7 +86,7 @@ export function EditApiRequestDialog({ open, onOpenChange, onSave, step, dataCon
     }
   };
 
-  const handleContinue = () => {
+  const handleSave = () => {
     const updatedStep: WorkflowStepData = {
       ...step,
       description: `${method} to ${url.substring(0, 30)}${url.length > 30 ? '...' : ''}`,
@@ -110,78 +102,32 @@ export function EditApiRequestDialog({ open, onOpenChange, onSave, step, dataCon
     onSave(updatedStep);
     onOpenChange(false);
   };
-
-  const handleTestAction = async () => {
-    setIsTesting(true);
-    setTestResponse(null);
-
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
-
-    try {
-      const resolvedUrl = resolveVariables(url, dataContext || {});
-      const resolvedHeaders = headers.map(h => ({
-        ...h,
-        value: resolveVariables(h.value, dataContext || {}),
-      }));
-
-      let resolvedBody: any = body.content;
-      if (body.type === 'json' && typeof body.content === 'string') {
-        resolvedBody = resolveVariables(body.content, dataContext || {});
-      } else if (body.type === 'form-urlencoded' && Array.isArray(body.content)) {
-        resolvedBody = body.content.map(p => ({
-          ...p,
-          value: resolveVariables(p.value, dataContext || {}),
-        }));
-      }
-
-      // This is a mock response for demonstration
-      const mockResponse = {
-        status: 200,
-        statusText: 'OK',
-        headers: {
-          'content-type': 'application/json',
-          'x-request-id': `req_${uuidv4()}`,
-        },
-        request: {
-          method,
-          url: resolvedUrl,
-          headers: resolvedHeaders,
-          body: resolvedBody,
-        },
-        body: {
-          message: 'This is a successful mock response!',
-          data: {
-            id: 123,
-            name: 'Test Item',
-            resolvedFromContext: `Value for 'trigger.body.user.name' might be ${resolveVariables('{{trigger.body.user.name}}', dataContext || {})}`,
-          },
-        },
-      };
-
-      setTestResponse(mockResponse);
-      toast({ title: 'Test Successful', description: 'Mock response received.' });
-    } catch (error: any) {
-      setTestResponse({ error: true, message: error.message });
-      toast({ variant: 'destructive', title: 'Test Failed', description: error.message });
-    } finally {
-      setIsTesting(false);
+  
+  const handleBodyTypeChange = (value: string) => {
+    const type = value as RequestBody['type'];
+    if (type === 'form-urlencoded') {
+        setBody({ type, content: [] });
+    } else {
+        setBody({ type, content: '' });
     }
-  };
+  }
 
   const renderBodyInputs = () => {
     switch (body.type) {
       case 'json':
         return (
-          <div className="space-y-2">
-            <Textarea
-              value={body.content as string}
-              onChange={e => setBody({ ...body, content: e.target.value })}
-              placeholder={'{\n  "key": "value",\n  "nested": {\n    "id": "{{trigger.body.user.id}}"\n  }\n}'}
-              rows={10}
-              className="font-code text-sm"
-            />
-          </div>
+            <div className="relative">
+                <Textarea
+                    value={typeof body.content === 'string' ? body.content : JSON.stringify(body.content, null, 2)}
+                    onChange={e => setBody({ ...body, content: e.target.value })}
+                    placeholder={'{\n  "key": "value",\n  "nested": {\n    "id": "{{trigger.body.user.id}}"\n  }\n}'}
+                    rows={10}
+                    className="font-code text-sm pr-10"
+                />
+                 <div className="absolute top-1 right-1">
+                    <VariableExplorer dataContext={dataContext} />
+                </div>
+            </div>
         );
       case 'form-urlencoded':
         const formContent = Array.isArray(body.content) ? body.content : [];
@@ -190,7 +136,12 @@ export function EditApiRequestDialog({ open, onOpenChange, onSave, step, dataCon
             {formContent.map(pair => (
               <div key={pair.id} className="flex gap-2 items-center">
                 <Input placeholder="Key" value={pair.key} onChange={e => handleFormPairChange(pair.id, 'key', e.target.value)} />
-                <Input placeholder="Value" value={pair.value} onChange={e => handleFormPairChange(pair.id, 'value', e.target.value)} />
+                 <div className="relative flex-1">
+                    <Input placeholder="Value" value={pair.value} onChange={e => handleFormPairChange(pair.id, 'value', e.target.value)} className="pr-10" />
+                    <div className="absolute top-1/2 -translate-y-1/2 right-1">
+                        <VariableExplorer dataContext={dataContext} />
+                    </div>
+                 </div>
                 <Button variant="ghost" size="icon" onClick={() => removeFormPair(pair.id)}>
                   <Trash2 className="h-4 w-4" />
                 </Button>
@@ -202,26 +153,24 @@ export function EditApiRequestDialog({ open, onOpenChange, onSave, step, dataCon
           </div>
         );
       default:
-        return <p className="text-sm text-muted-foreground p-4 text-center">No body for this request method or type.</p>;
+        return <p className="text-sm text-muted-foreground p-4 text-center bg-muted/50 rounded-md">No body for this request.</p>;
     }
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-4xl max-h-[90vh] flex flex-col">
+      <DialogContent className="sm:max-w-2xl max-h-[90vh] flex flex-col">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 font-headline">
             <ArrowRightLeft className="text-primary" />
             Edit Action: API Request
           </DialogTitle>
           <DialogDescription>
-            Configure an HTTP request to an external service. Use `{"{{variable}}"}` syntax to use data from previous steps.
+            Configure an HTTP request to an external service. Click the icon to browse available variables from previous steps.
           </DialogDescription>
         </DialogHeader>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 py-4 flex-1 min-h-0">
-          {/* Left Column: Configuration */}
-          <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-4 py-4 flex-1 min-h-0">
             <div className="flex gap-2">
               <Select value={method} onValueChange={v => setMethod(v as any)}>
                 <SelectTrigger className="w-[120px]">
@@ -235,18 +184,23 @@ export function EditApiRequestDialog({ open, onOpenChange, onSave, step, dataCon
                   <SelectItem value="DELETE">DELETE</SelectItem>
                 </SelectContent>
               </Select>
-              <Input placeholder="https://api.example.com/users" value={url} onChange={e => setUrl(e.target.value)} />
+              <div className="relative flex-1">
+                <Input placeholder="https://api.example.com/users" value={url} onChange={e => setUrl(e.target.value)} className="pr-10" />
+                <div className="absolute top-1/2 -translate-y-1/2 right-1">
+                    <VariableExplorer dataContext={dataContext} />
+                </div>
+              </div>
             </div>
 
-            <Tabs defaultValue="headers" className="flex-1 flex flex-col">
+            <Tabs defaultValue="body" className="flex-1 flex flex-col">
               <TabsList>
-                <TabsTrigger value="auth">Authentication</TabsTrigger>
+                <TabsTrigger value="auth">Auth</TabsTrigger>
                 <TabsTrigger value="headers">Headers</TabsTrigger>
                 <TabsTrigger value="body">Body</TabsTrigger>
               </TabsList>
-              <ScrollArea className="flex-1">
-                <div className="p-1">
-                  <TabsContent value="auth" className="mt-4 space-y-4">
+              
+              <div className="mt-4 flex-1">
+                  <TabsContent value="auth" className="space-y-4">
                     <Label>Authentication Method</Label>
                     <Select value={auth.type} onValueChange={v => setAuth({ type: v as any })}>
                       <SelectTrigger>
@@ -268,8 +222,8 @@ export function EditApiRequestDialog({ open, onOpenChange, onSave, step, dataCon
                     {auth.type === 'apiKey' && (
                       <div className="space-y-4">
                         <div className="space-y-2">
-                          <Label htmlFor="api-key">API Key</Label>
-                          <Input id="api-key" type="password" placeholder="Enter your API key or use a variable" value={auth.apiKey || ''} onChange={e => setAuth({ ...auth, apiKey: e.target.value })} />
+                          <Label htmlFor="api-key-val">API Key</Label>
+                          <Input id="api-key-val" type="password" placeholder="Enter your API key or use a variable" value={auth.apiKey || ''} onChange={e => setAuth({ ...auth, apiKey: e.target.value })} />
                         </div>
                         <div className="space-y-2">
                           <Label htmlFor="api-key-header">Header Name</Label>
@@ -302,11 +256,17 @@ export function EditApiRequestDialog({ open, onOpenChange, onSave, step, dataCon
                       </div>
                     )}
                   </TabsContent>
-                  <TabsContent value="headers" className="mt-4 space-y-2">
+
+                  <TabsContent value="headers" className="space-y-2">
                     {headers.map(header => (
                       <div key={header.id} className="flex gap-2 items-center">
                         <Input placeholder="Key" value={header.key} onChange={e => handleHeaderChange(header.id, 'key', e.target.value)} />
-                        <Input placeholder="Value" value={header.value} onChange={e => handleHeaderChange(header.id, 'value', e.target.value)} />
+                        <div className="relative flex-1">
+                          <Input placeholder="Value" value={header.value} onChange={e => handleHeaderChange(header.id, 'value', e.target.value)} className="pr-10" />
+                          <div className="absolute top-1/2 -translate-y-1/2 right-1">
+                            <VariableExplorer dataContext={dataContext} />
+                          </div>
+                        </div>
                         <Button variant="ghost" size="icon" onClick={() => removeHeader(header.id)}>
                           <Trash2 className="h-4 w-4 text-destructive" />
                         </Button>
@@ -316,55 +276,30 @@ export function EditApiRequestDialog({ open, onOpenChange, onSave, step, dataCon
                       <Plus className="mr-2 h-4 w-4" /> Add header
                     </Button>
                   </TabsContent>
-                  <TabsContent value="body" className="mt-4">
-                    <Select value={body.type} onValueChange={v => setBody({ type: v as any, content: v === 'form-urlencoded' ? [] : '' })}>
+
+                  <TabsContent value="body" className="space-y-4">
+                     <Select value={body.type} onValueChange={handleBodyTypeChange}>
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="none">None</SelectItem>
-                        <SelectItem value="json">JSON</SelectItem>
+                        <SelectItem value="json">JSON (application/json)</SelectItem>
                         <SelectItem value="form-urlencoded">Form URL-Encoded</SelectItem>
                       </SelectContent>
                     </Select>
-                    <div className="pt-4">{renderBodyInputs()}</div>
+                    <div>{renderBodyInputs()}</div>
                   </TabsContent>
-                </div>
-              </ScrollArea>
+              </div>
             </Tabs>
-          </div>
-
-          {/* Right Column: Testing */}
-          <div className="flex flex-col gap-4">
-            <Button onClick={handleTestAction} disabled={isTesting} className="w-full">
-              {isTesting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Play className="mr-2 h-4 w-4" />}
-              Test Action
-            </Button>
-            <div className="space-y-2 flex-1 flex flex-col min-h-0">
-              <Label>Test Response</Label>
-              <ScrollArea className="border rounded-md flex-1 bg-muted/30">
-                <div className="p-4">
-                  {testResponse ? (
-                    <pre className="text-xs font-mono whitespace-pre-wrap">
-                      {JSON.stringify(testResponse, null, 2)}
-                    </pre>
-                  ) : (
-                    <div className="flex items-center justify-center h-full text-sm text-muted-foreground p-10 text-center">
-                      <p>Click "Test Action" to see a mock response here.</p>
-                    </div>
-                  )}
-                </div>
-              </ScrollArea>
-            </div>
-          </div>
         </div>
 
         <DialogFooter>
           <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
-          <Button type="button" onClick={handleContinue}>
-            Continue
+          <Button type="button" onClick={handleSave}>
+            Save Changes
           </Button>
         </DialogFooter>
       </DialogContent>
