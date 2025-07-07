@@ -32,21 +32,21 @@ type EditApiRequestDialogProps = {
 };
 
 export function EditApiRequestDialog({ step, open, onOpenChange, onSave, dataContext = {} }: EditApiRequestDialogProps) {
-  const [method, setMethod] = useState<'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'>(step.data?.method || 'GET');
-  const [apiUrl, setApiUrl] = useState<string>(step.data?.apiUrl || '');
-  const [auth, setAuth] = useState<ApiRequestAuth>(step.data?.auth || { type: 'none' });
-  const [headers, setHeaders] = useState<{ id: string; key: string; value: string }[]>(step.data?.headers || []);
-  const [body, setBody] = useState<RequestBody>(step.data?.body || { type: 'none', content: '' });
+  const [method, setMethod] = useState<'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'>('GET');
+  const [apiUrl, setApiUrl] = useState<string>('');
+  const [auth, setAuth] = useState<ApiRequestAuth>({ type: 'none' });
+  const [headers, setHeaders] = useState<{ id: string; key: string; value: string }[]>([]);
+  const [body, setBody] = useState<RequestBody>({ type: 'none', content: '' });
   const [isTesting, setIsTesting] = useState<boolean>(false);
   const [testResult, setTestResult] = useState<any>(null);
   
   useEffect(() => {
-    if (open) {
-      setMethod(step.data?.method || 'GET');
-      setApiUrl(step.data?.apiUrl || '');
-      setAuth(step.data?.auth || { type: 'none' });
-      setHeaders(step.data?.headers?.map(h => ({...h, id: h.id || uuidv4()})) || []);
-      setBody(step.data?.body || { type: 'none', content: '' });
+    if (open && step.data) {
+      setMethod(step.data.method || 'GET');
+      setApiUrl(step.data.apiUrl || '');
+      setAuth(step.data.auth || { type: 'none' });
+      setHeaders(step.data.headers?.map(h => ({...h, id: h.id || uuidv4()})) || []);
+      setBody(step.data.body || { type: 'none', content: '' });
       setTestResult(null);
     }
   }, [open, step.data]);
@@ -163,7 +163,7 @@ export function EditApiRequestDialog({ step, open, onOpenChange, onSave, dataCon
             Edit Action: {step.title}
           </DialogTitle>
           <DialogDescription>
-            Configure the API request. Use `{{variable.path}}` to use data from previous steps.
+            Configure the API request. Use `{"{{variable.path}}}` to use data from previous steps.
           </DialogDescription>
         </DialogHeader>
         <div className="grid md:grid-cols-2 gap-6 py-4 flex-1 min-h-0">
