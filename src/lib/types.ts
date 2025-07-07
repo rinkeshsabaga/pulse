@@ -81,8 +81,19 @@ export type ConditionData = {
   cases: Case[];
 };
 
+export type WebhookEvent = {
+  id: string;
+  receivedAt: string; // ISO string
+  method: string;
+  headers: Record<string, string>;
+  query: Record<string, string>;
+  body: any;
+};
+
 export type ApiRequestData = {
     webhookUrl?: string; // for trigger
+    events?: WebhookEvent[];
+    selectedEventId?: string | null;
     // for Cron Job trigger
     cronString?: string;
     scheduleMode?: 'interval' | 'daily' | 'weekly' | 'monthly' | 'cron';

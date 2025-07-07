@@ -1,7 +1,7 @@
 // This is a mock database. In a real application, you would use a real database.
 'use server';
 
-import type { Credential, Workflow, CredentialAuthData } from './types';
+import type { Credential, Workflow, CredentialAuthData, WebhookEvent } from './types';
 import { initialSteps } from './initial-data';
 
 // To persist the mock database across hot reloads in development,
@@ -87,6 +87,67 @@ export async function updateWorkflow(id: string, updatedData: Partial<Omit<Workf
     }
     return undefined;
 }
+
+export async function addTestWebhookEvent(workflowId: string, stepId: string): Promise<Workflow | undefined> {
+    const workflowIndex = workflows.findIndex(wf => wf.id === workflowId);
+    if (workflowIndex === -1) {
+        console.error("Workflow not found");
+        return undefined;
+    }
+
+    const stepIndex = workflows[workflowIndex].steps.findIndex(s => s.id === stepId);
+    if (stepIndex === -1) {
+        console.error("Step not found");
+        return undefined;
+    }
+
+    const step = workflows[workflowIndex].steps[stepIndex];
+    if (step.title !== 'Webhook') {
+        console.error("Step is not a webhook trigger");
+        return undefined;
+    }
+
+    if (!step.data) {
+        step.data = {};
+    }
+    if (!step.data.events) {
+        step.data.events = [];
+    }
+    
+    const newTestEvent: WebhookEvent = {
+        id: `evt_${Date.now()}`,
+        receivedAt: new Date().toISOString(),
+        method: 'POST',
+        headers: {
+            'content-type': 'application/json',
+            'user-agent': 'SabagaPulse-Test-Event/1.0',
+            'x-test-event': 'true',
+        },
+        query: {
+            source: 'test-generator',
+        },
+        body: {
+            message: "This is a test event from SabagaPulse.",
+            user: {
+                id: `user_${Math.floor(Math.random() * 1000)}`,
+                name: "Test User"
+            },
+            timestamp: Date.now(),
+        }
+    };
+    
+    step.data.events.unshift(newTestEvent); // Add to the beginning of the array
+    
+    // Keep only the last 20 events
+    if (step.data.events.length > 20) {
+        step.data.events.length = 20;
+    }
+
+    workflows[workflowIndex].steps[stepIndex] = step;
+    
+    return JSON.parse(JSON.stringify(workflows[workflowIndex]));
+}
+
 
 // =================================================================
 // CREDENTIALS MOCK DATABASE

@@ -1,43 +1,59 @@
 
+
 // src/components/edit-trigger-dialog.tsx
 'use client';
 
+import { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogDescription,
-  DialogFooter
+  DialogFooter,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Copy } from 'lucide-react';
-import type { WorkflowStepData, IconName } from '@/lib/types';
-import * as icons from 'lucide-react';
-
-const iconMap: Record<IconName, React.ElementType> = {
-  Webhook: icons.Webhook,
-  Mail: icons.Mail,
-  FlaskConical: icons.FlaskConical,
-  Database: icons.Database,
-  ArrowRightLeft: icons.ArrowRightLeft,
-  GitMerge: icons.GitMerge,
-  Clock: icons.Clock,
-  ShoppingCart: icons.ShoppingCart,
-};
+import { Copy, Webhook, Loader2 } from 'lucide-react';
+import type { WorkflowStepData, WebhookEvent } from '@/lib/types';
+import { addTestWebhookEvent } from '@/lib/db';
+import { ScrollArea } from './ui/scroll-area';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { formatDistanceToNow } from 'date-fns';
+import { JsonTreeView } from './json-tree-view';
+import { Badge } from './ui/badge';
 
 type EditTriggerDialogProps = {
   step: WorkflowStepData;
+  workflowId: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onSave: (step: WorkflowStepData) => void;
 };
 
-export function EditTriggerDialog({ step, open, onOpenChange }: EditTriggerDialogProps) {
+export function EditTriggerDialog({ step, workflowId, open, onOpenChange, onSave }: EditTriggerDialogProps) {
   const { toast } = useToast();
-  const Icon = iconMap[step.icon];
+  const [events, setEvents] = useState<WebhookEvent[]>([]);
+  const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
+  const [isGenerating, setIsGenerating] = useState(false);
+
+  useEffect(() => {
+    if (open) {
+      const initialEvents = step.data?.events || [];
+      setEvents(initialEvents);
+      
+      const initialSelectedId = step.data?.selectedEventId || (initialEvents.length > 0 ? initialEvents[0].id : null);
+      setSelectedEventId(initialSelectedId);
+    }
+  }, [open, step.data]);
 
   const handleCopy = () => {
     if (step.data?.webhookUrl) {
@@ -48,40 +64,129 @@ export function EditTriggerDialog({ step, open, onOpenChange }: EditTriggerDialo
       });
     }
   };
+  
+  const handleGenerateTestEvent = async () => {
+    setIsGenerating(true);
+    try {
+      const updatedWorkflow = await addTestWebhookEvent(workflowId, step.id);
+      if (updatedWorkflow) {
+        const updatedStep = updatedWorkflow.steps.find(s => s.id === step.id);
+        const newEvents = updatedStep?.data?.events || [];
+        setEvents(newEvents);
+        if (newEvents.length > 0 && !selectedEventId) {
+            setSelectedEventId(newEvents[0].id);
+        } else if (newEvents.length > 0) {
+            setSelectedEventId(newEvents[0].id);
+        }
+        toast({
+            title: "Test event generated",
+            description: "A new test event has been added to the list."
+        });
+      }
+    } catch (e) {
+      toast({ variant: 'destructive', title: 'Error', description: 'Could not generate test event.'});
+    } finally {
+        setIsGenerating(false);
+    }
+  }
+
+  const handleSave = () => {
+    const updatedStep = {
+        ...step,
+        data: {
+            ...step.data,
+            selectedEventId: selectedEventId,
+            events: events,
+        }
+    };
+    onSave(updatedStep);
+    onOpenChange(false);
+  }
+
+  const selectedEvent = events.find(e => e.id === selectedEventId);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-4xl max-h-[90vh] flex flex-col">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 font-headline">
-            {Icon && <Icon className="text-primary" />}
+            <Webhook className="text-primary" />
             Edit Trigger: {step.title}
           </DialogTitle>
-          <DialogDescription>{step.description}</DialogDescription>
+          <DialogDescription>
+            This unique URL triggers the workflow. Send a POST request to it. Recent events will appear below.
+          </DialogDescription>
         </DialogHeader>
-        <div className="space-y-4 py-4">
-          {step.data?.webhookUrl ? (
-            <div className="space-y-2">
-              <Label htmlFor="webhook-url">Webhook URL</Label>
-              <div className="flex items-center space-x-2">
-                <Input id="webhook-url" value={step.data.webhookUrl} readOnly />
-                <Button variant="outline" size="icon" onClick={handleCopy}>
-                  <Copy className="h-4 w-4" />
-                </Button>
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Send a POST request to this URL to trigger the workflow.
-              </p>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 py-4 flex-1 min-h-0">
+            <div className="space-y-6 flex flex-col">
+                <div className="space-y-2">
+                  <Label htmlFor="webhook-url">Webhook URL</Label>
+                  <div className="flex items-center space-x-2">
+                    <Input id="webhook-url" value={step.data?.webhookUrl || ''} readOnly />
+                    <Button variant="outline" size="icon" onClick={handleCopy}>
+                      <Copy className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                    <Button onClick={handleGenerateTestEvent} disabled={isGenerating} className="w-full">
+                        {isGenerating ? (
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        ) : null}
+                        Generate Test Event
+                    </Button>
+                </div>
+                
+                <div className="space-y-2 flex-1 flex flex-col">
+                    <Label htmlFor="event-selector">Select an event</Label>
+                    <Select value={selectedEventId || ''} onValueChange={setSelectedEventId}>
+                        <SelectTrigger id="event-selector">
+                           <SelectValue placeholder="No events received yet..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                           {events.length === 0 && <SelectItem value="none" disabled>Listening for events...</SelectItem>}
+                           {events.map(event => (
+                            <SelectItem key={event.id} value={event.id}>
+                                <div className="flex items-center justify-between w-full">
+                                    <span>
+                                        <Badge variant="outline" className="mr-2">{event.method}</Badge> 
+                                        {new Date(event.receivedAt).toLocaleTimeString()}
+                                    </span>
+                                    <span className="text-muted-foreground text-xs ml-4">
+                                       {formatDistanceToNow(new Date(event.receivedAt), { addSuffix: true })}
+                                    </span>
+                                </div>
+                            </SelectItem>
+                           ))}
+                        </SelectContent>
+                    </Select>
+                </div>
             </div>
-          ) : (
-            <p className="text-sm text-muted-foreground">
-              This trigger does not have any editable properties.
-            </p>
-          )}
+            
+            <div className="space-y-2 flex flex-col min-h-0">
+                <Label>Event Payload</Label>
+                <ScrollArea className="border rounded-md flex-1 bg-muted/30">
+                   <div className="p-4">
+                     {selectedEvent ? (
+                        <JsonTreeView data={selectedEvent} />
+                     ) : (
+                        <div className="flex items-center justify-center h-full text-sm text-muted-foreground p-10">
+                            <p>Select an event or generate a test event to see its payload.</p>
+                        </div>
+                     )}
+                   </div>
+                </ScrollArea>
+            </div>
         </div>
+        
         <DialogFooter>
-          <Button type="button" variant="secondary" onClick={() => onOpenChange(false)}>
-            Close
+          <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
+            Cancel
+          </Button>
+          <Button type="button" onClick={handleSave} disabled={!selectedEventId}>
+            Save and Continue
           </Button>
         </DialogFooter>
       </DialogContent>

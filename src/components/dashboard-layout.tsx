@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import React from 'react';
@@ -94,7 +95,11 @@ export function DashboardLayout({ workflow }: { workflow: WorkflowType }) {
     };
     
     if (newStep.type === 'trigger' && newStep.title === 'Webhook') {
-      newStep.data = { webhookUrl: `https://api.sabagapulse.com/v1/webhooks/wf_${Date.now()}`};
+      newStep.data = { 
+        webhookUrl: `https://api.sabagapulse.com/v1/webhooks/wf_${Date.now()}`,
+        events: [],
+        selectedEventId: null
+      };
     }
 
     if (newStep.type === 'trigger' && newStep.title === 'Shopify') {
@@ -315,8 +320,10 @@ export function DashboardLayout({ workflow }: { workflow: WorkflowType }) {
       {editingStep && editingStep.title === 'Webhook' && (
         <EditTriggerDialog
           step={editingStep}
+          workflowId={workflow.id}
           open={!!editingStep}
           onOpenChange={(isOpen) => !isOpen && setEditingStep(null)}
+          onSave={handleSaveAction}
         />
       )}
       {editingStep && editingStep.title === 'Cron Job' && (
