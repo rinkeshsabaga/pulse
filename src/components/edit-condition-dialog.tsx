@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -19,6 +20,7 @@ import type { WorkflowStepData, ConditionData, Case, Rule } from '@/lib/types';
 import { Plus, Trash2, GitBranch, GripVertical } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 import { Card, CardContent, CardHeader } from './ui/card';
+import { VariableExplorer } from './variable-explorer';
 
 type EditConditionDialogProps = {
   step: WorkflowStepData | null;
@@ -41,7 +43,7 @@ const operatorOptions = [
     { value: 'less_than', label: 'Less than' },
 ];
 
-export function EditConditionDialog({ step, open, onOpenChange, onSave }: EditConditionDialogProps) {
+export function EditConditionDialog({ step, open, onOpenChange, onSave, dataContext = {} }: EditConditionDialogProps) {
   const [cases, setCases] = useState<Case[]>([]);
   
   useEffect(() => {
@@ -147,12 +149,18 @@ export function EditConditionDialog({ step, open, onOpenChange, onSave }: EditCo
                                 <div key={rule.id} className="flex items-end gap-2">
                                     <div className="flex-1 space-y-1">
                                         <Label htmlFor={`var-${rule.id}`} className="text-xs">Variable</Label>
-                                        <Input 
-                                            id={`var-${rule.id}`}
-                                            placeholder="{{trigger.body.name}}" 
-                                            value={rule.variable} 
-                                            onChange={e => handleRuleChange(caseItem.id, rule.id, 'variable', e.target.value)} 
-                                        />
+                                        <div className="relative">
+                                            <Input 
+                                                id={`var-${rule.id}`}
+                                                placeholder="{{trigger.body.name}}" 
+                                                value={rule.variable} 
+                                                onChange={e => handleRuleChange(caseItem.id, rule.id, 'variable', e.target.value)} 
+                                                className="pr-10"
+                                            />
+                                            <div className="absolute top-1/2 -translate-y-1/2 right-1">
+                                                <VariableExplorer dataContext={dataContext} />
+                                            </div>
+                                        </div>
                                     </div>
                                     <div className="w-48 space-y-1">
                                         <Label htmlFor={`op-${rule.id}`} className="text-xs">Operator</Label>
@@ -172,13 +180,19 @@ export function EditConditionDialog({ step, open, onOpenChange, onSave }: EditCo
                                     </div>
                                     <div className="flex-1 space-y-1">
                                         <Label htmlFor={`val-${rule.id}`} className="text-xs">Value</Label>
-                                        <Input 
-                                            id={`val-${rule.id}`}
-                                            placeholder="Enter a value" 
-                                            value={rule.value} 
-                                            onChange={e => handleRuleChange(caseItem.id, rule.id, 'value', e.target.value)} 
-                                            disabled={rule.operator === 'is_empty' || rule.operator === 'is_not_empty'}
-                                        />
+                                        <div className="relative">
+                                            <Input 
+                                                id={`val-${rule.id}`}
+                                                placeholder="Enter a value" 
+                                                value={rule.value} 
+                                                onChange={e => handleRuleChange(caseItem.id, rule.id, 'value', e.target.value)} 
+                                                disabled={rule.operator === 'is_empty' || rule.operator === 'is_not_empty'}
+                                                className="pr-10"
+                                            />
+                                            <div className="absolute top-1/2 -translate-y-1/2 right-1">
+                                                <VariableExplorer dataContext={dataContext} />
+                                            </div>
+                                        </div>
                                     </div>
                                     <Button 
                                         variant="ghost" 

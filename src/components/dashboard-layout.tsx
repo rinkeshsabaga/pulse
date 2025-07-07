@@ -354,6 +354,7 @@ export function DashboardLayout({ workflow }: { workflow: WorkflowType }) {
       {editingStepInfo && editingStepInfo.step.title === 'App Action' && (
         <EditAppActionDialog
             step={editingStepInfo.step}
+            dataContext={editingStepInfo.dataContext}
             open={!!editingStepInfo}
             onOpenChange={(isOpen) => !isOpen && setEditingStepInfo(null)}
             onSave={handleSaveAction}
@@ -376,12 +377,14 @@ export function DashboardLayout({ workflow }: { workflow: WorkflowType }) {
       />
       <EditWaitDialog
         step={editingStepInfo?.step}
+        dataContext={editingStepInfo?.dataContext}
         open={!!editingStepInfo && editingStepInfo.step.title === 'Wait'}
         onOpenChange={(isOpen) => !isOpen && setEditingStepInfo(null)}
         onSave={handleSaveAction}
       />
       <EditConditionDialog
         step={editingStepInfo?.step}
+        dataContext={editingStepInfo?.dataContext}
         open={!!editingStepInfo && editingStepInfo.step.title === 'Condition'}
         onOpenChange={(isOpen) => !isOpen && setEditingStepInfo(null)}
         onSave={handleSaveAction}

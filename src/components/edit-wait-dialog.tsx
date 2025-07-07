@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -28,6 +29,7 @@ import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { Clock, CalendarDays } from 'lucide-react';
 import type { WorkflowStepData, WaitMode, OfficeHoursDay } from '@/lib/types';
+import { VariableExplorer } from './variable-explorer';
 
 type EditWaitDialogProps = {
   step: WorkflowStepData | null;
@@ -49,7 +51,7 @@ const dayOptions: { id: OfficeHoursDay; label: string }[] = [
 
 const allDays = dayOptions.map(d => d.id as OfficeHoursDay);
 
-export function EditWaitDialog({ step, open, onOpenChange, onSave }: EditWaitDialogProps) {
+export function EditWaitDialog({ step, open, onOpenChange, onSave, dataContext = {} }: EditWaitDialogProps) {
   const [mode, setMode] = useState<WaitMode>('duration');
   const [durationValue, setDurationValue] = useState(5);
   const [durationUnit, setDurationUnit] = useState<'minutes' | 'hours' | 'days'>('minutes');
@@ -315,12 +317,18 @@ export function EditWaitDialog({ step, open, onOpenChange, onSave }: EditWaitDia
             {mode === 'timestamp' && (
                 <div className="pt-4 space-y-2">
                     <Label htmlFor="timestamp-value">Custom Timestamp</Label>
-                    <Input 
-                        id="timestamp-value" 
-                        value={timestamp} 
-                        onChange={e => setTimestamp(e.target.value)}
-                        placeholder="e.g., 2024-12-31T23:59:59Z or {{trigger.data.timestamp}}"
-                    />
+                    <div className="relative">
+                        <Input 
+                            id="timestamp-value" 
+                            value={timestamp} 
+                            onChange={e => setTimestamp(e.target.value)}
+                            placeholder="e.g., 2024-12-31T23:59:59Z or {{trigger.body.timestamp}}"
+                            className="pr-10"
+                        />
+                         <div className="absolute top-1/2 -translate-y-1/2 right-1">
+                            <VariableExplorer dataContext={dataContext} />
+                        </div>
+                    </div>
                     <p className="text-xs text-muted-foreground">
                         Provide a static ISO 8601 timestamp or a dynamic variable from a previous step.
                     </p>

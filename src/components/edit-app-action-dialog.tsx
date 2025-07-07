@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -25,24 +26,29 @@ import type { WorkflowStepData } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { APP_DEFINITIONS } from '@/lib/app-definitions';
 import { Textarea } from './ui/textarea';
+import { VariableExplorer } from './variable-explorer';
 
 type EditAppActionDialogProps = {
   step: WorkflowStepData;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSave: (step: WorkflowStepData) => void;
+  dataContext?: Record<string, any>;
 };
 
-export function EditAppActionDialog({ step, open, onOpenChange, onSave }: EditAppActionDialogProps) {
+export function EditAppActionDialog({ step, open, onOpenChange, onSave, dataContext = {} }: EditAppActionDialogProps) {
   const [selectedApp, setSelectedApp] = useState<string | null>(null);
   const [selectedAction, setSelectedAction] = useState<string | null>(null);
   const [params, setParams] = useState<Record<string, any>>({});
+  const [paramsJson, setParamsJson] = useState('{}');
 
   useEffect(() => {
     if (open) {
+      const initialParams = step.data?.appAction?.params || {};
       setSelectedApp(step.data?.appAction?.app || null);
       setSelectedAction(step.data?.appAction?.action || null);
-      setParams(step.data?.appAction?.params || {});
+      setParams(initialParams);
+      setParamsJson(JSON.stringify(initialParams, null, 2));
     }
   }, [open, step.data]);
 
@@ -53,6 +59,14 @@ export function EditAppActionDialog({ step, open, onOpenChange, onSave }: EditAp
   const handleSave = () => {
     if (!selectedApp || !selectedAction) return;
 
+    let finalParams = params;
+    try {
+      finalParams = JSON.parse(paramsJson);
+    } catch (e) {
+      // Ignore error, save last known valid JSON
+      console.warn("Saving with last valid JSON parameters due to parsing error.");
+    }
+    
     const actionLabel = appDefinition?.actions.find(a => a.value === selectedAction)?.label || 'App Action';
     
     const updatedStep: WorkflowStepData = {
@@ -64,7 +78,7 @@ export function EditAppActionDialog({ step, open, onOpenChange, onSave }: EditAp
         appAction: {
           app: selectedApp,
           action: selectedAction,
-          params: params,
+          params: finalParams,
         },
       },
     };
@@ -76,6 +90,7 @@ export function EditAppActionDialog({ step, open, onOpenChange, onSave }: EditAp
     setSelectedApp(appName);
     setSelectedAction(null); // Reset action when app changes
     setParams({});
+    setParamsJson('{}');
   };
 
   const renderAppSelection = () => (
@@ -133,21 +148,27 @@ export function EditAppActionDialog({ step, open, onOpenChange, onSave }: EditAp
             {selectedAction && (
                 <div className="space-y-2">
                     <Label>Parameters (as JSON)</Label>
-                    <Textarea 
-                        placeholder={'{\n  "channel": "#general",\n  "text": "Hello, World!"\n}'}
-                        rows={6}
-                        value={JSON.stringify(params, null, 2)}
-                        onChange={(e) => {
-                            try {
-                                setParams(JSON.parse(e.target.value));
-                            } catch (error) {
-                                // Maybe show an error to the user in the future
-                            }
-                        }}
-                        className="font-code text-sm"
-                    />
+                    <div className="relative">
+                        <Textarea 
+                            placeholder={'{\n  "channel": "#general",\n  "text": "Hello, {{trigger.body.name}}!"\n}'}
+                            rows={6}
+                            value={paramsJson}
+                            onChange={(e) => {
+                                setParamsJson(e.target.value);
+                                try {
+                                    setParams(JSON.parse(e.target.value));
+                                } catch (error) {
+                                    // Let user type invalid JSON, `params` state will hold last valid version
+                                }
+                            }}
+                            className="font-code text-sm"
+                        />
+                         <div className="absolute top-1 right-1">
+                            <VariableExplorer dataContext={dataContext} />
+                        </div>
+                    </div>
                     <p className="text-xs text-muted-foreground">
-                        Provide action parameters in JSON format. This will be replaced with a dynamic form later.
+                        Provide action parameters in JSON format. Use the icon to browse available variables from previous steps.
                     </p>
                 </div>
             )}
