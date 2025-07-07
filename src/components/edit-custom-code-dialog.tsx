@@ -28,6 +28,7 @@ type EditCustomCodeDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSave: (step: WorkflowStepData) => void;
+  dataContext?: any;
 };
 
 export function EditCustomCodeDialog({

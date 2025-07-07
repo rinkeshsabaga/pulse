@@ -34,6 +34,7 @@ type EditWaitDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSave: (step: WorkflowStepData) => void;
+  dataContext?: any;
 };
 
 const dayOptions: { id: OfficeHoursDay; label: string }[] = [

@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useCallback, useEffect } from 'react';
+import React, { useCallback, useEffect, useMemo } from 'react';
 import ReactFlow, {
   addEdge,
   Background,
@@ -103,7 +103,7 @@ function WorkflowCanvasComponent({
   steps: WorkflowStepData[];
   setSteps: (steps: React.SetStateAction<WorkflowStepData[]>) => void;
   onCreateNewWorkflow: () => void;
-  onEditStep: (step: WorkflowStepData) => void;
+  onEditStep: (step: WorkflowStepData, dataContext: any) => void;
   workflowName: string;
   workflowDescription?: string;
 }) {
@@ -112,6 +112,17 @@ function WorkflowCanvasComponent({
   const [layout, setLayout] = React.useState<'horizontal' | 'vertical'>('horizontal');
   const { toast } = useToast();
   
+  const dataContext = useMemo(() => {
+    const triggerStep = steps.find(s => s.type === 'trigger' && s.title === 'Webhook');
+    if (triggerStep?.data?.selectedEventId && triggerStep.data.events) {
+        const selectedEvent = triggerStep.data.events.find(e => e.id === triggerStep.data.selectedEventId);
+        if (selectedEvent) {
+            return { trigger: selectedEvent };
+        }
+    }
+    return {};
+  }, [steps]);
+
   const handleDeleteStep = useCallback((stepIdToDelete: string) => {
     setSteps((prevSteps) => prevSteps.filter((step) => step.id !== stepIdToDelete));
     toast({
@@ -122,14 +133,14 @@ function WorkflowCanvasComponent({
 
   const handleEditStep = useCallback((stepToEdit: WorkflowStepData) => {
     if (stepToEdit.type === 'trigger' || stepToEdit.title.includes('Action') || stepToEdit.title === 'API Request' || stepToEdit.title === 'Custom Code' || stepToEdit.title === 'Wait' || stepToEdit.title === 'Condition') {
-      onEditStep(stepToEdit);
+      onEditStep(stepToEdit, dataContext);
     } else {
       toast({
         title: 'Coming Soon!',
         description: `Editing for "${stepToEdit.title}" is not yet implemented.`,
       });
     }
-  }, [onEditStep, toast]);
+  }, [onEditStep, toast, dataContext]);
 
   useEffect(() => {
     const { nodes: newNodes, edges: newEdges } = getNodePositions(steps, layout);
@@ -254,7 +265,7 @@ export function WorkflowCanvas(props: {
   steps: WorkflowStepData[];
   setSteps: (steps: React.SetStateAction<WorkflowStepData[]>) => void;
   onCreateNewWorkflow: () => void;
-  onEditStep: (step: WorkflowStepData) => void;
+  onEditStep: (step: WorkflowStepData, dataContext: any) => void;
   workflowName: string;
   workflowDescription?: string;
 }) {

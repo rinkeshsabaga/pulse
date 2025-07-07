@@ -71,7 +71,8 @@ const iconMap: Record<IconName, React.ElementType> = {
 export function DashboardLayout({ workflow }: { workflow: WorkflowType }) {
   const [steps, setSteps] = React.useState<WorkflowStepData[]>(workflow.steps);
   const [isAiGeneratorOpen, setIsAiGeneratorOpen] = React.useState(false);
-  const [editingStep, setEditingStep] = React.useState<WorkflowStepData | null>(null);
+  const [editingStepInfo, setEditingStepInfo] = React.useState<{ step: WorkflowStepData, dataContext: any } | null>(null);
+
 
   React.useEffect(() => {
     setSteps(workflow.steps);
@@ -198,7 +199,7 @@ export function DashboardLayout({ workflow }: { workflow: WorkflowType }) {
 
   const handleSaveAction = (updatedStep: WorkflowStepData) => {
     handleSetSteps(prev => prev.map(s => s.id === updatedStep.id ? updatedStep : s));
-    setEditingStep(null);
+    setEditingStepInfo(null);
   }
 
   const actionSteps = [
@@ -300,7 +301,7 @@ export function DashboardLayout({ workflow }: { workflow: WorkflowType }) {
                   steps={steps}
                   setSteps={handleSetSteps}
                   onCreateNewWorkflow={handleCreateNewWorkflow}
-                  onEditStep={setEditingStep}
+                  onEditStep={(step, dataContext) => setEditingStepInfo({ step, dataContext })}
                   workflowName={workflow.name}
                   workflowDescription={workflow.description}
                 />
@@ -317,71 +318,72 @@ export function DashboardLayout({ workflow }: { workflow: WorkflowType }) {
         onOpenChange={setIsAiGeneratorOpen}
         onFunctionGenerated={handleFunctionGenerated}
       />
-      {editingStep && editingStep.title === 'Webhook' && (
+      {editingStepInfo && editingStepInfo.step.title === 'Webhook' && (
         <EditTriggerDialog
-          step={editingStep}
+          step={editingStepInfo.step}
           workflowId={workflow.id}
-          open={!!editingStep}
-          onOpenChange={(isOpen) => !isOpen && setEditingStep(null)}
+          open={!!editingStepInfo}
+          onOpenChange={(isOpen) => !isOpen && setEditingStepInfo(null)}
           onSave={handleSaveAction}
         />
       )}
-      {editingStep && editingStep.title === 'Cron Job' && (
+      {editingStepInfo && editingStepInfo.step.title === 'Cron Job' && (
         <EditCronJobDialog
-            step={editingStep}
-            open={!!editingStep}
-            onOpenChange={(isOpen) => !isOpen && setEditingStep(null)}
+            step={editingStepInfo.step}
+            open={!!editingStepInfo}
+            onOpenChange={(isOpen) => !isOpen && setEditingStepInfo(null)}
             onSave={handleSaveAction}
         />
       )}
-      {editingStep && editingStep.title === 'Shopify' && (
+      {editingStepInfo && editingStepInfo.step.title === 'Shopify' && (
         <EditShopifyTriggerDialog
-            step={editingStep}
-            open={!!editingStep}
-            onOpenChange={(isOpen) => !isOpen && setEditingStep(null)}
+            step={editingStepInfo.step}
+            open={!!editingStepInfo}
+            onOpenChange={(isOpen) => !isOpen && setEditingStepInfo(null)}
             onSave={handleSaveAction}
         />
       )}
-      {editingStep && editingStep.title === 'App Event' && (
+      {editingStepInfo && editingStepInfo.step.title === 'App Event' && (
         <EditAppTriggerDialog
-            step={editingStep}
-            open={!!editingStep}
-            onOpenChange={(isOpen) => !isOpen && setEditingStep(null)}
+            step={editingStepInfo.step}
+            open={!!editingStepInfo}
+            onOpenChange={(isOpen) => !isOpen && setEditingStepInfo(null)}
             onSave={handleSaveAction}
         />
       )}
-      {editingStep && editingStep.title === 'App Action' && (
+      {editingStepInfo && editingStepInfo.step.title === 'App Action' && (
         <EditAppActionDialog
-            step={editingStep}
-            open={!!editingStep}
-            onOpenChange={(isOpen) => !isOpen && setEditingStep(null)}
+            step={editingStepInfo.step}
+            open={!!editingStepInfo}
+            onOpenChange={(isOpen) => !isOpen && setEditingStepInfo(null)}
             onSave={handleSaveAction}
         />
       )}
-      {editingStep && editingStep.title === 'API Request' && (
+      {editingStepInfo && editingStepInfo.step.title === 'API Request' && (
         <EditApiRequestDialog
-            step={editingStep}
-            open={!!editingStep}
-            onOpenChange={(isOpen) => !isOpen && setEditingStep(null)}
+            step={editingStepInfo.step}
+            dataContext={editingStepInfo.dataContext}
+            open={!!editingStepInfo}
+            onOpenChange={(isOpen) => !isOpen && setEditingStepInfo(null)}
             onSave={handleSaveAction}
         />
       )}
       <EditCustomCodeDialog
-        step={editingStep}
-        open={!!editingStep && (editingStep.title === 'Custom Code' || editingStep.title === 'Custom AI Function')}
-        onOpenChange={(isOpen) => !isOpen && setEditingStep(null)}
+        step={editingStepInfo?.step}
+        open={!!editingStepInfo && (editingStepInfo.step.title === 'Custom Code' || editingStepInfo.step.title === 'Custom AI Function')}
+        onOpenChange={(isOpen) => !isOpen && setEditingStepInfo(null)}
         onSave={handleSaveAction}
       />
       <EditWaitDialog
-        step={editingStep}
-        open={!!editingStep && editingStep.title === 'Wait'}
-        onOpenChange={(isOpen) => !isOpen && setEditingStep(null)}
+        step={editingStepInfo?.step}
+        open={!!editingStepInfo && editingStepInfo.step.title === 'Wait'}
+        onOpenChange={(isOpen) => !isOpen && setEditingStepInfo(null)}
         onSave={handleSaveAction}
       />
       <EditConditionDialog
-        step={editingStep}
-        open={!!editingStep && editingStep.title === 'Condition'}
-        onOpenChange={(isOpen) => !isOpen && setEditingStep(null)}
+        step={editingStepInfo?.step}
+        open={!!editingStepInfo && editingStepInfo.step.title === 'Condition'}
+        onOpenChange={(isOpen) => !isOpen && setEditingStepInfo(null)}
         onSave={handleSaveAction}
       />
     </SidebarProvider>
