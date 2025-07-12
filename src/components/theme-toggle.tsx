@@ -38,26 +38,22 @@ export function ThemeToggle({ inMenu = false }: { inMenu?: boolean}) {
   }
 
   const handleModeChange = (modeName: string) => {
+    document.body.classList.remove('theme-rose', 'theme-green', 'theme-blue', 'theme-orange');
+    document.body.classList.add(`theme-${colorName}`);
     setTheme(`${modeName}-${color}`);
   }
-
-  React.useEffect(() => {
-    const body = window.document.body;
-    body.classList.remove('theme-rose', 'theme-green', 'theme-blue', 'theme-orange');
-    body.classList.add(`theme-${color}`);
-  }, [color]);
-
+  
   const modeContent = (
     <>
-      <DropdownMenuItem onClick={() => handleModeChange("light")}>
+      <DropdownMenuItem onClick={() => setTheme(`light-${color}`)}>
         <Sun className="mr-2 h-4 w-4" />
         <span>Light</span>
       </DropdownMenuItem>
-      <DropdownMenuItem onClick={() => handleModeChange("dark")}>
+      <DropdownMenuItem onClick={() => setTheme(`dark-${color}`)}>
         <Moon className="mr-2 h-4 w-4" />
         <span>Dark</span>
       </DropdownMenuItem>
-      <DropdownMenuItem onClick={() => handleModeChange("system")}>
+      <DropdownMenuItem onClick={() => setTheme(`system-${color}`)}>
         <Laptop className="mr-2 h-4 w-4" />
         <span>System</span>
       </DropdownMenuItem>
@@ -67,7 +63,11 @@ export function ThemeToggle({ inMenu = false }: { inMenu?: boolean}) {
   const colorContent = (
     <>
       {colorThemes.map((colorTheme) => (
-        <DropdownMenuItem key={colorTheme.name} onClick={() => handleColorChange(colorTheme.name)}>
+        <DropdownMenuItem key={colorTheme.name} onClick={() => {
+            document.body.classList.remove('theme-rose', 'theme-green', 'theme-blue', 'theme-orange');
+            document.body.classList.add(`theme-${colorTheme.name}`);
+            setTheme(`${mode}-${colorTheme.name}`)
+        }}>
             <div className={cn("w-4 h-4 rounded-full mr-2", colorTheme.color)} />
             <span>{colorTheme.label}</span>
         </DropdownMenuItem>
