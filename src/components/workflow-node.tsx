@@ -30,7 +30,6 @@ const iconMap: Record<IconName, React.ElementType> = {
   Database: icons.Database,
   ArrowRightLeft: icons.ArrowRightLeft,
   GitBranch: icons.GitBranch,
-  Filter: icons.Filter,
   Clock: icons.Clock,
   ShoppingCart: icons.ShoppingCart,
   StopCircle: icons.StopCircle,

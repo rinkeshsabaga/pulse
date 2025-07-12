@@ -51,6 +51,7 @@ import { EditAppActionDialog } from './edit-app-action-dialog';
 import { EditConditionDialog } from './edit-condition-dialog';
 import { EditCronJobDialog } from './edit-cron-job-dialog';
 import { EditSendEmailDialog } from './edit-send-email-dialog';
+import { EditDatabaseQueryDialog } from './edit-database-query-dialog';
 import type { Workflow as WorkflowType, WorkflowStepData, IconName, Case } from '@/lib/types';
 import { updateWorkflow } from '@/lib/db';
 import { v4 as uuidv4 } from 'uuid';
@@ -134,6 +135,16 @@ export function DashboardLayout({ workflow }: { workflow: WorkflowType }) {
           auth: { type: 'none' },
           headers: [],
           body: { type: 'none', content: '' }
+        };
+    }
+
+    if (newStep.type === 'action' && newStep.title === 'Database Query') {
+        newStep.description = 'Click Edit to write a query';
+        newStep.data = {
+          databaseQueryData: {
+            credentialId: '',
+            query: 'SELECT * FROM users LIMIT 10;',
+          }
         };
     }
     
@@ -375,6 +386,15 @@ export function DashboardLayout({ workflow }: { workflow: WorkflowType }) {
       )}
       {editingStepInfo && editingStepInfo.step.title === 'API Request' && (
         <EditApiRequestDialog
+            step={editingStepInfo.step}
+            dataContext={editingStepInfo.dataContext}
+            open={!!editingStepInfo}
+            onOpenChange={(isOpen) => !isOpen && setEditingStepInfo(null)}
+            onSave={handleSaveAction}
+        />
+      )}
+      {editingStepInfo && editingStepInfo.step.title === 'Database Query' && (
+        <EditDatabaseQueryDialog
             step={editingStepInfo.step}
             dataContext={editingStepInfo.dataContext}
             open={!!editingStepInfo}

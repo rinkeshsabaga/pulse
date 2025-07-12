@@ -9,7 +9,6 @@ export type IconName =
   | 'Database'
   | 'ArrowRightLeft'
   | 'GitBranch'
-  | 'Filter'
   | 'Clock'
   | 'ShoppingCart'
   | 'StopCircle'
@@ -97,6 +96,11 @@ export type EmailData = {
     body: string;
 };
 
+export type DatabaseQueryData = {
+  credentialId: string;
+  query: string;
+};
+
 export type ApiRequestData = {
     webhookUrl?: string; // for trigger
     events?: WebhookEvent[];
@@ -141,6 +145,8 @@ export type ApiRequestData = {
     conditionData?: ConditionData;
     // for Email action
     emailData?: EmailData;
+    // for Database Query action
+    databaseQueryData?: DatabaseQueryData;
 }
 
 
