@@ -22,6 +22,9 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import type { WorkflowStepData } from '@/lib/types';
 import { Code, FlaskConical } from 'lucide-react';
+import { VariableExplorer } from './variable-explorer';
+import { ScrollArea } from './ui/scroll-area';
+import { JsonTreeView } from './json-tree-view';
 
 type EditCustomCodeDialogProps = {
   step: WorkflowStepData | null;
@@ -36,6 +39,7 @@ export function EditCustomCodeDialog({
   open,
   onOpenChange,
   onSave,
+  dataContext = {},
 }: EditCustomCodeDialogProps) {
   const [code, setCode] = useState('');
   const [language, setLanguage] = useState('typescript');
@@ -67,10 +71,21 @@ export function EditCustomCodeDialog({
 
   const isAiFunction = step.title === 'Custom AI Function';
   const Icon = isAiFunction ? FlaskConical : Code;
+  
+  const getContextAccessSyntax = () => {
+      switch(language) {
+          case 'python':
+              return 'context.get("trigger", {}).get("body", {})';
+          case 'javascript':
+          case 'typescript':
+          default:
+              return 'context.trigger?.body';
+      }
+  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-3xl grid-rows-[auto_1fr_auto]">
+      <DialogContent className="sm:max-w-4xl grid-rows-[auto_1fr_auto] max-h-[90vh]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 font-headline">
             <Icon className="text-primary" />
@@ -78,30 +93,53 @@ export function EditCustomCodeDialog({
           </DialogTitle>
           <DialogDescription>{step.description}</DialogDescription>
         </DialogHeader>
-        <div className="space-y-4 py-4 max-h-[70vh] overflow-y-auto pr-2">
-          <div className="space-y-2">
-            <Label htmlFor="language">Language</Label>
-            <Select value={language} onValueChange={setLanguage}>
-              <SelectTrigger id="language" className="w-48">
-                <SelectValue placeholder="Select a language" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="typescript">TypeScript</SelectItem>
-                <SelectItem value="javascript">JavaScript</SelectItem>
-                <SelectItem value="python">Python</SelectItem>
-              </SelectContent>
-            </Select>
+        <div className="grid md:grid-cols-2 gap-6 py-4 flex-1 min-h-0">
+          {/* Left Column: Editor */}
+          <div className="flex flex-col gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="language">Language</Label>
+              <Select value={language} onValueChange={setLanguage}>
+                <SelectTrigger id="language" className="w-48">
+                  <SelectValue placeholder="Select a language" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="typescript">TypeScript</SelectItem>
+                  <SelectItem value="javascript">JavaScript</SelectItem>
+                  <SelectItem value="python">Python</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2 flex-1 flex flex-col">
+              <Label htmlFor="code-editor">Code</Label>
+              <Textarea
+                id="code-editor"
+                placeholder="// Your custom code goes here"
+                rows={15}
+                value={code}
+                onChange={(e) => setCode(e.target.value)}
+                className="font-code text-sm bg-muted/50 h-full"
+              />
+            </div>
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="code-editor">Code</Label>
-            <Textarea
-              id="code-editor"
-              placeholder="// Your custom code goes here"
-              rows={15}
-              value={code}
-              onChange={(e) => setCode(e.target.value)}
-              className="font-code text-sm bg-muted/50"
-            />
+          {/* Right Column: Context Explorer */}
+          <div className="flex flex-col gap-4">
+            <div className="space-y-2">
+              <Label>Available Data</Label>
+              <p className="text-sm text-muted-foreground">
+                Access data from previous steps via the `context` object. Click a path to copy it. Example: <code className="text-xs bg-muted p-1 rounded-sm">{getContextAccessSyntax()}</code>
+              </p>
+            </div>
+            <ScrollArea className="border rounded-md flex-1 bg-muted/30">
+               <div className="p-4">
+                 {Object.keys(dataContext).length > 0 ? (
+                    <JsonTreeView data={dataContext} />
+                 ) : (
+                    <div className="flex items-center justify-center h-full text-sm text-muted-foreground p-10 text-center">
+                        <p>No data from previous steps is available.</p>
+                    </div>
+                 )}
+               </div>
+            </ScrollArea>
           </div>
         </div>
         <DialogFooter>
