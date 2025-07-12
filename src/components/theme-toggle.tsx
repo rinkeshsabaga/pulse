@@ -41,6 +41,12 @@ export function ThemeToggle({ inMenu = false }: { inMenu?: boolean}) {
     setTheme(`${modeName}-${color}`);
   }
 
+  React.useEffect(() => {
+    const body = window.document.body;
+    body.classList.remove('theme-rose', 'theme-green', 'theme-blue', 'theme-orange');
+    body.classList.add(`theme-${color}`);
+  }, [color]);
+
   const modeContent = (
     <>
       <DropdownMenuItem onClick={() => handleModeChange("light")}>
