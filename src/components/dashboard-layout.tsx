@@ -50,6 +50,7 @@ import { EditAppTriggerDialog } from './edit-app-trigger-dialog';
 import { EditAppActionDialog } from './edit-app-action-dialog';
 import { EditConditionDialog } from './edit-condition-dialog';
 import { EditCronJobDialog } from './edit-cron-job-dialog';
+import { EditSendEmailDialog } from './edit-send-email-dialog';
 import type { Workflow as WorkflowType, WorkflowStepData, IconName, Case } from '@/lib/types';
 import { updateWorkflow } from '@/lib/db';
 import { v4 as uuidv4 } from 'uuid';
@@ -147,6 +148,18 @@ export function DashboardLayout({ workflow }: { workflow: WorkflowType }) {
             waitMode: 'duration',
             waitDurationValue: 5,
             waitDurationUnit: 'minutes'
+        };
+    }
+    
+    if (newStep.title === 'Send Email') {
+        newStep.description = 'Click Edit to compose email';
+        newStep.data = {
+            emailData: {
+                to: '',
+                from: 'noreply@sabagapulse.com',
+                subject: '',
+                body: ''
+            }
         };
     }
 
@@ -362,6 +375,15 @@ export function DashboardLayout({ workflow }: { workflow: WorkflowType }) {
       )}
       {editingStepInfo && editingStepInfo.step.title === 'API Request' && (
         <EditApiRequestDialog
+            step={editingStepInfo.step}
+            dataContext={editingStepInfo.dataContext}
+            open={!!editingStepInfo}
+            onOpenChange={(isOpen) => !isOpen && setEditingStepInfo(null)}
+            onSave={handleSaveAction}
+        />
+      )}
+      {editingStepInfo && editingStepInfo.step.title === 'Send Email' && (
+        <EditSendEmailDialog
             step={editingStepInfo.step}
             dataContext={editingStepInfo.dataContext}
             open={!!editingStepInfo}

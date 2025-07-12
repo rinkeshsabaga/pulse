@@ -90,6 +90,13 @@ export type WebhookEvent = {
   body: any;
 };
 
+export type EmailData = {
+    to: string;
+    from: string;
+    subject: string;
+    body: string;
+};
+
 export type ApiRequestData = {
     webhookUrl?: string; // for trigger
     events?: WebhookEvent[];
@@ -132,6 +139,8 @@ export type ApiRequestData = {
     waitSpecificTime?: string; // HH:mm
     // for Condition action
     conditionData?: ConditionData;
+    // for Email action
+    emailData?: EmailData;
 }
 
 
