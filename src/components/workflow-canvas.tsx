@@ -132,7 +132,7 @@ function WorkflowCanvasComponent({
   }, [setSteps, toast]);
 
   const handleEditStep = useCallback((stepToEdit: WorkflowStepData) => {
-    if (stepToEdit.type === 'trigger' || stepToEdit.title.includes('Action') || stepToEdit.title === 'API Request' || stepToEdit.title === 'Custom Code' || stepToEdit.title === 'Wait' || stepToEdit.title === 'Condition' || stepToEdit.title === 'Send Email') {
+    if (stepToEdit.type === 'trigger' || stepToEdit.title.includes('Action') || stepToEdit.title === 'API Request' || stepToEdit.title === 'Custom Code' || stepToEdit.title === 'Wait' || stepToEdit.title === 'Condition' || stepToEdit.title === 'Send Email' || stepToEdit.title === 'Database Query') {
       onEditStep(stepToEdit, dataContext);
     } else {
       toast({
@@ -149,6 +149,7 @@ function WorkflowCanvasComponent({
       ...node,
       data: {
         step: node.data.step,
+        layout: layout,
         onEdit: () => handleEditStep(node.data.step),
         onDelete: () => handleDeleteStep(node.id),
       }

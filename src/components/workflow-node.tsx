@@ -40,13 +40,16 @@ const iconMap: Record<IconName, React.ElementType> = {
 const HANDLE_BASE_TOP = 45; // Starting top percentage
 const HANDLE_SPACING = 25; // Spacing between handles in pixels
 
-const WorkflowNode = memo(({ data }: NodeProps<{ step: WorkflowStepData; onEdit: () => void; onDelete: () => void; }>) => {
-  const { step, onEdit, onDelete } = data;
+const WorkflowNode = memo(({ data }: NodeProps<{ step: WorkflowStepData; layout: 'horizontal' | 'vertical'; onEdit: () => void; onDelete: () => void; }>) => {
+  const { step, layout, onEdit, onDelete } = data;
   const isTrigger = step.type === 'trigger';
   const isEndNode = step.title === 'End Automation';
   const isConditional = step.title === 'Condition';
   
   const cases = step.data?.conditionData?.cases || [];
+
+  const sourcePosition = layout === 'vertical' ? Position.Bottom : Position.Right;
+  const targetPosition = layout === 'vertical' ? Position.Top : Position.Left;
 
   const statusClasses = {
     success: 'border-success',
@@ -58,50 +61,86 @@ const WorkflowNode = memo(({ data }: NodeProps<{ step: WorkflowStepData; onEdit:
   const Icon = iconMap[step.icon];
 
   const renderHandles = () => {
-    if (!isConditional) {
+    // For vertical layout, conditional handles need a different logic
+    if (isConditional && layout === 'vertical') {
+      const totalHandles = cases.length + 1;
+      const handleGap = 100 / (totalHandles + 1);
+       return (
+         <>
+          {cases.map((caseItem: Case, index: number) => (
+             <React.Fragment key={caseItem.id}>
+               <Handle
+                  type="source"
+                  position={Position.Bottom}
+                  id={caseItem.name}
+                  style={{ left: `${(index + 1) * handleGap}%` }}
+                  className="!bg-primary"
+              />
+              <div className="absolute text-xs text-foreground font-semibold" style={{ bottom: -25, left: `${(index + 1) * handleGap}%`, transform: 'translateX(-50%)' }}>
+                  {caseItem.name}
+              </div>
+             </React.Fragment>
+          ))}
+           <React.Fragment>
+              <Handle
+                  type="source"
+                  position={Position.Bottom}
+                  id="default"
+                  style={{ left: `${(cases.length + 1) * handleGap}%` }}
+                  className="!bg-muted-foreground"
+              />
+               <div className="absolute text-xs text-muted-foreground font-semibold" style={{ bottom: -25, left: `${(cases.length + 1) * handleGap}%`, transform: 'translateX(-50%)' }}>
+                  Default
+              </div>
+           </React.Fragment>
+        </>
+       )
+    }
+
+    if (isConditional && layout === 'horizontal') {
+      const totalHandles = cases.length + 1; // cases + default
+      const totalHeight = totalHandles * HANDLE_SPACING;
+      const startTop = `calc(50% - ${totalHeight / 2}px)`;
+
       return (
-         <Handle
-          type="source"
-          position={Position.Right}
-          className="!bg-muted-foreground/80"
-          style={{ visibility: isEndNode ? 'hidden' : 'visible' }}
-        />
+        <>
+          {cases.map((caseItem: Case, index: number) => (
+            <React.Fragment key={caseItem.id}>
+              <Handle
+                  type="source"
+                  position={Position.Right}
+                  id={caseItem.name}
+                  style={{ top: `calc(${startTop} + ${index * HANDLE_SPACING}px)` }}
+                  className="!bg-primary"
+              />
+              <div className="absolute right-[-70px] text-xs text-foreground font-semibold" style={{ top: `calc(${startTop} + ${index * HANDLE_SPACING}px)`, transform: 'translateY(-50%)' }}>
+                  {caseItem.name}
+              </div>
+            </React.Fragment>
+          ))}
+          <React.Fragment>
+              <Handle
+                  type="source"
+                  position={Position.Right}
+                  id="default"
+                  style={{ top: `calc(${startTop} + ${cases.length * HANDLE_SPACING}px)` }}
+                  className="!bg-muted-foreground"
+              />
+              <div className="absolute right-[-70px] text-xs text-muted-foreground font-semibold" style={{ top: `calc(${startTop} + ${cases.length * HANDLE_SPACING}px)`, transform: 'translateY(-50%)' }}>
+                  Default
+              </div>
+          </React.Fragment>
+        </>
       );
     }
     
-    const totalHandles = cases.length + 1; // cases + default
-    const totalHeight = totalHandles * HANDLE_SPACING;
-    const startTop = `calc(50% - ${totalHeight / 2}px)`;
-
     return (
-      <>
-        {cases.map((caseItem: Case, index: number) => (
-           <React.Fragment key={caseItem.id}>
-             <Handle
-                type="source"
-                position={Position.Right}
-                id={caseItem.name}
-                style={{ top: `calc(${startTop} + ${index * HANDLE_SPACING}px)` }}
-                className="!bg-primary"
-            />
-            <div className="absolute right-[-70px] text-xs text-foreground font-semibold" style={{ top: `calc(${startTop} + ${index * HANDLE_SPACING}px)`, transform: 'translateY(-50%)' }}>
-                {caseItem.name}
-            </div>
-           </React.Fragment>
-        ))}
-         <React.Fragment>
-            <Handle
-                type="source"
-                position={Position.Right}
-                id="default"
-                style={{ top: `calc(${startTop} + ${cases.length * HANDLE_SPACING}px)` }}
-                className="!bg-muted-foreground"
-            />
-             <div className="absolute right-[-70px] text-xs text-muted-foreground font-semibold" style={{ top: `calc(${startTop} + ${cases.length * HANDLE_SPACING}px)`, transform: 'translateY(-50%)' }}>
-                Default
-            </div>
-         </React.Fragment>
-      </>
+        <Handle
+        type="source"
+        position={sourcePosition}
+        className="!bg-muted-foreground/80"
+        style={{ visibility: isEndNode ? 'hidden' : 'visible' }}
+        />
     );
   }
 
@@ -109,7 +148,7 @@ const WorkflowNode = memo(({ data }: NodeProps<{ step: WorkflowStepData; onEdit:
     <>
       <Handle
         type="target"
-        position={Position.Left}
+        position={targetPosition}
         className="!bg-muted-foreground/80"
         isConnectable={!isTrigger}
         style={{ visibility: isTrigger ? 'hidden' : 'visible' }}
