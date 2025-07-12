@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useCallback, useEffect, useMemo } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import ReactFlow, {
   addEdge,
   Background,
@@ -33,6 +33,16 @@ import {
   LayoutGrid,
   List,
 } from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { Separator } from './ui/separator';
 import type { WorkflowStepData } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
@@ -110,6 +120,7 @@ function WorkflowCanvasComponent({
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
   const [layout, setLayout] = React.useState<'horizontal' | 'vertical'>('horizontal');
+  const [isClearDialogOpen, setIsClearDialogOpen] = useState(false);
   const { toast } = useToast();
   
   const dataContext = useMemo(() => {
@@ -164,8 +175,14 @@ function WorkflowCanvasComponent({
     (params: Connection | Edge) => setEdges((eds) => addEdge(params, eds)),
     [setEdges]
   );
+  
+  const handleConfirmClear = () => {
+    onCreateNewWorkflow();
+    setIsClearDialogOpen(false);
+  }
 
   return (
+    <>
     <div className="flex h-full flex-col space-y-6">
       <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
         <div className="flex-1 space-y-1">
@@ -215,7 +232,7 @@ function WorkflowCanvasComponent({
               <span className="sr-only">Vertical Layout</span>
             </Button>
           </div>
-          <Button variant="outline" onClick={onCreateNewWorkflow}>
+          <Button variant="outline" onClick={() => setIsClearDialogOpen(true)}>
             <Plus className="mr-2 h-4 w-4" />
             Clear Canvas
           </Button>
@@ -259,6 +276,29 @@ function WorkflowCanvasComponent({
         )}
       </div>
     </div>
+    <AlertDialog 
+        open={isClearDialogOpen} 
+        onOpenChange={setIsClearDialogOpen}
+    >
+        <AlertDialogContent>
+            <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+                This action cannot be undone. This will permanently remove all steps from the canvas.
+            </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleConfirmClear} 
+              className="bg-destructive hover:bg-destructive/90"
+            >
+              Clear Canvas
+            </AlertDialogAction>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+    </AlertDialog>
+    </>
   );
 }
 
