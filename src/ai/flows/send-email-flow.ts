@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview A flow to handle sending emails.
@@ -10,7 +11,7 @@
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 
-export const SendEmailInputSchema = z.object({
+const SendEmailInputSchema = z.object({
   to: z.string().email().describe('The recipient email address.'),
   from: z.string().email().describe('The sender email address.'),
   subject: z.string().describe('The subject of the email.'),
@@ -18,7 +19,7 @@ export const SendEmailInputSchema = z.object({
 });
 export type SendEmailInput = z.infer<typeof SendEmailInputSchema>;
 
-export const SendEmailOutputSchema = z.object({
+const SendEmailOutputSchema = z.object({
   success: z.boolean().describe('Whether the email was sent successfully.'),
   messageId: z.string().describe('The unique ID of the sent email.'),
 });
