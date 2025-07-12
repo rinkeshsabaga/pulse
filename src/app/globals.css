@@ -6,7 +6,7 @@
 @tailwind utilities;
 
 @layer base {
-  :root, .theme-rose {
+  body.theme-rose {
     --background: 240 25% 98%;
     --foreground: 224 71% 4%;
     --card: 0 0% 100%;
@@ -45,7 +45,7 @@
     --sidebar-ring: 346.8 77.2% 49.8%;
   }
  
-  .dark, .dark.theme-rose {
+  .dark.theme-rose {
     --background: 222 47% 11%;
     --foreground: 210 40% 98%;
     --card: 222 47% 14%;
@@ -83,7 +83,7 @@
     --sidebar-ring: 346.8 77.2% 49.8%;
   }
 
-  .theme-green {
+  body.theme-green {
     --primary: 142.1 76.2% 36.3%;
     --primary-foreground: 144.9 80.4% 97.3%;
     --accent: 142.1 76.2% 36.3%;
@@ -105,7 +105,7 @@
     --sidebar-ring: 142.1 70.6% 45.3%;
   }
 
-  .theme-blue {
+  body.theme-blue {
     --primary: 217.2 91.2% 59.8%;
     --primary-foreground: 222.9 100% 97.5%;
     --accent: 217.2 91.2% 59.8%;
@@ -127,7 +127,7 @@
     --sidebar-ring: 217.2 91.2% 59.8%;
   }
   
-  .theme-orange {
+  body.theme-orange {
     --primary: 24.6 95% 53.1%;
     --primary-foreground: 25.7 100% 97.3%;
     --accent: 24.6 95% 53.1%;

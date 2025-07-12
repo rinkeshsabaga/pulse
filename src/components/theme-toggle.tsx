@@ -31,18 +31,14 @@ const colorThemes = [
 export function ThemeToggle({ inMenu = false }: { inMenu?: boolean}) {
   const { setTheme, theme } = useTheme()
 
+  const [mode, color] = theme?.split('-') || ['system', 'rose'];
+
   const handleColorChange = (colorName: string) => {
-    const currentThemeParts = theme?.split('-') || ['system'];
-    const mode = currentThemeParts[0];
-    const newTheme = `${mode}-${colorName}`;
-    setTheme(newTheme);
+    setTheme(`${mode}-${colorName}`);
   }
 
-  const handleModeChange = (mode: string) => {
-    const currentThemeParts = theme?.split('-') || ['system', 'rose'];
-    const color = currentThemeParts[1] || 'rose';
-    const newTheme = `${mode}-${color}`;
-    setTheme(newTheme);
+  const handleModeChange = (modeName: string) => {
+    setTheme(`${modeName}-${color}`);
   }
 
   const modeContent = (
