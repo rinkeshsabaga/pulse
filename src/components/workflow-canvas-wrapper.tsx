@@ -14,6 +14,7 @@ import { EditConditionDialog } from './edit-condition-dialog';
 import { EditCronJobDialog } from './edit-cron-job-dialog';
 import { EditSendEmailDialog } from './edit-send-email-dialog';
 import { EditDatabaseQueryDialog } from './edit-database-query-dialog';
+import { EditParallelDialog } from './edit-parallel-dialog';
 import type { Workflow as WorkflowType, WorkflowStepData, IconName, WorkflowVersion } from '@/lib/types';
 import { v4 as uuidv4 } from 'uuid';
 import { DashboardLayout } from './dashboard-layout';
@@ -124,13 +125,17 @@ export function WorkflowCanvasWrapper({ workflow: initialWorkflow }: WorkflowCan
         newStep.description = 'Click Edit to set conditions';
         newStep.data = { conditionData: { cases: [{ id: uuidv4(), name: 'Case 1', logicalOperator: 'AND', rules: [{ id: uuidv4(), variable: '', operator: 'equals', value: '' }] }] } };
     }
-     if (newStep.title === 'Parallel' || newStep.title === 'Filter') {
+     if (newStep.title === 'Parallel') {
+        newStep.description = 'Click Edit to configure branches';
+        newStep.data = { branches: [{ id: uuidv4(), name: 'Branch 1'}, {id: uuidv4(), name: 'Branch 2'}] };
+    }
+     if (newStep.title === 'Filter') {
         newStep.description = 'Functionality not yet implemented';
     }
 
 
     handleSetSteps(prev => [...prev, newStep]);
-  }, [handleSetSteps, toast]);
+  }, [handleSetSteps]);
 
   const handleFunctionGenerated = (code: string, language: string, intent: string) => {
     const newStep = {
@@ -258,6 +263,15 @@ export function WorkflowCanvasWrapper({ workflow: initialWorkflow }: WorkflowCan
                 step={editingStepInfo.step}
                 allSteps={steps}
                 dataContext={editingStepInfo.dataContext}
+                open={!!editingStepInfo}
+                onOpenChange={(isOpen) => !isOpen && setEditingStepInfo(null)}
+                onSave={handleSaveAction}
+            />
+        )}
+        {editingStepInfo && editingStepInfo.step.title === 'Parallel' && (
+             <EditParallelDialog
+                step={editingStepInfo.step}
+                allSteps={steps}
                 open={!!editingStepInfo}
                 onOpenChange={(isOpen) => !isOpen && setEditingStepInfo(null)}
                 onSave={handleSaveAction}

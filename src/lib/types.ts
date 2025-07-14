@@ -185,6 +185,16 @@ export type ConditionData = {
   defaultNextStepId?: string;
 };
 
+export type ParallelBranch = {
+  id: string;
+  name: string;
+  nextStepId?: string;
+};
+
+export type ParallelData = {
+  branches: ParallelBranch[];
+};
+
 export const RunWorkflowInputSchema = z.object({
   steps: z.any().describe("An array of workflow step objects."),
 });
@@ -198,7 +208,7 @@ export const RunWorkflowOutputSchema = z.object({
 export type RunWorkflowOutput = z.infer<typeof RunWorkflowOutputSchema>;
 
 
-export type StepData = WaitData & ShopifyTriggerData & ApiRequestData & EmailData & DatabaseQueryData & AppTriggerData & AppActionData & ConditionData & {
+export type StepData = WaitData & ShopifyTriggerData & ApiRequestData & EmailData & DatabaseQueryData & AppTriggerData & AppActionData & ConditionData & ParallelData & {
     nextStepId?: string;
     webhookUrl?: string;
     events?: WebhookEvent[];

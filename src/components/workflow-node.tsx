@@ -50,6 +50,8 @@ const WorkflowNode = memo(({ data, id }: NodeProps<NodeData>) => {
   const isTrigger = step.type === 'trigger';
   const isEndNode = step.title === 'End Automation';
   const isConditionNode = step.title === 'If/Else' || step.title === 'Switch';
+  const isParallelNode = step.title === 'Parallel';
+
 
   const sourcePosition = Position.Bottom;
   const targetPosition = Position.Top;
@@ -63,11 +65,19 @@ const WorkflowNode = memo(({ data, id }: NodeProps<NodeData>) => {
 
   const Icon = iconMap[step.icon];
 
-  const caseHandles = isConditionNode ? step.data?.conditionData?.cases || [] : [];
-  const handleHeight = 25; // height of each handle area
-  const totalHandlesHeight = (caseHandles.length + 1) * handleHeight;
-  const startY = `calc(50% - ${totalHandlesHeight / 2}px)`;
+  const multiOutputHandles = isConditionNode 
+    ? step.data?.conditionData?.cases?.map(c => ({ id: c.id, name: c.name, isDefault: false })) || []
+    : isParallelNode
+    ? step.data?.branches?.map(b => ({ id: b.id, name: b.name, isDefault: false })) || []
+    : [];
+  
+  if (isConditionNode) {
+    multiOutputHandles.push({ id: 'default', name: 'Default', isDefault: true });
+  }
 
+  const handleHeight = 25; // height of each handle area
+  const totalHandlesHeight = multiOutputHandles.length * handleHeight;
+  const startY = `calc(50% - ${totalHandlesHeight / 2}px)`;
 
   return (
     <>
@@ -124,7 +134,7 @@ const WorkflowNode = memo(({ data, id }: NodeProps<NodeData>) => {
         </CardHeader>
       </Card>
       
-      {!isConditionNode && (
+      {!isConditionNode && !isParallelNode && (
           <Handle
             type="source"
             position={sourcePosition}
@@ -134,49 +144,30 @@ const WorkflowNode = memo(({ data, id }: NodeProps<NodeData>) => {
           />
       )}
       
-       {isConditionNode && (
-        <div className="absolute top-0 right-0 h-full w-px">
-            {caseHandles.map((caseItem, index) => (
-                <React.Fragment key={caseItem.id}>
+       {(isConditionNode || isParallelNode) && (
+        <>
+            {multiOutputHandles.map((handle, index) => (
+                <React.Fragment key={handle.id}>
                     <Handle
                         type="source"
                         position={Position.Right}
-                        id={caseItem.id}
+                        id={handle.id}
                         style={{ top: `calc(${startY} + ${index * handleHeight}px)`, zIndex: 10 }}
-                        className="!bg-green-500"
+                        className={cn("!bg-primary", handle.isDefault && "!bg-gray-500")}
                     />
-                    <div 
+                     <div 
                         className="absolute text-xs bg-background p-1 rounded-md border text-muted-foreground w-max pointer-events-none"
                         style={{ 
-                            left: '1.5rem', 
+                            left: 'calc(100% + 0.75rem)', 
                             top: `calc(${startY} + ${index * handleHeight}px)`,
                             transform: 'translateY(-50%)' 
                         }}
                     >
-                        {caseItem.name}
+                        {handle.name}
                     </div>
                 </React.Fragment>
             ))}
-            <React.Fragment>
-                <Handle
-                    type="source"
-                    position={Position.Right}
-                    id="default"
-                    style={{ top: `calc(${startY} + ${caseHandles.length * handleHeight}px)`, zIndex: 10 }}
-                    className="!bg-gray-500"
-                />
-                 <div 
-                    className="absolute text-xs bg-background p-1 rounded-md border text-muted-foreground w-max pointer-events-none"
-                    style={{ 
-                        left: '1.5rem', 
-                        top: `calc(${startY} + ${caseHandles.length * handleHeight}px)`,
-                        transform: 'translateY(-50%)' 
-                    }}
-                >
-                    Default
-                </div>
-            </React.Fragment>
-        </div>
+        </>
       )}
     </>
   );
