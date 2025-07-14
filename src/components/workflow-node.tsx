@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import React, { memo } from 'react';
@@ -37,7 +38,6 @@ const iconMap: Record<IconName, React.ElementType> = {
   AppWindow: icons.AppWindow,
 };
 
-const HANDLE_BASE_TOP = 45; // Starting top percentage
 const HANDLE_SPACING = 25; // Spacing between handles in pixels
 
 const WorkflowNode = memo(({ data }: NodeProps<{ step: WorkflowStepData; layout: 'horizontal' | 'vertical'; onEdit: () => void; onDelete: () => void; }>) => {
@@ -60,14 +60,11 @@ const WorkflowNode = memo(({ data }: NodeProps<{ step: WorkflowStepData; layout:
 
   const Icon = iconMap[step.icon];
 
-  const renderHandles = () => {
-    if (isEndNode) {
-        return null; // Do not render any source handles for the end node.
-    }
+  const renderConditionalHandles = () => {
+    if (!isConditional) return null;
 
-    // For vertical layout, conditional handles need a different logic
-    if (isConditional && layout === 'vertical') {
-      const totalHandles = cases.length + 1;
+    if (layout === 'vertical') {
+      const totalHandles = cases.length + 1; // cases + default
       const handleGap = 100 / (totalHandles + 1);
        return (
          <>
@@ -101,49 +98,38 @@ const WorkflowNode = memo(({ data }: NodeProps<{ step: WorkflowStepData; layout:
        )
     }
 
-    if (isConditional && layout === 'horizontal') {
-      const totalHandles = cases.length + 1; // cases + default
-      const totalHeight = totalHandles * HANDLE_SPACING;
-      const startTop = `calc(50% - ${totalHeight / 2}px)`;
+    // Horizontal layout for conditional
+    const totalHandles = cases.length + 1;
+    const totalHeight = totalHandles * HANDLE_SPACING;
+    const startTop = `calc(50% - ${totalHeight / 2}px)`;
 
-      return (
-        <>
-          {cases.map((caseItem: Case, index: number) => (
-            <React.Fragment key={caseItem.id}>
-              <Handle
-                  type="source"
-                  position={Position.Right}
-                  id={caseItem.name}
-                  style={{ top: `calc(${startTop} + ${index * HANDLE_SPACING}px)` }}
-                  className="!bg-primary"
-              />
-              <div className="absolute right-[-70px] text-xs text-foreground font-semibold" style={{ top: `calc(${startTop} + ${index * HANDLE_SPACING}px)`, transform: 'translateY(-50%)' }}>
-                  {caseItem.name}
-              </div>
-            </React.Fragment>
-          ))}
-          <React.Fragment>
-              <Handle
-                  type="source"
-                  position={Position.Right}
-                  id="default"
-                  style={{ top: `calc(${startTop} + ${cases.length * HANDLE_SPACING}px)` }}
-                  className="!bg-muted-foreground"
-              />
-              <div className="absolute right-[-70px] text-xs text-muted-foreground font-semibold" style={{ top: `calc(${startTop} + ${cases.length * HANDLE_SPACING}px)`, transform: 'translateY(-50%)' }}>
-                  Default
-              </div>
-          </React.Fragment>
-        </>
-      );
-    }
-    
     return (
+      <>
+        {cases.map((caseItem: Case, index: number) => (
+          <React.Fragment key={caseItem.id}>
+            <Handle
+                type="source"
+                position={Position.Right}
+                id={caseItem.name}
+                style={{ top: `calc(${startTop} + ${index * HANDLE_SPACING}px)` }}
+                className="!bg-primary"
+            />
+            <div className="absolute right-[-70px] text-xs text-foreground font-semibold" style={{ top: `calc(${startTop} + ${index * HANDLE_SPACING}px)`, transform: 'translateY(-50%)' }}>
+                {caseItem.name}
+            </div>
+          </React.Fragment>
+        ))}
         <Handle
             type="source"
-            position={sourcePosition}
-            className="!bg-muted-foreground/80"
+            position={Position.Right}
+            id="default"
+            style={{ top: `calc(${startTop} + ${cases.length * HANDLE_SPACING}px)` }}
+            className="!bg-muted-foreground"
         />
+        <div className="absolute right-[-70px] text-xs text-muted-foreground font-semibold" style={{ top: `calc(${startTop} + ${cases.length * HANDLE_SPACING}px)`, transform: 'translateY(-50%)' }}>
+            Default
+        </div>
+      </>
     );
   }
 
@@ -152,7 +138,8 @@ const WorkflowNode = memo(({ data }: NodeProps<{ step: WorkflowStepData; layout:
       <Handle
         type="target"
         position={targetPosition}
-        className="!bg-muted-foreground/80"
+        id="a"
+        className="!bg-transparent"
         isConnectable={!isTrigger}
         style={{ visibility: isTrigger ? 'hidden' : 'visible' }}
       />
@@ -231,7 +218,14 @@ const WorkflowNode = memo(({ data }: NodeProps<{ step: WorkflowStepData; layout:
         )}
       </Card>
       
-      {renderHandles()}
+      {isConditional ? renderConditionalHandles() : !isEndNode && (
+          <Handle
+            type="source"
+            position={sourcePosition}
+            id="b"
+            className="!bg-transparent"
+          />
+      )}
     </>
   );
 });
