@@ -1,6 +1,8 @@
 
+
 import type { ReactElement, ElementType } from 'react';
 import type { Node, Edge } from 'reactflow';
+import { z } from 'zod';
 
 export type IconName =
   | 'Webhook'
@@ -109,19 +111,32 @@ export type AppActionData = {
     params?: Record<string, any>;
 };
 
-export type Rule = {
-  id: string;
-  variable: string;
-  operator: 'equals' | 'not_equals' | 'contains' | 'not_contains' | 'starts_with' | 'ends_with' | 'is_empty' | 'is_not_empty' | 'greater_than' | 'less_than';
-  value: string;
-};
+export const RuleSchema = z.object({
+  id: z.string(),
+  variable: z.string().describe("The variable from the context to check, e.g., 'trigger.data.name'."),
+  operator: z.enum(['equals', 'not_equals', 'contains', 'not_contains', 'starts_with', 'ends_with', 'is_empty', 'is_not_empty', 'greater_than', 'less_than']),
+  value: z.string().describe("The value to compare against."),
+});
+export type Rule = z.infer<typeof RuleSchema>;
 
-export type Case = {
-  id: string;
-  name: string;
-  rules: Rule[];
-  logicalOperator: 'AND' | 'OR';
-};
+export const CaseSchema = z.object({
+    id: z.string(),
+    name: z.string(),
+    rules: z.array(RuleSchema),
+    logicalOperator: z.enum(['AND', 'OR']),
+});
+export type Case = z.infer<typeof CaseSchema>;
+
+export const ConditionInputSchema = z.object({
+  cases: z.array(CaseSchema),
+  dataContext: z.record(z.any()).describe('The data context from previous steps to evaluate against.'),
+});
+export type ConditionInput = z.infer<typeof ConditionInputSchema>;
+
+export const ConditionOutputSchema = z.object({
+  outcome: z.string().describe('The name of the first matching case, or "default" if none match.'),
+});
+export type ConditionOutput = z.infer<typeof ConditionOutputSchema>;
 
 export type ConditionData = {
   cases: Case[];

@@ -10,35 +10,9 @@
 
 import { ai } from '@/ai/genkit';
 import { resolvePath } from '@/lib/utils';
-import { z } from 'zod';
+import type { Case, Rule, ConditionInput, ConditionOutput } from '@/lib/types';
+import { ConditionInputSchema, ConditionOutputSchema } from '@/lib/types';
 
-const RuleSchema = z.object({
-  id: z.string(),
-  variable: z.string().describe("The variable from the context to check, e.g., 'trigger.data.name'."),
-  operator: z.enum(['equals', 'not_equals', 'contains', 'not_contains', 'starts_with', 'ends_with', 'is_empty', 'is_not_empty', 'greater_than', 'less_than']),
-  value: z.string().describe("The value to compare against."),
-});
-type Rule = z.infer<typeof RuleSchema>;
-
-const CaseSchema = z.object({
-    id: z.string(),
-    name: z.string(),
-    rules: z.array(RuleSchema),
-    logicalOperator: z.enum(['AND', 'OR']),
-});
-type Case = z.infer<typeof CaseSchema>;
-
-
-export const ConditionInputSchema = z.object({
-  cases: z.array(CaseSchema),
-  dataContext: z.record(z.any()).describe('The data context from previous steps to evaluate against.'),
-});
-export type ConditionInput = z.infer<typeof ConditionInputSchema>;
-
-export const ConditionOutputSchema = z.object({
-  outcome: z.string().describe('The name of the first matching case, or "default" if none match.'),
-});
-export type ConditionOutput = z.infer<typeof ConditionOutputSchema>;
 
 /**
  * Evaluates a single rule against the data context.
