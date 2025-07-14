@@ -139,14 +139,14 @@ const WorkflowNode = memo(({ data }: NodeProps<{ step: WorkflowStepData; onEdit:
           </CardContent>
         )}
       </Card>
-      {!isEndNode && (
-          <Handle
-            type="source"
-            position={sourcePosition}
-            id="b"
-            className="!bg-transparent"
-          />
-      )}
+      <Handle
+        type="source"
+        position={sourcePosition}
+        id="b"
+        className="!bg-transparent"
+        isConnectable={!isEndNode}
+        style={{ visibility: isEndNode ? 'hidden' : 'visible' }}
+      />
     </>
   );
 });
