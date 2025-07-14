@@ -6,6 +6,9 @@ import React from 'react';
 import {
   Sheet,
   SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
 } from '@/components/ui/sheet';
 import {
   Tabs,
@@ -173,6 +176,10 @@ export function DashboardLayout({ workflow }: { workflow: WorkflowType }) {
     <div className="grid grid-cols-1 md:grid-cols-[300px_1fr] lg:grid-cols-[350px_1fr] xl:grid-cols-[400px_1fr] h-full">
       <Sheet defaultOpen>
         <SheetContent side="left" className="p-0 border-r" hideCloseButton>
+            <SheetHeader className="sr-only">
+              <SheetTitle>Workflow Tools</SheetTitle>
+              <SheetDescription>Select tools and view logs for the current workflow.</SheetDescription>
+            </SheetHeader>
             <div className="flex h-full flex-col p-4 md:p-6">
                 <Tabs defaultValue="designer" className="flex h-full w-full flex-col">
                 <TabsList className="mb-4">
