@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
@@ -22,20 +23,28 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Skeleton } from '@/components/ui/skeleton';
+import { AsanaIcon, HubSpotIcon, SalesforceIcon, ZohoIcon, Logo } from '@/components/icons';
 import { Github } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { Credential } from '@/lib/types';
 import { getCredentials, deleteCredential } from '@/lib/db';
 import { CredentialDialog } from '@/components/credential-dialog';
+import { APP_DEFINITIONS } from '@/lib/app-definitions';
 
 const iconMap: Record<string, React.ElementType> = {
-  GitHub: Github,
+  ...APP_DEFINITIONS.reduce((acc, app) => {
+    acc[app.name] = app.icon;
+    return acc;
+  }, {} as Record<string, React.ElementType>),
   default: KeyRound,
 };
 
-const iconClassMap: Record<string, string> = {
-  GitHub: 'text-neutral-900 dark:text-neutral-100',
-};
+const iconClassMap: Record<string, string> = APP_DEFINITIONS.reduce((acc, app) => {
+    if (app.iconClassName) {
+        acc[app.name] = app.iconClassName;
+    }
+    return acc;
+}, {} as Record<string, string>);
 
 
 export default function CredentialsPage() {

@@ -7,6 +7,17 @@ import {
   LayoutList,
   Bot,
   GitBranch,
+  KeyRound,
+  Webhook,
+  Mail,
+  FlaskConical,
+  Database,
+  ArrowRightLeft,
+  Clock,
+  ShoppingCart,
+  StopCircle,
+  Code,
+  AppWindow,
 } from 'lucide-react';
 import {
   AsanaIcon,

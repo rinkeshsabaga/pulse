@@ -2,13 +2,15 @@
 // This is a mock database. In a real application, you would use a real database.
 'use server';
 
-import type { Workflow } from './types';
+import type { Workflow, WebhookEvent, Credential } from './types';
 import { initialSteps } from './initial-data';
+import { v4 as uuidv4 } from 'uuid';
 
 // To persist the mock database across hot reloads in development,
 // we attach it to the global object.
 declare global {
   var __workflows__: Workflow[] | undefined;
+  var __credentials__: Credential[] | undefined;
 }
 
 const initialWorkflows: Workflow[] = [
@@ -35,14 +37,36 @@ const initialWorkflows: Workflow[] = [
   },
 ];
 
+const initialCredentials: Credential[] = [
+  {
+    id: 'cred_1',
+    appName: 'GitHub',
+    accountName: 'personal-github',
+    type: 'API_KEY',
+    authData: { apiKey: 'ghp_mock_key_12345' }
+  },
+   {
+    id: 'cred_2',
+    appName: 'Slack',
+    accountName: 'work-slack',
+    type: 'API_KEY',
+    authData: { apiKey: 'xoxb-mock-key-67890' }
+  }
+];
+
 // In a real app, you'd use a proper database.
 // For this dev environment, we'll use a global variable to persist the data.
 if (!global.__workflows__) {
     // Use a deep copy to prevent mutation of the initial data array.
     global.__workflows__ = JSON.parse(JSON.stringify(initialWorkflows));
 }
+if (!global.__credentials__) {
+    global.__credentials__ = JSON.parse(JSON.stringify(initialCredentials));
+}
+
 
 const workflows: Workflow[] = global.__workflows__;
+const credentials: Credential[] = global.__credentials__;
 
 
 export async function getWorkflows(): Promise<Workflow[]> {
@@ -86,4 +110,78 @@ export async function updateWorkflow(id: string, updatedData: Partial<Omit<Workf
         return JSON.parse(JSON.stringify(workflows[index]));
     }
     return undefined;
+}
+
+export async function addTestWebhookEvent(workflowId: string, stepId: string): Promise<Workflow | null> {
+    const workflow = await getWorkflowById(workflowId);
+    if (!workflow) return null;
+
+    const step = workflow.steps.find(s => s.id === stepId);
+    if (!step || !step.data) return null;
+
+    const newEvent: WebhookEvent = {
+        id: `evt_${uuidv4()}`,
+        receivedAt: new Date().toISOString(),
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'User-Agent': 'Mock-Webhook-Client/1.0'
+        },
+        body: {
+            userId: `user_${Math.floor(Math.random() * 1000)}`,
+            product: 'SabagaPulse Pro',
+            event_type: 'subscription_created',
+            timestamp: new Date().toISOString()
+        }
+    };
+    
+    if (!step.data.events) {
+        step.data.events = [];
+    }
+    // Add to the beginning of the array
+    step.data.events.unshift(newEvent);
+
+    // Keep only the last 10 events
+    step.data.events = step.data.events.slice(0, 10);
+    
+    step.data.selectedEventId = newEvent.id;
+
+    return updateWorkflow(workflowId, { steps: workflow.steps });
+}
+
+
+// Credentials Management
+export async function getCredentials(): Promise<Credential[]> {
+  return JSON.parse(JSON.stringify(credentials));
+}
+
+export async function getCredentialById(id: string): Promise<Credential | undefined> {
+  return credentials.find(c => c.id === id);
+}
+
+export async function addCredential(credData: Omit<Credential, 'id'>): Promise<Credential> {
+  const newCredential: Credential = {
+    id: `cred_${Date.now()}`,
+    ...credData,
+  };
+  credentials.push(newCredential);
+  return JSON.parse(JSON.stringify(newCredential));
+}
+
+export async function updateCredential(id: string, updatedData: Omit<Credential, 'id'>): Promise<Credential | undefined> {
+  const index = credentials.findIndex(c => c.id === id);
+  if (index > -1) {
+    credentials[index] = { id, ...updatedData };
+    return JSON.parse(JSON.stringify(credentials[index]));
+  }
+  return undefined;
+}
+
+export async function deleteCredential(id: string): Promise<{ success: boolean }> {
+  const index = credentials.findIndex(c => c.id === id);
+  if (index > -1) {
+    credentials.splice(index, 1);
+    return { success: true };
+  }
+  return { success: false };
 }

@@ -2,32 +2,6 @@
 'use client';
 
 import React from 'react';
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetDescription,
-} from '@/components/ui/sheet';
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from '@/components/ui/tabs';
-import {
-  Card,
-  CardContent,
-} from '@/components/ui/card';
-import {
-    Accordion,
-    AccordionContent,
-    AccordionItem,
-    AccordionTrigger,
-} from '@/components/ui/accordion';
-
-import { WorkflowCanvas } from './workflow-canvas';
-import { MonitoringPanel } from './monitoring-panel';
 import { AIFunctionGenerator } from './ai-function-generator';
 import { EditTriggerDialog } from './edit-trigger-dialog';
 import { EditShopifyTriggerDialog } from './edit-shopify-trigger-dialog';
@@ -42,9 +16,9 @@ import { EditSendEmailDialog } from './edit-send-email-dialog';
 import { EditDatabaseQueryDialog } from './edit-database-query-dialog';
 import type { Workflow as WorkflowType, WorkflowStepData, IconName } from '@/lib/types';
 import { updateWorkflow } from '@/lib/db';
-import * as icons from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 import { DashboardLayout } from './dashboard-layout';
+import { WorkflowCanvas } from './workflow-canvas';
 
 export function WorkflowCanvasWrapper({ workflow }: { workflow: WorkflowType }) {
   const [steps, setSteps] = React.useState<WorkflowStepData[]>(workflow.steps);

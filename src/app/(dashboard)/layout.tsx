@@ -80,7 +80,7 @@ export default function DashboardLayout({
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
-                <SidebarMenuButton asChild className="justify-start">
+                <SidebarMenuButton asChild isActive={pathname.startsWith('/credentials')} className="justify-start">
                   <Link href="/credentials">
                     <KeyRound className="mr-2 h-4 w-4" />
                     Credentials
@@ -88,7 +88,7 @@ export default function DashboardLayout({
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
-                <SidebarMenuButton asChild className="justify-start">
+                <SidebarMenuButton asChild isActive={pathname.startsWith('/billing')} className="justify-start">
                   <Link href="/billing">
                     <CreditCard className="mr-2 h-4 w-4" />
                     Billing
@@ -118,13 +118,17 @@ export default function DashboardLayout({
                   <User className="mr-2 h-4 w-4" />
                   <span>Profile</span>
                 </DropdownMenuItem>
-                <DropdownMenuItem>
-                  <CreditCard className="mr-2 h-4 w-4" />
-                  <span>Billing</span>
+                <DropdownMenuItem asChild>
+                   <Link href="/billing">
+                    <CreditCard className="mr-2 h-4 w-4" />
+                    <span>Billing</span>
+                  </Link>
                 </DropdownMenuItem>
-                <DropdownMenuItem>
-                  <Settings className="mr-2 h-4 w-4" />
-                  <span>Settings</span>
+                <DropdownMenuItem asChild>
+                  <Link href="/settings">
+                    <Settings className="mr-2 h-4 w-4" />
+                    <span>Settings</span>
+                  </Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <ThemeToggle inMenu />
@@ -137,7 +141,7 @@ export default function DashboardLayout({
             </DropdownMenu>
           </SidebarFooter>
         </Sidebar>
-        <main className="flex-1">
+        <main className="flex-1 p-4 sm:p-6">
           {children}
         </main>
       </div>

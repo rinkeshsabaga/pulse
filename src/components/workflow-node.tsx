@@ -5,7 +5,6 @@ import React, { memo } from 'react';
 import { Handle, Position, type NodeProps } from 'reactflow';
 import {
   Card,
-  CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
@@ -33,12 +32,15 @@ const iconMap: Record<IconName, React.ElementType> = {
   Clock: icons.Clock,
   ShoppingCart: icons.ShoppingCart,
   StopCircle: icons.StopCircle,
+  Code: icons.Code,
+  AppWindow: icons.AppWindow,
 };
 
 const WorkflowNode = memo(({ data }: NodeProps<{ step: WorkflowStepData; onEdit: () => void; onDelete: () => void; }>) => {
   const { step, onEdit, onDelete } = data;
   const isTrigger = step.type === 'trigger';
   const isEndNode = step.title === 'End Automation';
+  const isConditionNode = step.title === 'Condition';
 
   const sourcePosition = Position.Bottom;
   const targetPosition = Position.Top;
@@ -58,9 +60,8 @@ const WorkflowNode = memo(({ data }: NodeProps<{ step: WorkflowStepData; onEdit:
         type="target"
         position={targetPosition}
         id="a"
-        className="!bg-transparent"
+        className={cn("!bg-primary", isTrigger && "invisible")}
         isConnectable={!isTrigger}
-        style={{ visibility: isTrigger ? 'hidden' : 'visible' }}
       />
       <Card
         className={cn(
@@ -77,9 +78,6 @@ const WorkflowNode = memo(({ data }: NodeProps<{ step: WorkflowStepData; onEdit:
               <div>
                 <CardTitle className="text-md font-semibold font-headline flex items-left gap-2">
                   {step.title}
-                  <Badge variant="outline" className="capitalize font-medium">
-                    {step.type}
-                  </Badge>
                 </CardTitle>
                 <CardDescription className="text-sm">
                   {step.description}
@@ -100,6 +98,7 @@ const WorkflowNode = memo(({ data }: NodeProps<{ step: WorkflowStepData; onEdit:
                 <DropdownMenuItem
                   onClick={onDelete}
                   className="text-destructive focus:text-destructive"
+                  disabled={isTrigger && !onDelete} // Simple guard for now
                 >
                   <Trash2 className="mr-2 h-4 w-4" />
                   Delete
@@ -108,42 +107,32 @@ const WorkflowNode = memo(({ data }: NodeProps<{ step: WorkflowStepData; onEdit:
             </DropdownMenu>
           </div>
         </CardHeader>
-        {(step.content || step.errorMessage) && (
-          <CardContent>
-            {step.content && (
-              <div className="text-sm text-muted-foreground p-4 bg-muted/50 rounded-md">
-                <pre className="overflow-x-auto">
-                  <code
-                    className={`language-${step.content.language} font-code text-xs`}
-                  >
-                    {step.content.code}
-                  </code>
-                </pre>
-                <div className="mt-2 flex gap-2">
-                  {step.title.includes('AI') && (
-                    <Badge variant="outline">AI Generated</Badge>
-                  )}
-                  <Badge variant="outline">{step.content.language}</Badge>
-                </div>
-              </div>
-            )}
-            {step.errorMessage && (
-              <div className="text-sm text-destructive-foreground p-4 bg-destructive/80 rounded-md">
-                <p className="font-semibold">{step.errorMessage.title}</p>
-                <p className="opacity-80">{step.errorMessage.description}</p>
-              </div>
-            )}
-          </CardContent>
-        )}
       </Card>
       <Handle
         type="source"
         position={sourcePosition}
         id="b"
-        className="!bg-transparent"
-        isConnectable={!isEndNode}
-        style={{ visibility: isEndNode ? 'hidden' : 'visible' }}
+        className={cn("!bg-primary", isEndNode && "invisible")}
+        isConnectable={!isEndNode && !isConditionNode}
       />
+       {isConditionNode && (
+        <>
+            <Handle
+                type="source"
+                position={Position.Right}
+                id="c" // 'Yes' or 'True' branch
+                style={{ top: '50%' }}
+                className="!bg-green-500"
+            />
+             <Handle
+                type="source"
+                position={Position.Bottom}
+                id="d" // 'No' or 'False' or 'Default' branch
+                style={{ left: '50%' }}
+                className="!bg-red-500"
+            />
+        </>
+      )}
     </>
   );
 });

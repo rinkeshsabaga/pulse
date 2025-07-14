@@ -21,12 +21,12 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { ArrowUpRight, PlusCircle, Workflow, CheckCircle, Zap } from 'lucide-react';
 import {
-  Bar,
   BarChart,
   ResponsiveContainer,
   XAxis,
   YAxis,
   Tooltip,
+  Bar,
 } from 'recharts';
 import {
     ChartTooltipContent,
