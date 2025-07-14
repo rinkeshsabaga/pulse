@@ -151,5 +151,3 @@ export function DashboardLayout({ children, onAddStep }: { children: React.React
     </SidebarProvider>
   );
 }
-
-    
