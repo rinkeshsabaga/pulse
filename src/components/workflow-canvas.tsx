@@ -18,6 +18,7 @@ import ReactFlow, {
   applyNodeChanges,
   applyEdgeChanges,
   EdgeChange,
+  NodeChange,
 } from 'reactflow';
 import { Button } from '@/components/ui/button';
 import { Play, Trash2, History, Loader2 } from 'lucide-react';
@@ -65,8 +66,8 @@ function WorkflowCanvasComponent({
   onDeleteStep,
   onRevert,
 }: WorkflowCanvasProps) {
-  const [nodes, setNodes, onNodesChange] = useNodesState([]);
-  const [edges, setEdges, onEdgesChange] = useEdgesState([]);
+  const [nodes, setNodes, onNodesChangeInternal] = useNodesState([]);
+  const [edges, setEdges, onEdgesChangeInternal] = useEdgesState([]);
   const [isClearAlertOpen, setIsClearAlertOpen] = useState(false);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [isExecuting, setIsExecuting] = useState(false);
@@ -127,19 +128,18 @@ function WorkflowCanvasComponent({
       setEdges((eds) => addEdge(params, eds));
   }, [onStepsChange, setEdges]);
   
-  const handleEdgesChange = useCallback((changes: EdgeChange[]) => {
-      // Find the edge(s) that are being removed
-      const removedEdgeIds = changes
-        .filter((change): change is { type: 'remove'; id: string } => change.type === 'remove')
-        .map(change => change.id);
+    const onEdgesChange: OnEdgesChange = useCallback(
+    (changes) => {
+      const removedEdges = changes.filter((change): change is { type: 'remove'; id: string } => change.type === 'remove');
 
-      if (removedEdgeIds.length > 0) {
-        const removedEdges = edges.filter(edge => removedEdgeIds.includes(edge.id));
-        
+      if (removedEdges.length > 0) {
+        // Find the full edge objects before they are removed from the state
+        const edgesToRemove = edges.filter(edge => removedEdges.some(removed => removed.id === edge.id));
+
         onStepsChange(prevSteps => {
           let newSteps = [...prevSteps];
           
-          removedEdges.forEach(edge => {
+          edgesToRemove.forEach(edge => {
             newSteps = newSteps.map(step => {
               if (step.id === edge.source) {
                 const newStep = { ...step, data: { ...step.data } };
@@ -165,11 +165,62 @@ function WorkflowCanvasComponent({
         });
       }
 
-      // Apply the visual changes to the edges
       setEdges((eds) => applyEdgeChanges(changes, eds));
-  }, [edges, onStepsChange, setEdges]);
+    },
+    [edges, onStepsChange, setEdges]
+  );
+  
+  const onNodesChange: OnNodesChange = useCallback((changes) => {
+    // Handle node insertion between two nodes
+    const dragChange = changes.find(change => change.type === 'position' && change.dragging === false);
+    if (dragChange && dragChange.type === 'position') {
+        const changedNode = nodes.find(node => node.id === dragChange.id);
+        if (changedNode) {
+            const intersectingEdge = edges.find(edge => {
+                const sourceNode = nodes.find(n => n.id === edge.source);
+                const targetNode = nodes.find(n => n.id === edge.target);
+                if (!sourceNode || !targetNode || !sourceNode.positionAbsolute || !targetNode.positionAbsolute || !changedNode.positionAbsolute) return false;
+                
+                // Simple bounding box check for intersection
+                const midX = (sourceNode.positionAbsolute.x + targetNode.positionAbsolute.x) / 2;
+                const midY = (sourceNode.positionAbsolute.y + targetNode.positionAbsolute.y) / 2;
 
+                const nodeBbox = {
+                    x1: changedNode.positionAbsolute.x,
+                    y1: changedNode.positionAbsolute.y,
+                    x2: changedNode.positionAbsolute.x + (changedNode.width || 0),
+                    y2: changedNode.positionAbsolute.y + (changedNode.height || 0),
+                };
 
+                return midX > nodeBbox.x1 && midX < nodeBbox.x2 && midY > nodeBbox.y1 && midY < nodeBbox.y2;
+            });
+
+            if (intersectingEdge) {
+                // Remove the old edge
+                onEdgesChange([{ type: 'remove', id: intersectingEdge.id }]);
+                
+                // Add new edges: source -> new node -> target
+                setEdges(eds => addEdge({ ...intersectingEdge, id: `e-${intersectingEdge.source}-${changedNode.id}`, target: changedNode.id }, eds));
+                setEdges(eds => addEdge({ ...intersectingEdge, id: `e-${changedNode.id}-${intersectingEdge.target}`, source: changedNode.id, sourceHandle: 'b' }, eds));
+                
+                // Update the data model
+                onStepsChange(prevSteps => {
+                    return prevSteps.map(step => {
+                        if (step.id === intersectingEdge.source) { // Update original source
+                            return { ...step, data: { ...step.data, nextStepId: changedNode.id } };
+                        }
+                        if (step.id === changedNode.id) { // Update new node
+                            return { ...step, data: { ...step.data, nextStepId: intersectingEdge.target } };
+                        }
+                        return step;
+                    });
+                });
+            }
+        }
+    }
+
+    setNodes((nds) => applyNodeChanges(changes, nds));
+  }, [nodes, edges, onStepsChange, setNodes, setEdges, onEdgesChange]);
 
 
   const handleConfirmClear = () => {
@@ -299,8 +350,8 @@ function WorkflowCanvasComponent({
         <ReactFlow
           nodes={nodes}
           edges={edges}
-          onNodesChange={onNodesChange as OnNodesChange}
-          onEdgesChange={handleEdgesChange}
+          onNodesChange={onNodesChange}
+          onEdgesChange={onEdgesChange}
           onConnect={handleConnect}
           nodeTypes={nodeTypes}
           fitView
