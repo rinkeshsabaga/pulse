@@ -42,6 +42,10 @@ type WorkflowCanvasProps = {
   onRevert: (steps: WorkflowStepData[]) => void;
 };
 
+const nodeTypes = {
+  workflowNode: WorkflowNode,
+};
+
 function WorkflowCanvasComponent({
   workflow,
   steps,
@@ -90,7 +94,7 @@ function WorkflowCanvasComponent({
 
   return (
     <>
-    <div className="flex h-full flex-col">
+    <div className="flex-1 flex flex-col h-full">
       <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 p-4 md:p-6">
         <div className="flex-1 space-y-1">
           <div className="flex items-center gap-3">
