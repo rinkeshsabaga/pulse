@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useCallback, useEffect, useMemo } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import ReactFlow, {
   Background,
   Controls,
@@ -27,8 +27,8 @@ const nodeTypes = {
 
 type WorkflowCanvasProps = {
   steps: WorkflowStepData[];
-  setSteps: React.Dispatch<React.SetStateAction<WorkflowStepData[]>>;
-  onEditStep: (step: WorkflowStepData, dataContext: any) => void;
+  setSteps: (steps: WorkflowStepData[]) => void;
+  onEditStep: (step: WorkflowStepData) => void;
   workflowName: string;
   workflowDescription?: string;
 };
@@ -46,33 +46,25 @@ function WorkflowCanvasComponent({
   const { toast } = useToast();
 
   const handleDeleteStep = useCallback((stepIdToDelete: string) => {
-      setSteps((prevSteps) =>
-        prevSteps.filter((step) => step.id !== stepIdToDelete)
-      );
+      setSteps(steps.filter((step) => step.id !== stepIdToDelete));
       toast({
         title: 'Step Deleted',
         description: 'The step has been removed from your workflow.',
       });
-    }, [setSteps, toast]
+    }, [setSteps, toast, steps]
   );
   
   const layoutedElements = useMemo(() => {
-    const onEdit = (step: WorkflowStepData) => {
-        onEditStep(step, edges);
-    }
-    const onDelete = (stepId: string) => {
-        handleDeleteStep(stepId);
-    }
-    return getLayoutedElements(steps, onEdit, onDelete);
-  }, [steps, onEditStep, handleDeleteStep, edges]);
+    return getLayoutedElements(steps, onEditStep, handleDeleteStep);
+  }, [steps, onEditStep, handleDeleteStep]);
 
   useEffect(() => {
     setNodes(layoutedElements.nodes);
     setEdges(layoutedElements.edges);
     window.requestAnimationFrame(() => {
-      fitView();
+        fitView();
     });
-  }, [layoutedElements, fitView, setNodes, setEdges]);
+  }, [layoutedElements, setNodes, setEdges, fitView]);
 
   const handleConfirmClear = () => {
     setSteps([]);

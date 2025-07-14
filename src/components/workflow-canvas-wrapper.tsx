@@ -30,22 +30,19 @@ export function WorkflowCanvasWrapper({ workflow }: { workflow: WorkflowType }) 
     setSteps(workflow.steps);
   }, [workflow]);
 
-  const persistSteps = (newSteps: WorkflowStepData[]) => {
+  const persistSteps = useCallback((newSteps: WorkflowStepData[]) => {
     updateWorkflow(workflow.id, { steps: newSteps });
-  };
+  }, [workflow.id]);
   
-  const handleSetSteps = useCallback((newStepsOrFn: React.SetStateAction<WorkflowStepData[]>) => {
-    const newSteps = typeof newStepsOrFn === 'function' ? newStepsOrFn(steps) : newStepsOrFn;
+  const handleSetSteps = useCallback((newSteps: WorkflowStepData[]) => {
     setSteps(newSteps);
     persistSteps(newSteps);
-  }, [steps]);
+  }, [persistSteps]);
 
-  const handleEditStep = useCallback((stepToEdit: WorkflowStepData, edges: any) => {
-    const parentEdges = edges.filter((e: any) => e.target === stepToEdit.id);
-    const parentNodeIds = parentEdges.map((e: any) => e.source);
-    
-    const dataContext = generateOutputContext(steps, parentNodeIds);
-
+  const handleEditStep = useCallback((stepToEdit: WorkflowStepData) => {
+    // This function is now simpler. It doesn't need edges from the child.
+    // It generates context based on the *current* steps array.
+    const dataContext = generateOutputContext(steps, stepToEdit.id);
     setEditingStepInfo({ step: stepToEdit, dataContext });
   }, [steps]);
 
@@ -100,7 +97,7 @@ export function WorkflowCanvasWrapper({ workflow }: { workflow: WorkflowType }) 
         newStep.data = { conditionData: { cases: [{ id: uuidv4(), name: 'Case 1', logicalOperator: 'AND', rules: [{ id: uuidv4(), variable: '', operator: 'equals', value: '' }] }] } };
     }
 
-    handleSetSteps(prev => [...prev, newStep]);
+    handleSetSteps([...steps, newStep]);
   };
 
   const handleFunctionGenerated = (code: string, language: string, intent: string) => {
@@ -113,11 +110,12 @@ export function WorkflowCanvasWrapper({ workflow }: { workflow: WorkflowType }) 
         content: { code, language },
         status: 'default' as const
     };
-    handleSetSteps(prev => [...prev, newStep]);
+    handleSetSteps([...steps, newStep]);
   };
 
   const handleSaveAction = (updatedStep: WorkflowStepData) => {
-    handleSetSteps(prev => prev.map(s => s.id === updatedStep.id ? updatedStep : s));
+    const newSteps = steps.map(s => s.id === updatedStep.id ? updatedStep : s)
+    handleSetSteps(newSteps);
     setEditingStepInfo(null);
   }
 

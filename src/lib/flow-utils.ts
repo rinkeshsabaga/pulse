@@ -54,24 +54,30 @@ export function getLayoutedElements(steps: WorkflowStepData[], onEdit: (step: Wo
 
 /**
  * Generates a data context object based on the output of parent steps.
- * @param steps The full list of workflow steps.
- * @param parentNodeIds The IDs of the direct parent nodes.
+ * This version finds the parent node without needing the full edge list.
+ * @param allSteps The full list of workflow steps.
+ * @param currentStepId The ID of the current step to find parents for.
  * @returns A data context object for a step's configuration dialog.
  */
-export function generateOutputContext(steps: WorkflowStepData[], parentNodeIds: string[]): Record<string, any> {
+export function generateOutputContext(allSteps: WorkflowStepData[], currentStepId: string): Record<string, any> {
   const context: Record<string, any> = {};
+  
+  // Find the index of the current step
+  const currentIndex = allSteps.findIndex(s => s.id === currentStepId);
 
-  parentNodeIds.forEach(parentId => {
-    const parentStep = steps.find(s => s.id === parentId);
-    if (!parentStep) return;
+  // If it's the first step (index 0), it has no parents in our simple layout
+  if (currentIndex <= 0) {
+    return context;
+  }
+  
+  // The parent is the step right before it in the array
+  const parentStep = allSteps[currentIndex - 1];
 
-    // For a trigger, we expose its event payload
-    if (parentStep.type === 'trigger') {
+  if (parentStep) {
+     if (parentStep.type === 'trigger') {
       const selectedEvent = parentStep.data?.events?.find(e => e.id === parentStep.data?.selectedEventId);
       context['trigger'] = selectedEvent || { body: { note: 'No event selected or found. This is sample data.' } };
     } else {
-      // For actions, create a generic output object.
-      // In a real app, this would be based on the actual execution output of the step.
       context[parentStep.id] = {
         status: 'success',
         output: {
@@ -79,7 +85,7 @@ export function generateOutputContext(steps: WorkflowStepData[], parentNodeIds: 
         }
       };
     }
-  });
+  }
 
   return context;
 }
