@@ -129,16 +129,14 @@ export function WorkflowCanvasWrapper({ workflow }: { workflow: WorkflowType }) 
   return (
     <>
       <DashboardLayout onAddStep={handleAddStep}>
-        <div className="relative flex-1 bg-background h-full w-full">
-            <WorkflowCanvas 
-                steps={steps}
-                onEditStep={handleEditStep}
-                onDeleteStep={handleDeleteStep}
-                onStepsChange={handleSetSteps}
-                workflowName={workflow.name}
-                workflowDescription={workflow.description}
-            />
-        </div>
+        <WorkflowCanvas 
+            steps={steps}
+            onEditStep={handleEditStep}
+            onDeleteStep={handleDeleteStep}
+            onStepsChange={handleSetSteps}
+            workflowName={workflow.name}
+            workflowDescription={workflow.description}
+        />
       </DashboardLayout>
         
         <AIFunctionGenerator
