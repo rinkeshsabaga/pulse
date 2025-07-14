@@ -1,3 +1,4 @@
+
 'use client';
 
 import React from 'react';
@@ -104,8 +105,12 @@ export default function DashboardLayout({
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
-                <SidebarMenuButton asChild className="justify-start" disabled>
-                  <Link href="#">
+                <SidebarMenuButton 
+                  asChild 
+                  className="justify-start"
+                  isActive={pathname.startsWith('/billing')}
+                >
+                  <Link href="/billing">
                     <CreditCard className="mr-2 h-4 w-4" />
                     Billing
                   </Link>
