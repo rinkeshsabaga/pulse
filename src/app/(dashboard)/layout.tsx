@@ -3,6 +3,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import React, { useState, createContext, useContext } from 'react';
 import {
   SidebarProvider,
   Sidebar,
@@ -34,6 +35,21 @@ import {
 import { Logo } from '@/components/icons';
 import { ThemeToggle } from '@/components/theme-toggle';
 
+type PlanContextType = {
+  currentPlan: string;
+  setCurrentPlan: React.Dispatch<React.SetStateAction<string>>;
+};
+
+export const PlanContext = createContext<PlanContextType | null>(null);
+
+export function usePlan() {
+  const context = useContext(PlanContext);
+  if (!context) {
+    throw new Error('usePlan must be used within a PlanProvider');
+  }
+  return context;
+}
+
 export default function DashboardLayout({
   children,
 }: {
@@ -41,114 +57,117 @@ export default function DashboardLayout({
 }) {
   const pathname = usePathname();
   const isWorkflowEditor = /^\/workflows\/wf_/.test(pathname);
-  
+  const [currentPlan, setCurrentPlan] = useState('Free');
+
   if (isWorkflowEditor) {
     return <main className="h-full">{children}</main>;
   }
 
 
   return (
-    <SidebarProvider>
-      <div className="flex h-screen w-full bg-muted/40">
-        <Sidebar>
-          <SidebarHeader>
-            <Link href="/home" className="flex items-center gap-2">
-              <Logo className="w-8 h-8 text-primary" />
-              <span className="text-lg font-semibold font-headline text-primary">
-                SabagaPulse
-              </span>
-            </Link>
-          </SidebarHeader>
-          <SidebarContent>
-            <ul className="flex w-full flex-col gap-2 list-none p-0">
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  asChild
-                  isActive={pathname === '/home'}
-                >
-                  <Link href="/home">
-                    <Home />
-                    <span>Home</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  asChild
-                  isActive={pathname.startsWith('/workflows')}
-                >
-                  <Link href="/workflows">
-                    <Workflow />
-                    <span>Workflows</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild isActive={pathname.startsWith('/credentials')}>
-                  <Link href="/credentials">
-                    <KeyRound />
-                    <span>Credentials</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild isActive={pathname.startsWith('/billing')}>
-                  <Link href="/billing">
-                    <CreditCard />
-                    <span>Billing</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            </ul>
-          </SidebarContent>
-          <SidebarFooter>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <div className="flex items-center gap-3 p-2 rounded-md hover:bg-sidebar-accent cursor-pointer w-full">
-                  <Avatar className="h-8 w-8">
-                    <AvatarImage src="https://placehold.co/100x100.png" alt="@user" data-ai-hint="profile picture" />
-                    <AvatarFallback>N</AvatarFallback>
-                  </Avatar>
-                  <div className="text-left flex-1">
-                    <p className="font-semibold text-sm truncate">Sabaga User</p>
-                    <p className="text-xs text-muted-foreground">Free Plan</p>
+    <PlanContext.Provider value={{ currentPlan, setCurrentPlan }}>
+      <SidebarProvider>
+        <div className="flex h-screen w-full bg-muted/40">
+          <Sidebar>
+            <SidebarHeader>
+              <Link href="/home" className="flex items-center gap-2">
+                <Logo className="w-8 h-8 text-primary" />
+                <span className="text-lg font-semibold font-headline text-primary">
+                  SabagaPulse
+                </span>
+              </Link>
+            </SidebarHeader>
+            <SidebarContent>
+              <ul className="flex w-full flex-col gap-2 list-none p-0">
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={pathname === '/home'}
+                  >
+                    <Link href="/home">
+                      <Home />
+                      <span>Home</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={pathname.startsWith('/workflows')}
+                  >
+                    <Link href="/workflows">
+                      <Workflow />
+                      <span>Workflows</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild isActive={pathname.startsWith('/credentials')}>
+                    <Link href="/credentials">
+                      <KeyRound />
+                      <span>Credentials</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild isActive={pathname.startsWith('/billing')}>
+                    <Link href="/billing">
+                      <CreditCard />
+                      <span>Billing</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              </ul>
+            </SidebarContent>
+            <SidebarFooter>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <div className="flex items-center gap-3 p-2 rounded-md hover:bg-sidebar-accent cursor-pointer w-full">
+                    <Avatar className="h-8 w-8">
+                      <AvatarImage src="https://placehold.co/100x100.png" alt="@user" data-ai-hint="profile picture" />
+                      <AvatarFallback>N</AvatarFallback>
+                    </Avatar>
+                    <div className="text-left flex-1">
+                      <p className="font-semibold text-sm truncate">Sabaga User</p>
+                      <p className="text-xs text-muted-foreground">{currentPlan} Plan</p>
+                    </div>
                   </div>
-                </div>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56" side="top">
-                <DropdownMenuLabel>My Account</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem>
-                  <User className="mr-2 h-4 w-4" />
-                  <span>Profile</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                   <Link href="/billing">
-                    <CreditCard className="mr-2 h-4 w-4" />
-                    <span>Billing</span>
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link href="/settings">
-                    <Settings className="mr-2 h-4 w-4" />
-                    <span>Settings</span>
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <ThemeToggle inMenu />
-                <DropdownMenuSeparator />
-                <DropdownMenuItem>
-                  <LogOut className="mr-2 h-4 w-4" />
-                  <span>Log out</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </SidebarFooter>
-        </Sidebar>
-        <main className="flex-1 h-full overflow-y-auto">
-          <div className="p-4 sm:p-6">{children}</div>
-        </main>
-      </div>
-    </SidebarProvider>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56" side="top">
+                  <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem>
+                    <User className="mr-2 h-4 w-4" />
+                    <span>Profile</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href="/billing">
+                      <CreditCard className="mr-2 h-4 w-4" />
+                      <span>Billing</span>
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href="/settings">
+                      <Settings className="mr-2 h-4 w-4" />
+                      <span>Settings</span>
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <ThemeToggle inMenu />
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem>
+                    <LogOut className="mr-2 h-4 w-4" />
+                    <span>Log out</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </SidebarFooter>
+          </Sidebar>
+          <main className="flex-1 h-full overflow-y-auto">
+            <div className="p-4 sm:p-6">{children}</div>
+          </main>
+        </div>
+      </SidebarProvider>
+    </PlanContext.Provider>
   );
 }

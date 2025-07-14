@@ -25,6 +25,7 @@ import { Badge } from '@/components/ui/badge';
 import { Download, CreditCard, CheckCircle2, ArrowRight, PlusCircle, Zap } from 'lucide-react';
 import { UpdateCardDialog } from '@/components/update-card-dialog';
 import { useToast } from '@/hooks/use-toast';
+import { usePlan } from '@/app/(dashboard)/layout';
 
 const billingHistory = [
     { invoice: 'INV-2024-005', date: 'June 1, 2024', amount: '$50.00', status: 'Paid' },
@@ -117,7 +118,7 @@ const creditPricing = [
 
 export default function BillingPage() {
   const [isUpdateCardOpen, setIsUpdateCardOpen] = useState(false);
-  const [currentPlan, setCurrentPlan] = useState('Free');
+  const { currentPlan, setCurrentPlan } = usePlan();
   const [cardInfo, setCardInfo] = useState({
       endingIn: '4242',
       expires: '06/2028'
