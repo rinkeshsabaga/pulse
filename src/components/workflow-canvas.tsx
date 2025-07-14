@@ -10,6 +10,8 @@ import ReactFlow, {
   useEdgesState,
   ReactFlowProvider,
   useReactFlow,
+  OnNodesChange,
+  OnEdgesChange,
 } from 'reactflow';
 import { Button } from '@/components/ui/button';
 import { Play, Trash2 } from 'lucide-react';
@@ -45,22 +47,21 @@ function WorkflowCanvasComponent({
   const { fitView } = useReactFlow();
   const { toast } = useToast();
 
-  const memoizedNodeCallbacks = useMemo(() => ({
+  const nodeCallbacks = useMemo(() => ({
     onEdit: onEditStep,
-    onDelete: onDeleteStep
+    onDelete: onDeleteStep,
   }), [onEditStep, onDeleteStep]);
   
   useEffect(() => {
-    const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(steps, memoizedNodeCallbacks);
+    const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(steps, nodeCallbacks);
     setNodes(layoutedNodes);
     setEdges(layoutedEdges);
     
-    const timer = setTimeout(() => {
+    window.requestAnimationFrame(() => {
         fitView({ duration: 300, padding: 0.1 });
-    }, 10);
+    });
 
-    return () => clearTimeout(timer);
-  }, [steps, memoizedNodeCallbacks, setNodes, setEdges, fitView]);
+  }, [steps, nodeCallbacks, setNodes, setEdges, fitView]);
 
 
   const handleConfirmClear = () => {

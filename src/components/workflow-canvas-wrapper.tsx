@@ -51,23 +51,6 @@ export function WorkflowCanvasWrapper({ workflow, onUpdate }: { workflow: Workfl
   );
 
   const handleAddStep = useCallback((step: { type: 'trigger' | 'action', icon: IconName; title: string, description: string }) => {
-    if (steps.length === 0 && step.type === 'action') {
-        toast({
-            variant: 'destructive',
-            title: 'Invalid Start',
-            description: 'A workflow must begin with a trigger step.'
-        });
-        return;
-    }
-     if (steps.some(s => s.type === 'trigger') && step.type === 'trigger') {
-        toast({
-            variant: 'destructive',
-            title: 'Trigger Exists',
-            description: 'A workflow can only have one trigger step.'
-        });
-        return;
-    }
-    
     const newStep: WorkflowStepData = {
       id: `step-${uuidv4()}`,
       ...step,
@@ -119,7 +102,7 @@ export function WorkflowCanvasWrapper({ workflow, onUpdate }: { workflow: Workfl
     }
 
     handleSetSteps(prev => [...prev, newStep]);
-  }, [steps, handleSetSteps, toast]);
+  }, [handleSetSteps, toast]);
 
   const handleFunctionGenerated = (code: string, language: string, intent: string) => {
     const newStep = {

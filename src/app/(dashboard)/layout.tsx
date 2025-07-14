@@ -43,7 +43,7 @@ export default function DashboardLayout({
   const isWorkflowEditor = /^\/workflows\/wf_/.test(pathname);
   
   if (isWorkflowEditor) {
-    return <main className="flex flex-col flex-1 h-full">{children}</main>;
+    return <main className="h-full">{children}</main>;
   }
 
 
@@ -60,7 +60,7 @@ export default function DashboardLayout({
             </Link>
           </SidebarHeader>
           <SidebarContent>
-            <SidebarMenu>
+            <ul className="flex w-full flex-col gap-2 list-none p-0">
               <SidebarMenuItem>
                 <SidebarMenuButton
                   asChild
@@ -99,7 +99,7 @@ export default function DashboardLayout({
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
-            </SidebarMenu>
+            </ul>
           </SidebarContent>
           <SidebarFooter>
             <DropdownMenu>
