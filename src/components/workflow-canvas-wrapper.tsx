@@ -24,7 +24,7 @@ import { generateOutputContext } from '@/lib/flow-utils';
 export function WorkflowCanvasWrapper({ workflow }: { workflow: WorkflowType }) {
   const [steps, setSteps] = useState<WorkflowStepData[]>(workflow.steps);
   const [isAiGeneratorOpen, setIsAiGeneratorOpen] = useState(false);
-  const [editingStepInfo, setEditingStepInfo] = useState<{ step: WorkflowStepData, dataContext: any } | null>(null);
+  const [editingStepInfo, setEditingStepInfo] = useState<{ step: WorkflowStepData, dataContext: any }| null>(null);
 
   useEffect(() => {
     setSteps(workflow.steps);
@@ -42,7 +42,7 @@ export function WorkflowCanvasWrapper({ workflow }: { workflow: WorkflowType }) 
   const handleEditStep = useCallback((stepToEditId: string) => {
     const stepToEdit = steps.find(s => s.id === stepToEditId);
     if (!stepToEdit) return;
-
+    
     const dataContext = generateOutputContext(steps, stepToEdit.id);
     setEditingStepInfo({ step: stepToEdit, dataContext });
   }, [steps]);
@@ -129,7 +129,7 @@ export function WorkflowCanvasWrapper({ workflow }: { workflow: WorkflowType }) 
   return (
     <>
       <DashboardLayout onAddStep={handleAddStep}>
-        <div className="relative flex-1 bg-background h-full">
+        <div className="relative flex-1 bg-background h-full w-full">
             <WorkflowCanvas 
                 steps={steps}
                 onEditStep={handleEditStep}
