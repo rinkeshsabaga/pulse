@@ -20,6 +20,8 @@ import { getWorkflows, deleteWorkflow, duplicateWorkflow } from '@/lib/db';
 import type { Workflow as WorkflowType } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 export default function WorkflowsPage() {
   const [workflows, setWorkflows] = useState<WorkflowType[]>([]);
@@ -27,6 +29,7 @@ export default function WorkflowsPage() {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [workflowToRename, setWorkflowToRename] = useState<WorkflowType | null>(null);
   const [workflowToDelete, setWorkflowToDelete] = useState<WorkflowType | null>(null);
+  const [deleteConfirmation, setDeleteConfirmation] = useState('');
   const { toast } = useToast();
 
   const loadWorkflows = useCallback(async () => {
@@ -45,7 +48,7 @@ export default function WorkflowsPage() {
   }
 
   const handleDelete = async () => {
-    if (!workflowToDelete) return;
+    if (!workflowToDelete || deleteConfirmation !== workflowToDelete.name) return;
 
     await deleteWorkflow(workflowToDelete.id);
     setWorkflows(prev => prev.filter((wf) => wf.id !== workflowToDelete.id));
@@ -55,6 +58,7 @@ export default function WorkflowsPage() {
       description: `"${workflowToDelete.name}" has been successfully deleted.`,
     });
     setWorkflowToDelete(null);
+    setDeleteConfirmation('');
   };
 
   const handleDuplicate = async (workflowToDuplicate: WorkflowType) => {
@@ -80,6 +84,16 @@ export default function WorkflowsPage() {
         title: "Coming Soon!",
         description: `${feature} functionality is not yet implemented.`
     })
+  }
+  
+  const handleOpenDeleteDialog = (workflow: WorkflowType) => {
+    setWorkflowToDelete(workflow);
+    setDeleteConfirmation('');
+  }
+
+  const handleCloseDeleteDialog = () => {
+    setWorkflowToDelete(null);
+    setDeleteConfirmation('');
   }
 
   return (
@@ -171,7 +185,7 @@ export default function WorkflowsPage() {
                         </DropdownMenuItem>
                         <DropdownMenuItem
                           className="text-destructive focus:text-destructive"
-                          onClick={() => setWorkflowToDelete(workflow)}
+                          onClick={() => handleOpenDeleteDialog(workflow)}
                         >
                           <Trash2 className="mr-2 h-4 w-4" />
                           Delete
@@ -198,20 +212,33 @@ export default function WorkflowsPage() {
       />
        <AlertDialog 
         open={!!workflowToDelete} 
-        onOpenChange={(open) => !open && setWorkflowToDelete(null)}
+        onOpenChange={(open) => !open && handleCloseDeleteDialog()}
       >
         <AlertDialogContent>
             <AlertDialogHeader>
             <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
             <AlertDialogDescription>
                 This action cannot be undone. This will permanently delete the
-                <span className="font-semibold"> {workflowToDelete?.name}</span> workflow.
+                <span className="font-semibold"> "{workflowToDelete?.name}"</span> workflow.
+                <br/><br/>
+                To confirm, please type the name of the workflow below.
             </AlertDialogDescription>
             </AlertDialogHeader>
+            <div className="my-4 space-y-2">
+                <Label htmlFor="delete-confirm" className="sr-only">Workflow Name</Label>
+                <Input 
+                    id="delete-confirm"
+                    value={deleteConfirmation}
+                    onChange={(e) => setDeleteConfirmation(e.target.value)}
+                    placeholder={workflowToDelete?.name}
+                    autoComplete="off"
+                />
+            </div>
             <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction 
               onClick={handleDelete} 
+              disabled={deleteConfirmation !== workflowToDelete?.name}
               className="bg-destructive hover:bg-destructive/90"
             >
               Delete
