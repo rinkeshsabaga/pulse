@@ -4,7 +4,7 @@ import type { WorkflowStepData } from './types';
 
 const nodeWidth = 320;
 const nodeHeight = 90;
-const verticalGap = 50;
+const verticalGap = 70;
 const horizontalGap = 150;
 
 type NodeCallbacks = {
@@ -13,8 +13,9 @@ type NodeCallbacks = {
 }
 
 /**
- * Creates React Flow nodes and edges from workflow steps with a simple vertical layout.
+ * Creates React Flow nodes and edges from workflow steps with support for branching.
  * @param steps The array of workflow steps.
+ * @param nodeData Callbacks for node interactions.
  * @returns An object containing the layouted nodes and edges.
  */
 export function getLayoutedElements(steps: WorkflowStepData[], nodeData: NodeCallbacks) {
@@ -25,71 +26,92 @@ export function getLayoutedElements(steps: WorkflowStepData[], nodeData: NodeCal
     return { nodes, edges };
   }
   
-  let yPos = 0;
-  let lastNodeId: string | null = null;
-  
-  steps.forEach((step) => {
+  // Basic vertical layout for all nodes first
+  steps.forEach((step, index) => {
     const node: Node = {
       id: step.id,
       type: 'workflowNode',
-      position: { x: 0, y: yPos },
+      position: { x: 0, y: index * (nodeHeight + verticalGap) },
       data: { 
         step,
         ...nodeData
        },
     };
     nodes.push(node);
-    yPos += nodeHeight + verticalGap;
-
-    if (lastNodeId) {
-       edges.push({
-           id: `e-${lastNodeId}-${step.id}`,
-           source: lastNodeId,
-           target: step.id,
-           type: 'smoothstep'
-       });
-    }
-
-    lastNodeId = step.id;
   });
+
+  // Create edges based on nextStepId logic
+  steps.forEach(step => {
+    if (step.title === 'Condition' && step.data?.conditionData) {
+      // Handle branching for Condition nodes
+      step.data.conditionData.cases.forEach((caseItem, index) => {
+        if (caseItem.nextStepId) {
+          edges.push({
+            id: `e-${step.id}-${caseItem.nextStepId}-${caseItem.id}`,
+            source: step.id,
+            target: caseItem.nextStepId,
+            sourceHandle: caseItem.id, // Connect from the specific case handle
+            type: 'smoothstep',
+            label: caseItem.name,
+          });
+        }
+      });
+      if (step.data.conditionData.defaultNextStepId) {
+          edges.push({
+            id: `e-${step.id}-${step.data.conditionData.defaultNextStepId}-default`,
+            source: step.id,
+            target: step.data.conditionData.defaultNextStepId,
+            sourceHandle: 'default', // Connect from the default handle
+            type: 'smoothstep',
+            label: 'Default',
+          });
+      }
+    } else if (step.data?.nextStepId) {
+      // Handle linear connections for other nodes
+      edges.push({
+        id: `e-${step.id}-${step.data.nextStepId}`,
+        source: step.id,
+        target: step.data.nextStepId,
+        type: 'smoothstep',
+      });
+    }
+  });
+
 
   return { nodes, edges };
 }
 
 /**
- * Generates a data context object based on the output of parent steps.
- * This version finds the parent node without needing the full edge list.
+ * Generates a data context object based on the output of all preceding steps.
  * @param allSteps The full list of workflow steps.
- * @param currentStepId The ID of the current step to find parents for.
+ * @param currentStepId The ID of the current step to generate context for.
  * @returns A data context object for a step's configuration dialog.
  */
 export function generateOutputContext(allSteps: WorkflowStepData[], currentStepId: string): Record<string, any> {
   const context: Record<string, any> = {};
+  const stepMap = new Map(allSteps.map(step => [step.id, step]));
   
-  // Find the index of the current step
+  // For simplicity in this non-graph layout, we'll consider all steps before the current one
+  // as potential context providers. A true graph traversal would be needed for complex layouts.
   const currentIndex = allSteps.findIndex(s => s.id === currentStepId);
 
-  // If it's the first step (index 0), it has no parents in our simple layout
-  if (currentIndex <= 0) {
-    return context;
-  }
-  
-  // The parent is the step right before it in the array
-  const parentStep = allSteps[currentIndex - 1];
+  if (currentIndex === -1) return {};
 
-  if (parentStep) {
-     if (parentStep.type === 'trigger') {
-      const selectedEvent = parentStep.data?.events?.find(e => e.id === parentStep.data?.selectedEventId);
+  const precedingSteps = allSteps.slice(0, currentIndex);
+
+  precedingSteps.forEach(step => {
+    if (step.type === 'trigger') {
+      const selectedEvent = step.data?.events?.find(e => e.id === step.data?.selectedEventId);
       context['trigger'] = selectedEvent || { body: { note: 'No event selected or found. This is sample data.' } };
     } else {
-      context[parentStep.id] = {
+      context[step.id] = {
         status: 'success',
         output: {
-          note: `This is sample output from step: ${parentStep.title}`
+          note: `This is sample output from step: ${step.title}`
         }
       };
     }
-  }
+  });
 
   return context;
 }

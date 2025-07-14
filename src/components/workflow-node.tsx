@@ -60,6 +60,12 @@ const WorkflowNode = memo(({ data, id }: NodeProps<NodeData>) => {
 
   const Icon = iconMap[step.icon];
 
+  const caseHandles = isConditionNode ? step.data?.conditionData?.cases || [] : [];
+  const handleHeight = 25; // height of each handle area
+  const totalHandlesHeight = (caseHandles.length + 1) * handleHeight;
+  const startY = `calc(50% - ${totalHandlesHeight / 2}px)`;
+
+
   return (
     <>
       <Handle
@@ -114,29 +120,40 @@ const WorkflowNode = memo(({ data, id }: NodeProps<NodeData>) => {
           </div>
         </CardHeader>
       </Card>
-      <Handle
-        type="source"
-        position={sourcePosition}
-        id="b"
-        className={cn("!bg-primary", isEndNode && "invisible")}
-        isConnectable={!isEndNode && !isConditionNode}
-      />
+      
+      {!isConditionNode && (
+          <Handle
+            type="source"
+            position={sourcePosition}
+            id="b"
+            className={cn("!bg-primary", isEndNode && "invisible")}
+            isConnectable={!isEndNode}
+          />
+      )}
+      
        {isConditionNode && (
         <>
+            {caseHandles.map((caseItem, index) => (
+              <Handle
+                key={caseItem.id}
+                type="source"
+                position={Position.Right}
+                id={caseItem.id}
+                style={{ top: `calc(${startY} + ${index * handleHeight}px)` }}
+                className="!bg-green-500"
+              >
+                  <div className="absolute -left-20 -translate-y-1/2 text-xs bg-background p-1 rounded-md border text-muted-foreground w-max">{caseItem.name}</div>
+              </Handle>
+            ))}
             <Handle
                 type="source"
                 position={Position.Right}
-                id="c" // 'Yes' or 'True' branch
-                style={{ top: '50%' }}
-                className="!bg-green-500"
-            />
-             <Handle
-                type="source"
-                position={Position.Bottom}
-                id="d" // 'No' or 'False' or 'Default' branch
-                style={{ left: '50%' }}
-                className="!bg-red-500"
-            />
+                id="default"
+                style={{ top: `calc(${startY} + ${caseHandles.length * handleHeight}px)` }}
+                className="!bg-gray-500"
+            >
+                <div className="absolute -left-20 -translate-y-1/2 text-xs bg-background p-1 rounded-md border text-muted-foreground w-max">Default</div>
+            </Handle>
         </>
       )}
     </>

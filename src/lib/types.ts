@@ -162,6 +162,7 @@ export const CaseSchema = z.object({
     name: z.string(),
     rules: z.array(RuleSchema),
     logicalOperator: z.enum(['AND', 'OR']),
+    nextStepId: z.string().optional().describe("The ID of the next step to execute if this case matches."),
 });
 export type Case = z.infer<typeof CaseSchema>;
 
@@ -178,6 +179,7 @@ export type ConditionOutput = z.infer<typeof ConditionOutputSchema>;
 
 export type ConditionData = {
   cases: Case[];
+  defaultNextStepId?: string;
 };
 
 export const RunWorkflowInputSchema = z.object({
@@ -194,6 +196,7 @@ export type RunWorkflowOutput = z.infer<typeof RunWorkflowOutputSchema>;
 
 
 export type StepData = WaitData & ShopifyTriggerData & ApiRequestData & EmailData & DatabaseQueryData & AppTriggerData & ConditionData & {
+    nextStepId?: string;
     webhookUrl?: string;
     events?: WebhookEvent[];
     selectedEventId?: string | null;

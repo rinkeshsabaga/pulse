@@ -27,12 +27,24 @@ const runWorkflowFlow = ai.defineFlow(
   },
   async (input) => {
     const steps = input.steps as WorkflowStepData[];
+    const stepMap = new Map(steps.map(step => [step.id, step]));
     let dataContext: Record<string, any> = {};
+    let currentStepId: string | undefined;
 
     console.log(`--- Starting Workflow Execution ---`);
 
-    // Initialize context with trigger data, if available
+    // Find the trigger step to start
     const triggerStep = steps.find(s => s.type === 'trigger');
+    if (!triggerStep) {
+        return {
+            success: false,
+            message: 'Workflow has no trigger step.',
+            finalDataContext: dataContext,
+        };
+    }
+    
+    currentStepId = triggerStep.id;
+
     if (triggerStep?.data?.selectedEventId && triggerStep?.data?.events) {
         const selectedEvent = triggerStep.data.events.find(e => e.id === triggerStep.data.selectedEventId);
         if (selectedEvent) {
@@ -41,28 +53,46 @@ const runWorkflowFlow = ai.defineFlow(
     } else {
         dataContext['trigger'] = { body: { note: 'No trigger event selected, using empty context.' } };
     }
-    
-    // Process steps sequentially
-    for (const step of steps) {
-      if (step.type === 'trigger') continue; // Skip trigger, already processed
+     if (triggerStep) {
+        dataContext[triggerStep.id] = { ...dataContext.trigger };
+     }
+
+
+    // Process steps by following the chain
+    while(currentStepId) {
+      const step = stepMap.get(currentStepId);
+      if (!step) {
+          console.error(`Step with ID ${currentStepId} not found. Halting execution.`);
+          break;
+      }
       
       console.log(`Executing step: ${step.title} (ID: ${step.id})`);
 
       try {
         let stepOutput: any = null;
+        let nextStepId: string | undefined;
+
         switch(step.title) {
             case 'Wait':
                 if (step.data) {
                     stepOutput = await wait(step.data);
                 }
+                nextStepId = step.data?.nextStepId;
                 break;
             case 'Condition':
                 if (step.data?.conditionData) {
                     const result = await condition({ cases: step.data.conditionData.cases, dataContext });
-                    // This is a special case, we don't add to context but it can alter flow
-                    // For now, we just log it. A real engine would handle branching here.
-                    console.log(`Condition result: ${result.outcome}`);
+                    const matchedCase = step.data.conditionData.cases.find(c => c.name === result.outcome);
+
+                    if (matchedCase && matchedCase.nextStepId) {
+                        nextStepId = matchedCase.nextStepId;
+                    } else {
+                        nextStepId = step.data.conditionData.defaultNextStepId;
+                    }
+                    console.log(`Condition result: ${result.outcome}, next step: ${nextStepId}`);
                     stepOutput = result;
+                } else {
+                    nextStepId = step.data?.nextStepId;
                 }
                 break;
             case 'Send Email':
@@ -80,6 +110,7 @@ const runWorkflowFlow = ai.defineFlow(
                         stepOutput = await sendEmail(resolvedInput);
                     }
                 }
+                nextStepId = step.data?.nextStepId;
                 break;
             case 'Database Query':
                  if (step.data?.databaseQueryData) {
@@ -89,11 +120,20 @@ const runWorkflowFlow = ai.defineFlow(
                         dataContext,
                     });
                 }
+                nextStepId = step.data?.nextStepId;
                 break;
-            // TODO: Implement other action types like API Request, Custom Code, etc.
+            // Handle trigger as a non-action step
+            case 'Webhook':
+            case 'Cron Job':
+            case 'Shopify':
+            case 'App Event':
+                nextStepId = step.data?.nextStepId;
+                // No output for triggers during run, context is already set
+                break;
             default:
                 console.log(`Skipping step "${step.title}" - execution logic not implemented.`);
                 stepOutput = { note: `Execution for ${step.title} is not implemented.` };
+                nextStepId = step.data?.nextStepId;
                 break;
         }
         
@@ -101,6 +141,8 @@ const runWorkflowFlow = ai.defineFlow(
         if (stepOutput) {
             dataContext[step.id] = stepOutput;
         }
+        
+        currentStepId = nextStepId;
 
       } catch (error: any) {
         console.error(`Error executing step ${step.id}:`, error);

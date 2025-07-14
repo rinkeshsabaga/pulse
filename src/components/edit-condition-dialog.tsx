@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -16,14 +15,16 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from './ui/radio-group';
-import type { WorkflowStepData, ConditionData, Case, Rule } from '@/lib/types';
+import type { WorkflowStepData, Case, Rule } from '@/lib/types';
 import { Plus, Trash2, GitBranch, GripVertical } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 import { Card, CardContent, CardHeader } from './ui/card';
 import { VariableExplorer } from './variable-explorer';
+import { Separator } from './ui/separator';
 
 type EditConditionDialogProps = {
   step: WorkflowStepData | null;
+  allSteps: WorkflowStepData[];
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSave: (step: WorkflowStepData) => void;
@@ -43,14 +44,17 @@ const operatorOptions = [
     { value: 'less_than', label: 'Less than' },
 ];
 
-export function EditConditionDialog({ step, open, onOpenChange, onSave, dataContext = {} }: EditConditionDialogProps) {
+export function EditConditionDialog({ step, allSteps, open, onOpenChange, onSave, dataContext = {} }: EditConditionDialogProps) {
   const [cases, setCases] = useState<Case[]>([]);
+  const [defaultNextStepId, setDefaultNextStepId] = useState<string | undefined>(undefined);
   
   useEffect(() => {
     if (open && step?.data?.conditionData) {
       setCases(step.data.conditionData.cases || []);
+      setDefaultNextStepId(step.data.conditionData.defaultNextStepId);
     } else if (open) {
       setCases([{ id: uuidv4(), name: 'Case 1', rules: [{ id: uuidv4(), variable: '', operator: 'equals', value: '' }], logicalOperator: 'AND' }]);
+      setDefaultNextStepId(undefined);
     }
   }, [open, step?.data]);
 
@@ -62,7 +66,8 @@ export function EditConditionDialog({ step, open, onOpenChange, onSave, dataCont
       data: {
         ...step.data,
         conditionData: {
-          cases: cases
+          cases: cases,
+          defaultNextStepId: defaultNextStepId
         },
       },
     };
@@ -98,6 +103,8 @@ export function EditConditionDialog({ step, open, onOpenChange, onSave, dataCont
   }
 
   if (!step) return null;
+
+  const availableNextSteps = allSteps.filter(s => s.id !== step.id && s.type === 'action');
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -208,12 +215,49 @@ export function EditConditionDialog({ step, open, onOpenChange, onSave, dataCont
                         <Button variant="outline" size="sm" onClick={() => handleAddRule(caseItem.id)}>
                             <Plus className="mr-2 h-4 w-4" /> Add Rule
                         </Button>
+                        <Separator />
+                        <div className="space-y-1">
+                            <Label htmlFor={`next-step-${caseItem.id}`} className="text-xs">If this case is true, go to:</Label>
+                            <Select
+                                value={caseItem.nextStepId}
+                                onValueChange={(v) => handleCaseChange(caseItem.id, 'nextStepId', v)}
+                            >
+                                <SelectTrigger id={`next-step-${caseItem.id}`}>
+                                    <SelectValue placeholder="Select next step..." />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {availableNextSteps.map(s => (
+                                        <SelectItem key={s.id} value={s.id}>{s.title}</SelectItem>
+                                    ))}
+                                    <SelectItem value="">End Workflow</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
                     </CardContent>
                 </Card>
             ))}
             <Button variant="outline" className="w-full border-dashed" onClick={handleAddCase}>
                 <Plus className="mr-2 h-4 w-4" /> Add Case
             </Button>
+            <Separator />
+            <div className="p-4 border rounded-md">
+                 <Label htmlFor="default-next-step">Default Case (if no cases match)</Label>
+                 <p className="text-xs text-muted-foreground mb-2">Select the step to execute if none of the cases above are true.</p>
+                 <Select
+                    value={defaultNextStepId}
+                    onValueChange={setDefaultNextStepId}
+                >
+                    <SelectTrigger id="default-next-step">
+                        <SelectValue placeholder="Select next step..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                        {availableNextSteps.map(s => (
+                            <SelectItem key={s.id} value={s.id}>{s.title}</SelectItem>
+                        ))}
+                         <SelectItem value="">End Workflow</SelectItem>
+                    </SelectContent>
+                </Select>
+            </div>
         </div>
         <DialogFooter>
           <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>

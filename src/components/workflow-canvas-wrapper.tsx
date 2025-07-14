@@ -40,6 +40,18 @@ export function WorkflowCanvasWrapper({ workflow: initialWorkflow }: WorkflowCan
 
   const handleSetSteps = useCallback(async (newStepsOrFn: WorkflowStepData[] | ((prev: WorkflowStepData[]) => WorkflowStepData[])) => {
     const updatedSteps = typeof newStepsOrFn === 'function' ? newStepsOrFn(steps) : newStepsOrFn;
+    
+    // Assign nextStepId for linear workflows
+    for (let i = 0; i < updatedSteps.length; i++) {
+        const currentStep = updatedSteps[i];
+        if (currentStep.title !== 'Condition' && i + 1 < updatedSteps.length) {
+            if (!currentStep.data) currentStep.data = {};
+            currentStep.data.nextStepId = updatedSteps[i+1].id;
+        } else if (currentStep.title !== 'Condition') {
+             if (currentStep.data?.nextStepId) delete currentStep.data.nextStepId;
+        }
+    }
+    
     setSteps(updatedSteps);
     const updatedWorkflow = await handleUpdate(workflow.id, { steps: updatedSteps });
     if(updatedWorkflow) {
@@ -248,13 +260,16 @@ export function WorkflowCanvasWrapper({ workflow: initialWorkflow }: WorkflowCan
             onOpenChange={(isOpen) => !isOpen && setEditingStepInfo(null)}
             onSave={handleSaveAction}
         />
-        <EditConditionDialog
-            step={editingStepInfo?.step}
-            dataContext={editingStepInfo?.dataContext}
-            open={!!editingStepInfo && editingStepInfo.step.title === 'Condition'}
-            onOpenChange={(isOpen) => !isOpen && setEditingStepInfo(null)}
-            onSave={handleSaveAction}
-        />
+        {editingStepInfo && editingStepInfo.step.title === 'Condition' && (
+             <EditConditionDialog
+                step={editingStepInfo.step}
+                allSteps={steps}
+                dataContext={editingStepInfo.dataContext}
+                open={!!editingStepInfo}
+                onOpenChange={(isOpen) => !isOpen && setEditingStepInfo(null)}
+                onSave={handleSaveAction}
+            />
+        )}
     </div>
   );
 }
