@@ -67,7 +67,7 @@ function WorkflowCanvasComponent({ steps, setSteps, onEditStep, workflowName, wo
       description: 'The step has been removed from your workflow.',
     });
   }, [setSteps, toast]);
-  
+
   const onConnect = useCallback(
     (params: Connection | Edge) => setEdges((eds) => addEdge({ ...params, type: 'smoothstep' }, eds)),
     [setEdges]
@@ -75,7 +75,7 @@ function WorkflowCanvasComponent({ steps, setSteps, onEditStep, workflowName, wo
   
   const layoutedElements = useMemo(() => {
     const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(steps);
-    // Inject handlers into node data
+    
     const nodesWithHandlers = layoutedNodes.map(node => ({
       ...node,
       data: {
@@ -86,6 +86,7 @@ function WorkflowCanvasComponent({ steps, setSteps, onEditStep, workflowName, wo
     }));
     return { nodes: nodesWithHandlers, edges: layoutedEdges };
   }, [steps, handleEditStep, handleDeleteStep]);
+  
 
   useEffect(() => {
     setNodes(layoutedElements.nodes);
