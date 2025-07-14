@@ -130,43 +130,46 @@ function WorkflowCanvasComponent({
   
   const onEdgesChange: OnEdgesChange = useCallback(
     (changes) => {
-      const edgesToRemove = changes.filter((change): change is { type: 'remove'; id: string } => change.type === 'remove');
-
-      if (edgesToRemove.length > 0) {
-        const fullEdgesBeingRemoved = edges.filter(edge => edgesToRemove.some(removed => removed.id === edge.id));
-
-        onStepsChange(prevSteps => {
-          let newSteps = [...prevSteps];
-          
-          fullEdgesBeingRemoved.forEach(edge => {
-            newSteps = newSteps.map(step => {
-              if (step.id === edge.source) {
-                const newStep = { ...step, data: { ...step.data } };
-                if (step.title === 'Condition' && newStep.data?.conditionData) {
-                  if (edge.sourceHandle === 'default') {
-                    delete newStep.data.conditionData.defaultNextStepId;
-                  } else {
-                    const caseToUpdate = newStep.data.conditionData.cases.find(c => c.id === edge.sourceHandle);
-                    if (caseToUpdate) {
-                      delete caseToUpdate.nextStepId;
-                    }
+      onStepsChange(currentSteps => {
+        let nextSteps = [...currentSteps];
+        const edgesToRemove = changes.filter((c): c is EdgeChange & { type: 'remove' } => c.type === 'remove');
+  
+        edgesToRemove.forEach(change => {
+          const edgeToRemove = edges.find(edge => edge.id === change.id);
+          if (!edgeToRemove) return;
+  
+          nextSteps = nextSteps.map(step => {
+            if (step.id === edgeToRemove.source) {
+              const newStepData = { ...step.data };
+              
+              if (step.title === 'Condition' && newStepData.conditionData) {
+                // It's a condition node, check which handle was disconnected
+                if (edgeToRemove.sourceHandle === 'default') {
+                  delete newStepData.conditionData.defaultNextStepId;
+                } else {
+                  const caseToUpdate = newStepData.conditionData.cases.find(c => c.id === edgeToRemove.sourceHandle);
+                  if (caseToUpdate) {
+                    delete caseToUpdate.nextStepId;
                   }
-                } else if (newStep.data?.nextStepId === edge.target) {
-                  delete newStep.data.nextStepId;
                 }
-                return newStep;
+              } else {
+                // It's a regular node
+                if (newStepData.nextStepId === edgeToRemove.target) {
+                  delete newStepData.nextStepId;
+                }
               }
-              return step;
-            });
+              return { ...step, data: newStepData };
+            }
+            return step;
           });
-          
-          return newSteps;
         });
-      }
-
+        
+        return nextSteps;
+      });
+  
       setEdges((eds) => applyEdgeChanges(changes, eds));
     },
-    [edges, onStepsChange, setEdges]
+    [setEdges, onStepsChange, edges]
   );
   
   const onNodesChange: OnNodesChange = useCallback((changes) => {
