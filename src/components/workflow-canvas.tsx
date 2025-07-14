@@ -12,9 +12,12 @@ import ReactFlow, {
   useReactFlow,
   OnNodesChange,
   OnEdgesChange,
+  addEdge,
+  Connection,
+  Edge,
 } from 'reactflow';
 import { Button } from '@/components/ui/button';
-import { Play, Trash2, History, Loader2, Save } from 'lucide-react';
+import { Play, Trash2, History, Loader2 } from 'lucide-react';
 import { Separator } from './ui/separator';
 import type { Workflow as WorkflowType, WorkflowStepData, WorkflowVersion } from '@/lib/types';
 import WorkflowNode from './workflow-node';
@@ -88,6 +91,81 @@ function WorkflowCanvasComponent({
     });
 
   }, [steps, nodeCallbacks, setNodes, setEdges, fitView]);
+
+  const handleConnect = useCallback((params: Connection) => {
+      const { source, sourceHandle, target } = params;
+      if (!source || !target) return;
+
+      onStepsChange(prevSteps => {
+          const newSteps = [...prevSteps];
+          const sourceStepIndex = newSteps.findIndex(s => s.id === source);
+          if (sourceStepIndex === -1) return prevSteps;
+
+          const sourceStep = newSteps[sourceStepIndex];
+          
+          if (sourceStep.title === 'Condition' && sourceStep.data?.conditionData) {
+              if (sourceHandle === 'default') {
+                  sourceStep.data.conditionData.defaultNextStepId = target;
+              } else {
+                  const caseIndex = sourceStep.data.conditionData.cases.findIndex(c => c.id === sourceHandle);
+                  if (caseIndex !== -1) {
+                      sourceStep.data.conditionData.cases[caseIndex].nextStepId = target;
+                  }
+              }
+          } else {
+              if (!sourceStep.data) sourceStep.data = {};
+              sourceStep.data.nextStepId = target;
+          }
+
+          newSteps[sourceStepIndex] = sourceStep;
+          return newSteps;
+      });
+
+      setEdges((eds) => addEdge(params, eds));
+  }, [onStepsChange, setEdges]);
+  
+  const handleEdgesChange: OnEdgesChange = useCallback((changes) => {
+    onEdgesChange(changes);
+    
+    changes.forEach(change => {
+        if(change.type === 'remove') {
+            const edgeId = change.id;
+            const sourceIdMatch = edgeId.match(/e-(step-.*?)-/);
+            const sourceId = sourceIdMatch ? sourceIdMatch[1] : null;
+
+            if (sourceId) {
+                onStepsChange(prevSteps => {
+                    return prevSteps.map(step => {
+                        if (step.id === sourceId) {
+                            const newStep = {...step};
+                            if (newStep.title === 'Condition' && newStep.data?.conditionData) {
+                                // Clear nextStepId from the matching case
+                                newStep.data.conditionData.cases = newStep.data.conditionData.cases.map(c => {
+                                    if(edgeId.endsWith(c.id)) {
+                                        const newCase = {...c};
+                                        delete newCase.nextStepId;
+                                        return newCase;
+                                    }
+                                    return c;
+                                });
+                                // Clear default nextStepId
+                                if (edgeId.endsWith('-default')) {
+                                    delete newStep.data.conditionData.defaultNextStepId;
+                                }
+                            } else {
+                                // Clear linear nextStepId
+                                delete newStep.data?.nextStepId;
+                            }
+                            return newStep;
+                        }
+                        return step;
+                    });
+                });
+            }
+        }
+    });
+}, [onEdgesChange, onStepsChange]);
+
 
 
   const handleConfirmClear = () => {
@@ -218,7 +296,8 @@ function WorkflowCanvasComponent({
           nodes={nodes}
           edges={edges}
           onNodesChange={onNodesChange as OnNodesChange}
-          onEdgesChange={onEdgesChange as OnEdgesChange}
+          onEdgesChange={handleEdgesChange}
+          onConnect={handleConnect}
           nodeTypes={nodeTypes}
           fitView
           className="bg-background"
