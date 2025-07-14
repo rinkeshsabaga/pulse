@@ -20,14 +20,13 @@ import { DashboardLayout } from './dashboard-layout';
 import { WorkflowCanvas } from './workflow-canvas';
 import { generateOutputContext } from '@/lib/flow-utils';
 import { useToast } from '@/hooks/use-toast';
+import { handleUpdate, handleRevert } from '@/app/actions';
 
 type WorkflowCanvasWrapperProps = {
   workflow: WorkflowType;
-  onUpdate: (data: Partial<WorkflowType>) => Promise<WorkflowType | undefined>;
-  onRevert: (steps: WorkflowStepData[]) => Promise<WorkflowType | undefined>;
 };
 
-export function WorkflowCanvasWrapper({ workflow: initialWorkflow, onUpdate, onRevert }: WorkflowCanvasWrapperProps) {
+export function WorkflowCanvasWrapper({ workflow: initialWorkflow }: WorkflowCanvasWrapperProps) {
   const [workflow, setWorkflow] = useState<WorkflowType>(initialWorkflow);
   const [steps, setSteps] = useState<WorkflowStepData[]>(initialWorkflow.steps);
   const [isAiGeneratorOpen, setIsAiGeneratorOpen] = useState(false);
@@ -42,15 +41,15 @@ export function WorkflowCanvasWrapper({ workflow: initialWorkflow, onUpdate, onR
   const handleSetSteps = useCallback(async (newStepsOrFn: WorkflowStepData[] | ((prev: WorkflowStepData[]) => WorkflowStepData[])) => {
     const updatedSteps = typeof newStepsOrFn === 'function' ? newStepsOrFn(steps) : newStepsOrFn;
     setSteps(updatedSteps);
-    const updatedWorkflow = await onUpdate({ steps: updatedSteps });
+    const updatedWorkflow = await handleUpdate(workflow.id, { steps: updatedSteps });
     if(updatedWorkflow) {
         setWorkflow(updatedWorkflow);
     }
-  }, [onUpdate, steps]);
+  }, [workflow.id, steps]);
 
   const handleRevertVersion = useCallback(async (version: WorkflowVersion) => {
     const revertedSteps = version.steps;
-    const updatedWorkflow = await onRevert(revertedSteps);
+    const updatedWorkflow = await handleRevert(workflow.id, revertedSteps);
     if (updatedWorkflow) {
       setWorkflow(updatedWorkflow);
       setSteps(updatedWorkflow.steps);
@@ -59,7 +58,7 @@ export function WorkflowCanvasWrapper({ workflow: initialWorkflow, onUpdate, onR
         description: `Successfully reverted to Version ${version.version}.`
       });
     }
-  }, [onRevert, toast]);
+  }, [workflow.id, toast]);
 
   const handleEditStep = useCallback((stepToEditId: string) => {
     const stepToEdit = steps.find(s => s.id === stepToEditId);
