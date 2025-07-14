@@ -49,14 +49,18 @@ export function EditConditionDialog({ step, allSteps, open, onOpenChange, onSave
   const [defaultNextStepId, setDefaultNextStepId] = useState<string | undefined>(undefined);
   
   useEffect(() => {
-    if (open && step?.data?.conditionData) {
-      setCases(step.data.conditionData.cases || []);
-      setDefaultNextStepId(step.data.conditionData.defaultNextStepId);
-    } else if (open) {
-      setCases([{ id: uuidv4(), name: 'Case 1', rules: [{ id: uuidv4(), variable: '', operator: 'equals', value: '' }], logicalOperator: 'AND' }]);
-      setDefaultNextStepId(undefined);
+    if (open && step) {
+        const conditionData = step.data?.conditionData;
+        if (conditionData && conditionData.cases && conditionData.cases.length > 0) {
+            setCases(JSON.parse(JSON.stringify(conditionData.cases))); // Deep copy
+            setDefaultNextStepId(conditionData.defaultNextStepId);
+        } else {
+            // Initialize with a default case if none exist
+            setCases([{ id: uuidv4(), name: 'Case 1', rules: [{ id: uuidv4(), variable: '', operator: 'equals', value: '' }], logicalOperator: 'AND', nextStepId: undefined }]);
+            setDefaultNextStepId(undefined);
+        }
     }
-  }, [open, step?.data]);
+  }, [open, step]);
 
   const handleSave = () => {
     if (!step) return;
