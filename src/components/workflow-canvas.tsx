@@ -120,6 +120,13 @@ function WorkflowCanvasComponent({
                 }
             }
             sourceStep.data = { ...sourceStep.data, conditionData: { ...conditionData, cases } };
+        } else if (sourceStep.title === 'Parallel' && sourceStep.data?.branches) {
+            const branches = [...sourceStep.data.branches];
+            const branchIndex = branches.findIndex(b => b.id === sourceHandle);
+            if (branchIndex !== -1) {
+                branches[branchIndex] = { ...branches[branchIndex], nextStepId: target };
+            }
+            sourceStep.data = { ...sourceStep.data, branches };
         } else {
             sourceStep.data = { ...sourceStep.data, nextStepId: target };
         }
@@ -132,54 +139,61 @@ function WorkflowCanvasComponent({
 
   const onEdgesChange: OnEdgesChange = useCallback(
     (changes) => {
-        const edgesToRemove = changes.filter((c): c is EdgeChange & { type: 'remove' } => c.type === 'remove');
-
-        if (edgesToRemove.length > 0) {
-            onStepsChange(currentSteps => {
-                let nextSteps = [...currentSteps];
-
-                edgesToRemove.forEach(change => {
-                    const edgeToRemove = edges.find(edge => edge.id === change.id);
-                    if (!edgeToRemove) return;
-
-                    const sourceStepIndex = nextSteps.findIndex(s => s.id === edgeToRemove.source);
-                    if (sourceStepIndex === -1) return;
-                    
-                    const sourceStep = { ...nextSteps[sourceStepIndex] };
-
-                    if (sourceStep.title === 'Condition' && sourceStep.data?.conditionData) {
-                        const conditionData = { ...sourceStep.data.conditionData };
-                        const cases = [...(conditionData.cases || [])];
-                        let caseModified = false;
-
-                        if (edgeToRemove.sourceHandle === 'default') {
-                            conditionData.defaultNextStepId = undefined;
-                            caseModified = true;
-                        } else {
-                            const caseIndex = cases.findIndex(c => c.id === edgeToRemove.sourceHandle);
-                            if (caseIndex !== -1) {
-                                cases[caseIndex].nextStepId = undefined;
-                                caseModified = true;
-                            }
-                        }
-
-                        if (caseModified) {
-                           sourceStep.data = { ...sourceStep.data, conditionData: { ...conditionData, cases } };
-                           nextSteps[sourceStepIndex] = sourceStep;
-                        }
-
-                    } else if (sourceStep.data?.nextStepId === edgeToRemove.target) {
-                        const { nextStepId, ...restData } = sourceStep.data;
-                        sourceStep.data = restData;
-                        nextSteps[sourceStepIndex] = sourceStep;
-                    }
-                });
-
-                return nextSteps;
-            });
-        }
-      
-        setEdges((eds) => applyEdgeChanges(changes, eds));
+      const edgesToRemove = changes.filter((c): c is EdgeChange & { type: 'remove' } => c.type === 'remove');
+  
+      if (edgesToRemove.length > 0) {
+        onStepsChange(currentSteps => {
+          let nextSteps = [...currentSteps];
+  
+          edgesToRemove.forEach(change => {
+            const edgeToRemove = edges.find(edge => edge.id === change.id);
+            if (!edgeToRemove) return;
+  
+            const sourceStepIndex = nextSteps.findIndex(s => s.id === edgeToRemove.source);
+            if (sourceStepIndex === -1) return;
+  
+            const sourceStep = { ...nextSteps[sourceStepIndex] };
+            let stepWasModified = false;
+  
+            if (sourceStep.title === 'Condition' && sourceStep.data?.conditionData) {
+              const conditionData = { ...sourceStep.data.conditionData };
+              if (edgeToRemove.sourceHandle === 'default') {
+                conditionData.defaultNextStepId = undefined;
+                stepWasModified = true;
+              } else {
+                const caseIndex = conditionData.cases.findIndex(c => c.id === edgeToRemove.sourceHandle);
+                if (caseIndex !== -1) {
+                  conditionData.cases[caseIndex].nextStepId = undefined;
+                  stepWasModified = true;
+                }
+              }
+              if (stepWasModified) {
+                sourceStep.data = { ...sourceStep.data, conditionData };
+              }
+            } else if (sourceStep.title === 'Parallel' && sourceStep.data?.branches) {
+                const branches = [...sourceStep.data.branches];
+                const branchIndex = branches.findIndex(b => b.id === edgeToRemove.sourceHandle);
+                if (branchIndex !== -1) {
+                    branches[branchIndex].nextStepId = undefined;
+                    sourceStep.data = { ...sourceStep.data, branches };
+                    stepWasModified = true;
+                }
+            } else if (sourceStep.data?.nextStepId === edgeToRemove.target) {
+              const { nextStepId, ...restData } = sourceStep.data;
+              sourceStep.data = restData;
+              stepWasModified = true;
+            }
+  
+            if (stepWasModified) {
+              nextSteps[sourceStepIndex] = sourceStep;
+            }
+          });
+  
+          return nextSteps;
+        });
+      }
+  
+      setEdges((eds) => applyEdgeChanges(changes, eds));
     },
     [setEdges, onStepsChange, edges]
   );

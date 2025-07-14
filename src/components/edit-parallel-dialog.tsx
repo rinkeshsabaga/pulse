@@ -96,21 +96,40 @@ export function EditParallelDialog({ step, allSteps, open, onOpenChange, onSave 
         <div className="space-y-4 py-4 max-h-[70vh] overflow-y-auto pr-4">
             {branches.map((branch, branchIndex) => (
                 <Card key={branch.id} className="bg-muted/30">
-                    <CardContent className="p-4 flex items-center gap-4">
-                       <GripVertical className="h-5 w-5 text-muted-foreground cursor-grab" />
-                       <div className="flex-1 space-y-1.5">
-                            <Label htmlFor={`branch-name-${branch.id}`}>Branch Name</Label>
-                            <Input 
-                                id={`branch-name-${branch.id}`}
-                                placeholder="Branch Name" 
-                                value={branch.name}
-                                onChange={(e) => handleBranchChange(branch.id, 'name', e.target.value)}
-                                className="font-semibold"
-                            />
-                       </div>
-                        <Button variant="ghost" size="icon" onClick={() => handleRemoveBranch(branch.id)} disabled={branches.length <= 1}>
-                           <Trash2 className="h-4 w-4 text-destructive" />
-                       </Button>
+                    <CardContent className="p-4 space-y-4">
+                        <div className="flex items-center gap-4">
+                            <GripVertical className="h-5 w-5 text-muted-foreground cursor-grab" />
+                            <div className="flex-1 space-y-1.5">
+                                    <Label htmlFor={`branch-name-${branch.id}`}>Branch Name</Label>
+                                    <Input 
+                                        id={`branch-name-${branch.id}`}
+                                        placeholder="Branch Name" 
+                                        value={branch.name}
+                                        onChange={(e) => handleBranchChange(branch.id, 'name', e.target.value)}
+                                        className="font-semibold"
+                                    />
+                            </div>
+                            <Button variant="ghost" size="icon" onClick={() => handleRemoveBranch(branch.id)} disabled={branches.length <= 1}>
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                        </div>
+                         <div className="space-y-1 pl-10">
+                            <Label htmlFor={`next-step-${branch.id}`} className="text-xs">Starts with step:</Label>
+                            <Select
+                                value={branch.nextStepId || END_WORKFLOW_VALUE}
+                                onValueChange={(v) => handleBranchChange(branch.id, 'nextStepId', v === END_WORKFLOW_VALUE ? undefined : v)}
+                            >
+                                <SelectTrigger id={`next-step-${branch.id}`}>
+                                    <SelectValue placeholder="Select next step..." />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {availableNextSteps.map(s => (
+                                        <SelectItem key={s.id} value={s.id}>{s.title}</SelectItem>
+                                    ))}
+                                    <SelectItem value={END_WORKFLOW_VALUE}>End this Branch</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
                     </CardContent>
                 </Card>
             ))}

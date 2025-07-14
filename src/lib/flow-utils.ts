@@ -44,7 +44,7 @@ export function getLayoutedElements(steps: WorkflowStepData[], nodeData: NodeCal
   steps.forEach(step => {
     if (step.title === 'Condition' && step.data?.conditionData) {
       // Handle branching for Condition nodes
-      step.data.conditionData.cases.forEach((caseItem, index) => {
+      step.data.conditionData.cases.forEach((caseItem) => {
         if (caseItem.nextStepId) {
           edges.push({
             id: `e-${step.id}-${caseItem.nextStepId}-${caseItem.id}`,
@@ -52,7 +52,6 @@ export function getLayoutedElements(steps: WorkflowStepData[], nodeData: NodeCal
             target: caseItem.nextStepId,
             sourceHandle: caseItem.id, // Connect from the specific case handle
             type: 'smoothstep',
-            label: caseItem.name,
           });
         }
       });
@@ -63,9 +62,20 @@ export function getLayoutedElements(steps: WorkflowStepData[], nodeData: NodeCal
             target: step.data.conditionData.defaultNextStepId,
             sourceHandle: 'default', // Connect from the default handle
             type: 'smoothstep',
-            label: 'Default',
           });
       }
+    } else if (step.title === 'Parallel' && step.data?.branches) {
+       step.data.branches.forEach((branch) => {
+        if (branch.nextStepId) {
+          edges.push({
+            id: `e-${step.id}-${branch.nextStepId}-${branch.id}`,
+            source: step.id,
+            target: branch.nextStepId,
+            sourceHandle: branch.id,
+            type: 'smoothstep',
+          });
+        }
+      });
     } else if (step.data?.nextStepId) {
       // Handle linear connections for other nodes
       edges.push({
