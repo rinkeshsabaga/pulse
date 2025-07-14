@@ -14,7 +14,9 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { MoreHorizontal, FolderPlus, Plus, Workflow, Edit, Copy, Trash2, Eye } from 'lucide-react';
 import { CreateWorkflowDialog } from '@/components/create-workflow-dialog';
-import { getWorkflows, deleteWorkflow } from '@/lib/db';
+import { RenameWorkflowDialog } from '@/components/rename-workflow-dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { getWorkflows, deleteWorkflow, duplicateWorkflow } from '@/lib/db';
 import type { Workflow as WorkflowType } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -23,6 +25,8 @@ export default function WorkflowsPage() {
   const [workflows, setWorkflows] = useState<WorkflowType[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [workflowToRename, setWorkflowToRename] = useState<WorkflowType | null>(null);
+  const [workflowToDelete, setWorkflowToDelete] = useState<WorkflowType | null>(null);
   const { toast } = useToast();
 
   const loadWorkflows = useCallback(async () => {
@@ -35,6 +39,41 @@ export default function WorkflowsPage() {
   useEffect(() => {
     loadWorkflows();
   }, [loadWorkflows]);
+  
+  const handleRename = () => {
+    loadWorkflows();
+  }
+
+  const handleDelete = async () => {
+    if (!workflowToDelete) return;
+
+    await deleteWorkflow(workflowToDelete.id);
+    setWorkflows(prev => prev.filter((wf) => wf.id !== workflowToDelete.id));
+
+    toast({
+      title: 'Workflow Deleted',
+      description: `"${workflowToDelete.name}" has been successfully deleted.`,
+    });
+    setWorkflowToDelete(null);
+  };
+
+  const handleDuplicate = async (workflowToDuplicate: WorkflowType) => {
+    try {
+        await duplicateWorkflow(workflowToDuplicate.id);
+        toast({
+            title: 'Workflow Duplicated',
+            description: `A copy of "${workflowToDuplicate.name}" has been created.`,
+        });
+        loadWorkflows();
+    } catch (error) {
+        toast({
+            variant: 'destructive',
+            title: 'Error Duplicating Workflow',
+            description: 'Could not duplicate the workflow. Please try again.',
+        });
+    }
+  }
+
 
   const showNotImplementedToast = (feature: string) => {
     toast({
@@ -122,17 +161,17 @@ export default function WorkflowsPage() {
                               View
                           </Link>
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => showNotImplementedToast('Rename')}>
+                        <DropdownMenuItem onClick={() => setWorkflowToRename(workflow)}>
                           <Edit className="mr-2 h-4 w-4" />
                           Rename
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => showNotImplementedToast('Duplicate')}>
+                        <DropdownMenuItem onClick={() => handleDuplicate(workflow)}>
                           <Copy className="mr-2 h-4 w-4" />
                           Duplicate
                         </DropdownMenuItem>
                         <DropdownMenuItem
                           className="text-destructive focus:text-destructive"
-                          onClick={() => showNotImplementedToast('Delete')}
+                          onClick={() => setWorkflowToDelete(workflow)}
                         >
                           <Trash2 className="mr-2 h-4 w-4" />
                           Delete
@@ -151,6 +190,35 @@ export default function WorkflowsPage() {
         onOpenChange={setIsCreateDialogOpen} 
         onWorkflowCreated={loadWorkflows}
       />
+      <RenameWorkflowDialog
+        open={!!workflowToRename}
+        onOpenChange={() => setWorkflowToRename(null)}
+        onWorkflowRenamed={handleRename}
+        workflow={workflowToRename}
+      />
+       <AlertDialog 
+        open={!!workflowToDelete} 
+        onOpenChange={(open) => !open && setWorkflowToDelete(null)}
+      >
+        <AlertDialogContent>
+            <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+                This action cannot be undone. This will permanently delete the
+                <span className="font-semibold"> {workflowToDelete?.name}</span> workflow.
+            </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleDelete} 
+              className="bg-destructive hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }

@@ -108,6 +108,23 @@ export async function addWorkflow(workflowData: { name: string; description?: st
   return JSON.parse(JSON.stringify(newWorkflow));
 }
 
+export async function duplicateWorkflow(id: string): Promise<Workflow> {
+  const originalWorkflow = await getWorkflowById(id);
+  if (!originalWorkflow) {
+    throw new Error('Workflow not found');
+  }
+  const newWorkflow: Workflow = {
+    ...originalWorkflow,
+    id: `wf_${Date.now()}`,
+    name: `Copy of ${originalWorkflow.name}`,
+    status: 'Draft',
+    version: 1,
+    history: [],
+  };
+  workflows.push(newWorkflow);
+  return JSON.parse(JSON.stringify(newWorkflow));
+}
+
 export async function deleteWorkflow(id: string): Promise<{ success: boolean }> {
   const index = workflows.findIndex((wf) => wf.id === id);
   if (index > -1) {
@@ -122,9 +139,10 @@ export async function updateWorkflow(id: string, updatedData: Partial<Omit<Workf
     if (index !== -1) {
         const currentWorkflow = workflows[index];
         const newVersionNumber = currentWorkflow.version + 1;
+        const hasRelevantChanges = updatedData.steps || updatedData.name || updatedData.description;
 
-        // Don't save an entry if there are no steps to save
-        if (currentWorkflow.steps.length > 0) {
+        // Only create a new history entry if there are meaningful changes
+        if (hasRelevantChanges && currentWorkflow.steps.length > 0) {
           const newHistoryEntry = {
             version: currentWorkflow.version,
             date: new Date().toISOString(),
@@ -137,7 +155,7 @@ export async function updateWorkflow(id: string, updatedData: Partial<Omit<Workf
         const updatedWorkflow = {
           ...currentWorkflow,
           ...updatedData,
-          version: newVersionNumber,
+          version: hasRelevantChanges ? newVersionNumber : currentWorkflow.version,
           history: currentWorkflow.history
         }
         
