@@ -19,6 +19,30 @@ export type IconName =
 
 export type WaitMode = 'duration' | 'datetime' | 'office_hours' | 'timestamp' | 'specific_day';
 export type OfficeHoursDay = 'sun' | 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat';
+
+export const OfficeHoursDaySchema = z.enum(['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat']);
+export const WaitModeSchema = z.enum(['duration', 'datetime', 'office_hours', 'timestamp', 'specific_day']);
+
+export const WaitInputSchema = z.object({
+  waitMode: WaitModeSchema.default('duration'),
+  waitDurationValue: z.number().optional(),
+  waitDurationUnit: z.enum(['minutes', 'hours', 'days']).optional(),
+  waitDateTime: z.string().datetime({ message: "Invalid datetime string" }).optional(),
+  waitOfficeHoursDays: z.array(OfficeHoursDaySchema).optional(),
+  waitOfficeHoursStartTime: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, { message: "Invalid time format, expected HH:mm" }).optional(),
+  waitOfficeHoursEndTime: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, { message: "Invalid time format, expected HH:mm" }).optional(),
+  waitOfficeHoursAction: z.enum(['wait', 'proceed']).optional(),
+  waitTimestamp: z.string().optional(),
+  waitSpecificDays: z.array(OfficeHoursDaySchema).optional(),
+  waitSpecificTime: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, { message: "Invalid time format, expected HH:mm" }).optional(),
+});
+export type WaitInput = z.infer<typeof WaitInputSchema>;
+
+export const WaitOutputSchema = z.object({
+  waitedMilliseconds: z.number(),
+});
+export type WaitOutput = z.infer<typeof WaitOutputSchema>;
+
 export type WaitData = {
     waitMode?: WaitMode;
     waitDurationValue?: number;
