@@ -72,33 +72,25 @@ function WorkflowCanvasComponent({ steps, setSteps, onEditStep, workflowName, wo
       description: 'The step has been removed from your workflow.',
     });
   }, [setSteps, toast]);
-
-  const memoizedElements = useMemo(() => {
-    const { nodes: newNodes, edges: newEdges } = getLayoutedElements(steps);
-    const nodesWithCallbacks = newNodes.map(node => ({
-      ...node,
-      data: {
-        ...node.data,
-        onEdit: handleEditStep,
-        onDelete: handleDeleteStep,
-      }
-    }));
-    return { nodes: nodesWithCallbacks, edges: newEdges };
-  }, [steps, handleEditStep, handleDeleteStep]);
+  
 
   useEffect(() => {
-    setNodes(memoizedElements.nodes);
-    setEdges(memoizedElements.edges);
-    if (memoizedElements.nodes.length > 0) {
-        window.requestAnimationFrame(() => {
-            fitView();
-        });
-    }
-  }, [memoizedElements, setNodes, setEdges, fitView]);
+    const { nodes: newNodes, edges: newEdges } = getLayoutedElements(steps);
+    setNodes(newNodes);
+    setEdges(newEdges);
+    window.requestAnimationFrame(() => {
+        fitView();
+    });
+  }, [steps, fitView, setNodes, setEdges]);
   
   const handleConfirmClear = () => {
     setSteps([]);
   }
+
+  const reactFlowProOptions = {
+      onEdit: handleEditStep,
+      onDelete: handleDeleteStep
+  };
 
 
   return (
@@ -136,6 +128,7 @@ function WorkflowCanvasComponent({ steps, setSteps, onEditStep, workflowName, wo
                 onEdgesChange={onEdgesChange}
                 onConnect={onConnect}
                 nodeTypes={nodeTypes}
+                proOptions={reactFlowProOptions as any}
                 fitView
                 className="bg-background"
             >

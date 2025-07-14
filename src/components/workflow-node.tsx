@@ -2,7 +2,7 @@
 'use client';
 
 import React, { memo } from 'react';
-import { Handle, Position, type NodeProps } from 'reactflow';
+import { Handle, Position, useReactFlow, type NodeProps } from 'reactflow';
 import {
   Card,
   CardDescription,
@@ -35,8 +35,10 @@ const iconMap: Record<IconName, React.ElementType> = {
   AppWindow: icons.AppWindow,
 };
 
-const WorkflowNode = memo(({ data, id }: NodeProps<{ step: WorkflowStepData; onEdit: (id: string) => void; onDelete: (id: string) => void; }>) => {
-  const { step, onEdit, onDelete } = data;
+const WorkflowNode = memo(({ data, id }: NodeProps<{ step: WorkflowStepData }>) => {
+  const { step } = data;
+  const { onEdit, onDelete } = useReactFlow().proOptions as { onEdit: (id: string) => void; onDelete: (id: string) => void; };
+  
   const isTrigger = step.type === 'trigger';
   const isEndNode = step.title === 'End Automation';
   const isConditionNode = step.title === 'Condition';
