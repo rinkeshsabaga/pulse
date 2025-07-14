@@ -17,6 +17,7 @@ import ReactFlow, {
   Edge,
   applyNodeChanges,
   applyEdgeChanges,
+  EdgeChange,
 } from 'reactflow';
 import { Button } from '@/components/ui/button';
 import { Play, Trash2, History, Loader2 } from 'lucide-react';
@@ -126,40 +127,48 @@ function WorkflowCanvasComponent({
       setEdges((eds) => addEdge(params, eds));
   }, [onStepsChange, setEdges]);
   
- const handleEdgesChange: OnEdgesChange = useCallback((changes) => {
-    setEdges((prevEdges) => {
-        const removedEdges = changes
-            .filter(change => change.type === 'remove')
-            .map(change => prevEdges.find(e => e.id === change.id))
-            .filter((e): e is Edge => !!e);
+  const handleEdgesChange = useCallback((changes: EdgeChange[]) => {
+      // Find the edge(s) that are being removed
+      const removedEdgeIds = changes
+        .filter((change): change is { type: 'remove'; id: string } => change.type === 'remove')
+        .map(change => change.id);
 
-        if (removedEdges.length > 0) {
-            onStepsChange(prevSteps => {
-                const newSteps = JSON.parse(JSON.stringify(prevSteps));
-                removedEdges.forEach(edge => {
-                    const sourceStep = newSteps.find((s: WorkflowStepData) => s.id === edge.source);
-                    if (!sourceStep) return;
-
-                    if (sourceStep.title === 'Condition' && sourceStep.data?.conditionData) {
-                        if (edge.sourceHandle === 'default') {
-                            delete sourceStep.data.conditionData.defaultNextStepId;
-                        } else {
-                            const caseToUpdate = sourceStep.data.conditionData.cases.find((c: any) => c.id === edge.sourceHandle);
-                            if (caseToUpdate) {
-                                delete caseToUpdate.nextStepId;
-                            }
-                        }
-                    } else if (sourceStep.data?.nextStepId === edge.target) {
-                        delete sourceStep.data.nextStepId;
-                    }
-                });
-                return newSteps;
-            });
-        }
+      if (removedEdgeIds.length > 0) {
+        const removedEdges = edges.filter(edge => removedEdgeIds.includes(edge.id));
         
-        return applyEdgeChanges(changes, prevEdges);
-    });
-}, [onStepsChange, setEdges]);
+        onStepsChange(prevSteps => {
+          let newSteps = [...prevSteps];
+          
+          removedEdges.forEach(edge => {
+            newSteps = newSteps.map(step => {
+              if (step.id === edge.source) {
+                const newStep = { ...step, data: { ...step.data } };
+                if (step.title === 'Condition' && newStep.data?.conditionData) {
+                  if (edge.sourceHandle === 'default') {
+                    delete newStep.data.conditionData.defaultNextStepId;
+                  } else {
+                    const caseToUpdate = newStep.data.conditionData.cases.find(c => c.id === edge.sourceHandle);
+                    if (caseToUpdate) {
+                      delete caseToUpdate.nextStepId;
+                    }
+                  }
+                } else if (newStep.data?.nextStepId === edge.target) {
+                  delete newStep.data.nextStepId;
+                }
+                return newStep;
+              }
+              return step;
+            });
+          });
+          
+          return newSteps;
+        });
+      }
+
+      // Apply the visual changes to the edges
+      setEdges((eds) => applyEdgeChanges(changes, eds));
+  }, [edges, onStepsChange, setEdges]);
+
 
 
 
