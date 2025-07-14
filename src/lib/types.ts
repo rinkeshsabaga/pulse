@@ -159,12 +159,20 @@ export type WorkflowStepData = {
   data?: StepData;
 };
 
+export type WorkflowVersion = {
+  version: number;
+  date: string; // ISO string
+  steps: WorkflowStepData[];
+}
+
 export type Workflow = {
   id: string;
   name: string;
   description?: string;
   status: 'Draft' | 'Published';
   steps: WorkflowStepData[];
+  version: number;
+  history: WorkflowVersion[];
   nodes?: Node[];
   edges?: Edge[];
 };

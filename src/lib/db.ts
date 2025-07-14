@@ -19,21 +19,33 @@ const initialWorkflows: Workflow[] = [
     name: 'Onboarding Email Sequence', 
     description: 'Sends a series of emails to new users.', 
     status: 'Published', 
-    steps: initialSteps 
+    steps: initialSteps,
+    version: 1,
+    history: [
+      { version: 1, date: new Date().toISOString(), steps: initialSteps }
+    ]
   },
   { 
     id: 'wf_2', 
     name: 'Daily Report', 
     description: 'Generates and emails a daily sales report.', 
     status: 'Published', 
-    steps: [] 
+    steps: [],
+    version: 1,
+    history: [
+      { version: 1, date: new Date().toISOString(), steps: [] }
+    ]
   },
   { 
     id: 'wf_3', 
     name: 'Failed Payment Alert', 
     description: 'Notifies the team on Slack about failed payments.', 
     status: 'Draft', 
-    steps: [] 
+    steps: [],
+    version: 1,
+    history: [
+      { version: 1, date: new Date().toISOString(), steps: [] }
+    ]
   },
 ];
 
@@ -89,6 +101,8 @@ export async function addWorkflow(workflowData: { name: string; description?: st
     description: workflowData.description || '',
     status: 'Draft',
     steps: [],
+    version: 1,
+    history: [{ version: 1, date: new Date().toISOString(), steps: [] }],
   };
   workflows.push(newWorkflow);
   return JSON.parse(JSON.stringify(newWorkflow));
@@ -103,14 +117,33 @@ export async function deleteWorkflow(id: string): Promise<{ success: boolean }> 
   return { success: false };
 }
 
-export async function updateWorkflow(id: string, updatedData: Partial<Omit<Workflow, 'id'>>): Promise<Workflow | undefined> {
+export async function updateWorkflow(id: string, updatedData: Partial<Omit<Workflow, 'id' | 'version' | 'history'>>): Promise<Workflow | undefined> {
     const index = workflows.findIndex(wf => wf.id === id);
     if (index !== -1) {
-        workflows[index] = { ...workflows[index], ...updatedData };
-        return JSON.parse(JSON.stringify(workflows[index]));
+        const currentWorkflow = workflows[index];
+        const newVersionNumber = currentWorkflow.version + 1;
+
+        const newHistoryEntry = {
+          version: currentWorkflow.version,
+          date: new Date().toISOString(),
+          steps: JSON.parse(JSON.stringify(currentWorkflow.steps)),
+        };
+
+        // Update workflow data
+        const updatedWorkflow = {
+          ...currentWorkflow,
+          ...updatedData,
+          version: newVersionNumber,
+          history: [...currentWorkflow.history, newHistoryEntry]
+        }
+        
+        workflows[index] = updatedWorkflow;
+
+        return JSON.parse(JSON.stringify(updatedWorkflow));
     }
     return undefined;
 }
+
 
 export async function addTestWebhookEvent(workflowId: string, stepId: string): Promise<Workflow | null> {
     const workflow = await getWorkflowById(workflowId);
@@ -140,13 +173,19 @@ export async function addTestWebhookEvent(workflowId: string, stepId: string): P
     }
     // Add to the beginning of the array
     step.data.events.unshift(newEvent);
-
+    
     // Keep only the last 10 events
     step.data.events = step.data.events.slice(0, 10);
     
     step.data.selectedEventId = newEvent.id;
 
-    return updateWorkflow(workflowId, { steps: workflow.steps });
+    // This update should not create a new version
+    const index = workflows.findIndex(wf => wf.id === workflowId);
+    if (index !== -1) {
+        workflows[index].steps = workflow.steps;
+        return JSON.parse(JSON.stringify(workflows[index]));
+    }
+    return null;
 }
 
 

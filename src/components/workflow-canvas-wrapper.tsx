@@ -21,21 +21,44 @@ import { WorkflowCanvas } from './workflow-canvas';
 import { generateOutputContext } from '@/lib/flow-utils';
 import { useToast } from '@/hooks/use-toast';
 
-export function WorkflowCanvasWrapper({ workflow, onUpdate }: { workflow: WorkflowType, onUpdate: (data: Partial<WorkflowType>) => void }) {
-  const [steps, setSteps] = useState<WorkflowStepData[]>(workflow.steps);
+type WorkflowCanvasWrapperProps = {
+  workflow: WorkflowType;
+  onUpdate: (data: Partial<WorkflowType>) => Promise<WorkflowType | undefined>;
+  onRevert: (steps: WorkflowStepData[]) => Promise<WorkflowType | undefined>;
+};
+
+export function WorkflowCanvasWrapper({ workflow: initialWorkflow, onUpdate, onRevert }: WorkflowCanvasWrapperProps) {
+  const [workflow, setWorkflow] = useState<WorkflowType>(initialWorkflow);
+  const [steps, setSteps] = useState<WorkflowStepData[]>(initialWorkflow.steps);
   const [isAiGeneratorOpen, setIsAiGeneratorOpen] = useState(false);
   const [editingStepInfo, setEditingStepInfo] = useState<{ step: WorkflowStepData, dataContext: any }| null>(null);
   const { toast } = useToast();
-
+  
   useEffect(() => {
-    setSteps(workflow.steps);
-  }, [workflow]);
+    setWorkflow(initialWorkflow);
+    setSteps(initialWorkflow.steps);
+  }, [initialWorkflow]);
 
-  const handleSetSteps = useCallback(async (newSteps: WorkflowStepData[] | ((prev: WorkflowStepData[]) => WorkflowStepData[])) => {
-    const updatedSteps = typeof newSteps === 'function' ? newSteps(steps) : newSteps;
+  const handleSetSteps = useCallback(async (newStepsOrFn: WorkflowStepData[] | ((prev: WorkflowStepData[]) => WorkflowStepData[])) => {
+    const updatedSteps = typeof newStepsOrFn === 'function' ? newStepsOrFn(steps) : newStepsOrFn;
     setSteps(updatedSteps);
-    await onUpdate({ steps: updatedSteps });
+    const updatedWorkflow = await onUpdate({ steps: updatedSteps });
+    if(updatedWorkflow) {
+        setWorkflow(updatedWorkflow);
+    }
   }, [onUpdate, steps]);
+
+  const handleRevertVersion = useCallback(async (revertedSteps: WorkflowStepData[]) => {
+    const updatedWorkflow = await onRevert(revertedSteps);
+    if (updatedWorkflow) {
+      setWorkflow(updatedWorkflow);
+      setSteps(updatedWorkflow.steps);
+      toast({
+        title: 'Workflow Reverted',
+        description: `Successfully reverted to a previous version.`
+      });
+    }
+  }, [onRevert, toast]);
 
   const handleEditStep = useCallback((stepToEditId: string) => {
     const stepToEdit = steps.find(s => s.id === stepToEditId);
@@ -125,14 +148,16 @@ export function WorkflowCanvasWrapper({ workflow, onUpdate }: { workflow: Workfl
   return (
     <div className="h-full flex flex-col">
       <DashboardLayout onAddStep={handleAddStep}>
-        <WorkflowCanvas 
-            steps={steps}
-            onEditStep={handleEditStep}
-            onDeleteStep={handleDeleteStep}
-            onStepsChange={handleSetSteps}
-            workflowName={workflow.name}
-            workflowDescription={workflow.description}
-        />
+        <div className="flex-1 h-full w-full">
+            <WorkflowCanvas 
+                workflow={workflow}
+                steps={steps}
+                onEditStep={handleEditStep}
+                onDeleteStep={handleDeleteStep}
+                onStepsChange={handleSetSteps}
+                onRevert={handleRevertVersion}
+            />
+        </div>
       </DashboardLayout>
         
         <AIFunctionGenerator

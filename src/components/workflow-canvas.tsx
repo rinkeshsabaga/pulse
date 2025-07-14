@@ -14,9 +14,9 @@ import ReactFlow, {
   OnEdgesChange,
 } from 'reactflow';
 import { Button } from '@/components/ui/button';
-import { Play, Trash2 } from 'lucide-react';
+import { Play, Trash2, History } from 'lucide-react';
 import { Separator } from './ui/separator';
-import type { WorkflowStepData } from '@/lib/types';
+import type { Workflow as WorkflowType, WorkflowStepData, WorkflowVersion } from '@/lib/types';
 import WorkflowNode from './workflow-node';
 import { useToast } from '@/hooks/use-toast';
 import { getLayoutedElements } from '@/lib/flow-utils';
@@ -30,31 +30,30 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-
-const nodeTypes = {
-  workflowNode: WorkflowNode,
-};
+import { Badge } from './ui/badge';
+import { VersionHistoryPanel } from './version-history-panel';
 
 type WorkflowCanvasProps = {
+  workflow: WorkflowType;
   steps: WorkflowStepData[];
   onStepsChange: (steps: WorkflowStepData[] | ((prev: WorkflowStepData[]) => WorkflowStepData[])) => void;
   onEditStep: (stepId: string) => void;
   onDeleteStep: (stepId: string) => void;
-  workflowName: string;
-  workflowDescription?: string;
+  onRevert: (steps: WorkflowStepData[]) => void;
 };
 
 function WorkflowCanvasComponent({
+  workflow,
   steps,
   onStepsChange,
   onEditStep,
   onDeleteStep,
-  workflowName,
-  workflowDescription,
+  onRevert,
 }: WorkflowCanvasProps) {
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
   const [isClearAlertOpen, setIsClearAlertOpen] = useState(false);
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const { fitView } = useReactFlow();
   const { toast } = useToast();
 
@@ -83,23 +82,36 @@ function WorkflowCanvasComponent({
     });
     setIsClearAlertOpen(false);
   };
+  
+  const handleRevertVersion = (version: WorkflowVersion) => {
+    onRevert(version.steps);
+    setIsHistoryOpen(false);
+  }
 
   return (
     <>
     <div className="flex h-full flex-col">
       <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 p-4 md:p-6">
         <div className="flex-1 space-y-1">
-          <h1 className="text-2xl font-bold font-headline">
-            {workflowName || 'Untitled Workflow'}
-          </h1>
+          <div className="flex items-center gap-3">
+             <h1 className="text-2xl font-bold font-headline">
+              {workflow.name || 'Untitled Workflow'}
+            </h1>
+            <Badge variant="outline">v{workflow.version}</Badge>
+            <Badge variant={workflow.status === 'Draft' ? 'secondary' : 'default'}>{workflow.status}</Badge>
+          </div>
           <p className="text-muted-foreground">
-            {workflowDescription ||
+            {workflow.description ||
               (steps.length > 0
                 ? 'A sequence of automated actions.'
                 : 'Start building your new workflow by adding steps from the panel.')}
           </p>
         </div>
         <div className="flex flex-shrink-0 items-center gap-2">
+           <Button variant="outline" onClick={() => setIsHistoryOpen(true)}>
+            <History className="mr-2 h-4 w-4" />
+            History
+          </Button>
           <Button variant="outline">
             <Play className="mr-2 h-4 w-4" />
             Run Workflow
@@ -152,6 +164,12 @@ function WorkflowCanvasComponent({
             </AlertDialogFooter>
         </AlertDialogContent>
     </AlertDialog>
+    <VersionHistoryPanel
+        isOpen={isHistoryOpen}
+        onClose={() => setIsHistoryOpen(false)}
+        history={workflow.history}
+        onRevert={handleRevertVersion}
+    />
     </>
   );
 }
