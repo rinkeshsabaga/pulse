@@ -44,6 +44,8 @@ const operatorOptions = [
     { value: 'less_than', label: 'Less than' },
 ];
 
+const END_WORKFLOW_VALUE = 'END_WORKFLOW';
+
 export function EditConditionDialog({ step, allSteps, open, onOpenChange, onSave, dataContext = {} }: EditConditionDialogProps) {
   const [cases, setCases] = useState<Case[]>([]);
   const [defaultNextStepId, setDefaultNextStepId] = useState<string | undefined>(undefined);
@@ -223,8 +225,8 @@ export function EditConditionDialog({ step, allSteps, open, onOpenChange, onSave
                         <div className="space-y-1">
                             <Label htmlFor={`next-step-${caseItem.id}`} className="text-xs">If this case is true, go to:</Label>
                             <Select
-                                value={caseItem.nextStepId}
-                                onValueChange={(v) => handleCaseChange(caseItem.id, 'nextStepId', v)}
+                                value={caseItem.nextStepId || ''}
+                                onValueChange={(v) => handleCaseChange(caseItem.id, 'nextStepId', v === END_WORKFLOW_VALUE ? undefined : v)}
                             >
                                 <SelectTrigger id={`next-step-${caseItem.id}`}>
                                     <SelectValue placeholder="Select next step..." />
@@ -233,7 +235,7 @@ export function EditConditionDialog({ step, allSteps, open, onOpenChange, onSave
                                     {availableNextSteps.map(s => (
                                         <SelectItem key={s.id} value={s.id}>{s.title}</SelectItem>
                                     ))}
-                                    <SelectItem value="">End Workflow</SelectItem>
+                                    <SelectItem value={END_WORKFLOW_VALUE}>End Workflow</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>
@@ -248,8 +250,8 @@ export function EditConditionDialog({ step, allSteps, open, onOpenChange, onSave
                  <Label htmlFor="default-next-step">Default Case (if no cases match)</Label>
                  <p className="text-xs text-muted-foreground mb-2">Select the step to execute if none of the cases above are true.</p>
                  <Select
-                    value={defaultNextStepId}
-                    onValueChange={setDefaultNextStepId}
+                    value={defaultNextStepId || ''}
+                    onValueChange={(v) => setDefaultNextStepId(v === END_WORKFLOW_VALUE ? undefined : v)}
                 >
                     <SelectTrigger id="default-next-step">
                         <SelectValue placeholder="Select next step..." />
@@ -258,7 +260,7 @@ export function EditConditionDialog({ step, allSteps, open, onOpenChange, onSave
                         {availableNextSteps.map(s => (
                             <SelectItem key={s.id} value={s.id}>{s.title}</SelectItem>
                         ))}
-                         <SelectItem value="">End Workflow</SelectItem>
+                         <SelectItem value={END_WORKFLOW_VALUE}>End Workflow</SelectItem>
                     </SelectContent>
                 </Select>
             </div>
