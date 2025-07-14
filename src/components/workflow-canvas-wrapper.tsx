@@ -30,8 +30,8 @@ export function WorkflowCanvasWrapper({ workflow }: { workflow: WorkflowType }) 
     setSteps(workflow.steps);
   }, [workflow]);
 
-  const persistSteps = useCallback((newSteps: WorkflowStepData[]) => {
-    updateWorkflow(workflow.id, { steps: newSteps });
+  const persistSteps = useCallback(async (newSteps: WorkflowStepData[]) => {
+    await updateWorkflow(workflow.id, { steps: newSteps });
   }, [workflow.id]);
   
   const handleSetSteps = useCallback((newSteps: WorkflowStepData[]) => {
@@ -39,12 +39,19 @@ export function WorkflowCanvasWrapper({ workflow }: { workflow: WorkflowType }) 
     persistSteps(newSteps);
   }, [persistSteps]);
 
-  const handleEditStep = useCallback((stepToEdit: WorkflowStepData) => {
-    // This function is now simpler. It doesn't need edges from the child.
-    // It generates context based on the *current* steps array.
+  const handleEditStep = useCallback((stepToEditId: string) => {
+    const stepToEdit = steps.find(s => s.id === stepToEditId);
+    if (!stepToEdit) return;
+
     const dataContext = generateOutputContext(steps, stepToEdit.id);
     setEditingStepInfo({ step: stepToEdit, dataContext });
   }, [steps]);
+  
+  const handleDeleteStep = useCallback((stepIdToDelete: string) => {
+      const newSteps = steps.filter((step) => step.id !== stepIdToDelete);
+      handleSetSteps(newSteps);
+    }, [steps, handleSetSteps]
+  );
 
   const handleAddStep = (step: { type: 'trigger' | 'action', icon: IconName; title: string, description: string }) => {
     const newStep: WorkflowStepData = {
@@ -125,8 +132,9 @@ export function WorkflowCanvasWrapper({ workflow }: { workflow: WorkflowType }) 
         <div className="relative flex-1 bg-background h-full">
             <WorkflowCanvas 
                 steps={steps}
-                setSteps={handleSetSteps}
                 onEditStep={handleEditStep}
+                onDeleteStep={handleDeleteStep}
+                onStepsChange={handleSetSteps}
                 workflowName={workflow.name}
                 workflowDescription={workflow.description}
             />

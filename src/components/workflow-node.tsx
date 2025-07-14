@@ -37,8 +37,8 @@ const iconMap: Record<IconName, React.ElementType> = {
 
 type NodeData = {
   step: WorkflowStepData;
-  onEdit: (step: WorkflowStepData) => void;
-  onDelete: (id: string) => void;
+  onEdit: (stepId: string) => void;
+  onDelete: (stepId: string) => void;
 };
 
 const WorkflowNode = memo(({ data, id }: NodeProps<NodeData>) => {
@@ -97,7 +97,7 @@ const WorkflowNode = memo(({ data, id }: NodeProps<NodeData>) => {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => onEdit(step)} disabled={isEndNode}>
+                <DropdownMenuItem onClick={() => onEdit(id)} disabled={isEndNode}>
                   <Pencil className="mr-2 h-4 w-4" />
                   Edit
                 </DropdownMenuItem>

@@ -7,12 +7,17 @@ const nodeHeight = 90;
 const verticalGap = 50;
 const horizontalGap = 150;
 
+type NodeCallbacks = {
+  onEdit: (id: string) => void;
+  onDelete: (id: string) => void;
+}
+
 /**
  * Creates React Flow nodes and edges from workflow steps with a simple vertical layout.
  * @param steps The array of workflow steps.
  * @returns An object containing the layouted nodes and edges.
  */
-export function getLayoutedElements(steps: WorkflowStepData[], onEdit: (step: WorkflowStepData) => void, onDelete: (id: string) => void) {
+export function getLayoutedElements(steps: WorkflowStepData[], nodeData: NodeCallbacks) {
   const nodes: Node[] = [];
   const edges: Edge[] = [];
 
@@ -30,8 +35,7 @@ export function getLayoutedElements(steps: WorkflowStepData[], onEdit: (step: Wo
       position: { x: 0, y: yPos },
       data: { 
         step,
-        onEdit,
-        onDelete
+        ...nodeData
        },
     };
     nodes.push(node);

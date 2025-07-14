@@ -27,16 +27,18 @@ const nodeTypes = {
 
 type WorkflowCanvasProps = {
   steps: WorkflowStepData[];
-  setSteps: (steps: WorkflowStepData[]) => void;
-  onEditStep: (step: WorkflowStepData) => void;
+  onStepsChange: (steps: WorkflowStepData[]) => void;
+  onEditStep: (stepId: string) => void;
+  onDeleteStep: (stepId: string) => void;
   workflowName: string;
   workflowDescription?: string;
 };
 
 function WorkflowCanvasComponent({
   steps,
-  setSteps,
+  onStepsChange,
   onEditStep,
+  onDeleteStep,
   workflowName,
   workflowDescription,
 }: WorkflowCanvasProps) {
@@ -44,30 +46,33 @@ function WorkflowCanvasComponent({
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
   const { fitView } = useReactFlow();
   const { toast } = useToast();
-
-  const handleDeleteStep = useCallback((stepIdToDelete: string) => {
-      setSteps(steps.filter((step) => step.id !== stepIdToDelete));
-      toast({
-        title: 'Step Deleted',
-        description: 'The step has been removed from your workflow.',
-      });
-    }, [setSteps, toast, steps]
-  );
   
   const layoutedElements = useMemo(() => {
-    return getLayoutedElements(steps, onEditStep, handleDeleteStep);
-  }, [steps, onEditStep, handleDeleteStep]);
+    const nodeData = { 
+        onEdit: onEditStep,
+        onDelete: onDeleteStep
+    };
+    return getLayoutedElements(steps, nodeData);
+  }, [steps, onEditStep, onDeleteStep]);
 
   useEffect(() => {
     setNodes(layoutedElements.nodes);
     setEdges(layoutedElements.edges);
-    window.requestAnimationFrame(() => {
-        fitView();
-    });
+    
+    // Fit view after a short delay to ensure layout is complete
+    const timer = setTimeout(() => {
+        fitView({ duration: 300, padding: 0.1 });
+    }, 10);
+
+    return () => clearTimeout(timer);
   }, [layoutedElements, setNodes, setEdges, fitView]);
 
   const handleConfirmClear = () => {
-    setSteps([]);
+    onStepsChange([]);
+    toast({
+        title: 'Canvas Cleared',
+        description: 'All steps have been removed from your workflow.',
+    });
   };
 
   return (
