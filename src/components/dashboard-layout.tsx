@@ -4,11 +4,31 @@
 
 import React from 'react';
 import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+} from '@/components/ui/sheet';
+import {
   Tabs,
   TabsContent,
   TabsList,
   TabsTrigger,
 } from '@/components/ui/tabs';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import {
+    Accordion,
+    AccordionContent,
+    AccordionItem,
+    AccordionTrigger,
+} from '@/components/ui/accordion';
 
 import { WorkflowCanvas } from './workflow-canvas';
 import { MonitoringPanel } from './monitoring-panel';
@@ -24,20 +44,49 @@ import { EditConditionDialog } from './edit-condition-dialog';
 import { EditCronJobDialog } from './edit-cron-job-dialog';
 import { EditSendEmailDialog } from './edit-send-email-dialog';
 import { EditDatabaseQueryDialog } from './edit-database-query-dialog';
-import type { Workflow as WorkflowType, WorkflowStepData } from '@/lib/types';
+import type { Workflow as WorkflowType, WorkflowStepData, IconName } from '@/lib/types';
 import { updateWorkflow } from '@/lib/db';
+import * as icons from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
-import { AddStepDialog, type StepDefinition } from './add-step-dialog';
+
+const Triggers = [
+    { type: 'trigger' as const, icon: 'AppWindow' as const, title: 'App Event', description: 'Trigger from an app' },
+    { type: 'trigger' as const, icon: 'Webhook' as const, title: 'Webhook', description: 'Trigger via HTTP POST' },
+    { type: 'trigger' as const, icon: 'Clock' as const, title: 'Cron Job', description: 'Run on a schedule' },
+    { type: 'trigger' as const, icon: 'ShoppingCart' as const, title: 'Shopify', description: 'Trigger on a Shopify event' },
+];
+
+const Actions = [
+    { type: 'action' as const, icon: 'AppWindow' as const, title: 'App Action', description: 'Perform an action in an app' },
+    { type: 'action' as const, icon: 'GitBranch' as const, title: 'Condition', description: 'Branch workflow on conditions' },
+    { type: 'action' as const, icon: 'Clock' as const, title: 'Wait', description: 'Delay workflow execution' },
+    { type: 'action' as const, icon: 'Code' as const, title: 'Custom Code', description: 'Write and run custom code' },
+    { type: 'action' as const, icon: 'FlaskConical' as const, title: 'Custom AI Function', description: 'Generate code with AI' },
+    { type: 'action' as const, icon: 'ArrowRightLeft' as const, title: 'API Request', description: 'Make an HTTP request' },
+    { type: 'action' as const, icon: 'Mail' as const, title: 'Send Email', description: 'Send an email' },
+    { type: 'action' as const, icon: 'Database' as const, title: 'Database Query', description: 'Interact with a database' },
+    { type: 'action' as const, icon: 'StopCircle' as const, title: 'End Automation', description: 'Stops the workflow execution' },
+];
+
+const iconMap: Record<IconName, React.ElementType> = {
+  Webhook: icons.Webhook,
+  Mail: icons.Mail,
+  FlaskConical: icons.FlaskConical,
+  Database: icons.Database,
+  ArrowRightLeft: icons.ArrowRightLeft,
+  GitBranch: icons.GitBranch,
+  Clock: icons.Clock,
+  ShoppingCart: icons.ShoppingCart,
+  StopCircle: icons.StopCircle,
+  Code: icons.Code,
+  AppWindow: icons.AppWindow,
+};
 
 
 export function DashboardLayout({ workflow }: { workflow: WorkflowType }) {
   const [steps, setSteps] = React.useState<WorkflowStepData[]>(workflow.steps);
   const [isAiGeneratorOpen, setIsAiGeneratorOpen] = React.useState(false);
   const [editingStepInfo, setEditingStepInfo] = React.useState<{ step: WorkflowStepData, dataContext: any } | null>(null);
-
-  const [isAddStepDialogOpen, setIsAddStepDialogOpen] = React.useState(false);
-  const [addStepAfterIndex, setAddStepAfterIndex] = React.useState(-1);
-
 
   React.useEffect(() => {
     setSteps(workflow.steps);
@@ -53,10 +102,10 @@ export function DashboardLayout({ workflow }: { workflow: WorkflowType }) {
     persistSteps(newSteps);
   };
 
-  const handleAddStep = (stepDef: StepDefinition) => {
+  const handleAddStep = (step: { type: 'trigger' | 'action', icon: IconName; title: string, description: string }) => {
     const newStep: WorkflowStepData = {
       id: `step-${uuidv4()}`,
-      ...stepDef,
+      ...step,
       status: 'default'
     };
     
@@ -96,58 +145,40 @@ export function DashboardLayout({ workflow }: { workflow: WorkflowType }) {
         newStep.description = 'For 5 minutes';
         newStep.data = { waitMode: 'duration', waitDurationValue: 5, waitDurationUnit: 'minutes' };
     }
-    if (newStep.title === 'Send Email') {
+     if (newStep.title === 'Send Email') {
         newStep.description = 'Click Edit to compose email';
         newStep.data = { emailData: { to: '', from: 'noreply@sabagapulse.com', subject: '', body: '' } };
     }
-    if (newStep.title === 'Condition') {
+     if (newStep.title === 'Condition') {
         newStep.description = 'Click Edit to set conditions';
         newStep.data = { conditionData: { cases: [{ id: uuidv4(), name: 'Case 1', logicalOperator: 'AND', rules: [{ id: uuidv4(), variable: '', operator: 'equals', value: '' }] }] } };
     }
-    
-    handleSetSteps(prev => {
-      // If it's the first step, just add it.
-      if(addStepAfterIndex === -1 && prev.length === 0) {
-        return [newStep];
-      }
-      
-      const newSteps = [...prev];
-      newSteps.splice(addStepAfterIndex + 1, 0, newStep);
-      return newSteps;
-    });
+
+    handleSetSteps(prev => [...prev, newStep]);
   };
 
   const handleFunctionGenerated = (code: string, language: string, intent: string) => {
-    const newStep: WorkflowStepData = {
+    const newStep = {
         id: `step-${uuidv4()}`,
-        type: 'action',
-        icon: 'FlaskConical',
+        type: 'action' as const,
+        icon: 'FlaskConical' as const,
         title: 'Custom AI Function',
         description: intent.length > 50 ? intent.substring(0, 47) + '...' : intent,
         content: { code, language },
-        status: 'default'
-    }
-    handleSetSteps(prev => {
-        const newSteps = [...prev];
-        newSteps.splice(addStepAfterIndex + 1, 0, newStep);
-        return newSteps;
-    });
+        status: 'default' as const
+    };
+    handleSetSteps(prev => [...prev, newStep]);
   };
-
-  const handleOpenAddStepDialog = (index: number) => {
-    setAddStepAfterIndex(index);
-    setIsAddStepDialogOpen(true);
-  }
 
   const handleSaveAction = (updatedStep: WorkflowStepData) => {
     handleSetSteps(prev => prev.map(s => s.id === updatedStep.id ? updatedStep : s));
     setEditingStepInfo(null);
   }
 
-  const isAddingFirstStep = addStepAfterIndex === -1;
-
   return (
-      <div className="flex-1 flex flex-col h-full">
+    <div className="grid grid-cols-1 md:grid-cols-[300px_1fr] lg:grid-cols-[350px_1fr] xl:grid-cols-[400px_1fr] h-full">
+      <Sheet defaultOpen>
+        <SheetContent side="left" className="p-0 border-r" hideCloseButton>
           <div className="flex h-full flex-col p-4 md:p-6">
             <Tabs defaultValue="designer" className="flex h-full w-full flex-col">
               <TabsList className="mb-4">
@@ -155,27 +186,68 @@ export function DashboardLayout({ workflow }: { workflow: WorkflowType }) {
                 <TabsTrigger value="logs">Monitoring & Logs</TabsTrigger>
               </TabsList>
               <TabsContent value="designer" className="flex-1">
-                <WorkflowCanvas 
-                  steps={steps}
-                  setSteps={handleSetSteps}
-                  onEditStep={(step, dataContext) => setEditingStepInfo({ step, dataContext })}
-                  onAddStep={handleOpenAddStepDialog}
-                  workflowName={workflow.name}
-                  workflowDescription={workflow.description}
-                />
+                 <Accordion type="single" collapsible defaultValue="actions" className="w-full">
+                    <AccordionItem value="triggers">
+                        <AccordionTrigger>Triggers</AccordionTrigger>
+                        <AccordionContent>
+                            <div className="grid grid-cols-1 gap-2">
+                            {Triggers.map((tool) => {
+                                const Icon = iconMap[tool.icon];
+                                return (
+                                <Card key={tool.title} onClick={() => handleAddStep(tool)} className="cursor-pointer hover:bg-muted/50">
+                                    <CardContent className="p-3 flex items-start gap-4">
+                                        <Icon className="h-5 w-5 text-muted-foreground mt-1" />
+                                        <div>
+                                            <h3 className="font-semibold">{tool.title}</h3>
+                                            <p className="text-sm text-muted-foreground">{tool.description}</p>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                                );
+                            })}
+                            </div>
+                        </AccordionContent>
+                    </AccordionItem>
+                     <AccordionItem value="actions">
+                        <AccordionTrigger>Actions</AccordionTrigger>
+                        <AccordionContent>
+                            <div className="grid grid-cols-1 gap-2">
+                                {Actions.map((tool) => {
+                                const Icon = iconMap[tool.icon];
+                                return (
+                                    <Card key={tool.title} onClick={() => handleAddStep(tool)} className="cursor-pointer hover:bg-muted/50">
+                                        <CardContent className="p-3 flex items-start gap-4">
+                                            <Icon className="h-5 w-5 text-muted-foreground mt-1" />
+                                            <div>
+                                                <h3 className="font-semibold">{tool.title}</h3>
+                                                <p className="text-sm text-muted-foreground">{tool.description}</p>
+                                            </div>
+                                        </CardContent>
+                                    </Card>
+                                );
+                                })}
+                            </div>
+                        </AccordionContent>
+                    </AccordionItem>
+                </Accordion>
               </TabsContent>
               <TabsContent value="logs" className="flex-1">
                 <MonitoringPanel />
               </TabsContent>
             </Tabs>
           </div>
+        </SheetContent>
+      </Sheet>
+        <div className="relative flex-1 bg-background h-full">
+            <WorkflowCanvas 
+                steps={steps}
+                setSteps={handleSetSteps}
+                onEditStep={(step, dataContext) => setEditingStepInfo({ step, dataContext })}
+                workflowName={workflow.name}
+                workflowDescription={workflow.description}
+            />
+        </div>
         
-        <AddStepDialog 
-            open={isAddStepDialogOpen}
-            onOpenChange={setIsAddStepDialogOpen}
-            onStepSelect={handleAddStep}
-            stepType={isAddingFirstStep ? 'trigger' : 'action'}
-        />
         <AIFunctionGenerator
             open={isAiGeneratorOpen}
             onOpenChange={setIsAiGeneratorOpen}

@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import React, { useState, useMemo } from 'react';
@@ -176,8 +177,8 @@ export function MonitoringPanel() {
                             </TableRow>
                         </CollapsibleTrigger>
                         <CollapsibleContent asChild>
-                            <TableRow className="bg-muted/50 hover:bg-muted/50">
-                                <TableCell colSpan={5} className="p-0">
+                            <tr className="bg-muted/50 hover:bg-muted/50">
+                                <td colSpan={5} className="p-0">
                                     <div className="p-4">
                                         <Table>
                                              <TableHeader>
@@ -198,8 +199,8 @@ export function MonitoringPanel() {
                                             </TableBody>
                                         </Table>
                                     </div>
-                                </TableCell>
-                            </TableRow>
+                                </td>
+                            </tr>
                         </CollapsibleContent>
                       </>
                     </Collapsible>

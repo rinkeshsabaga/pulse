@@ -9,6 +9,7 @@ import ReactFlow, {
   MiniMap,
   useNodesState,
   useEdgesState,
+  addEdge,
   ReactFlowProvider,
   type Connection,
   type Edge,
@@ -28,10 +29,6 @@ import {
 } from '@/components/ui/select';
 import {
   Play,
-  Plus,
-  Workflow,
-  LayoutGrid,
-  List,
   Trash2,
 } from 'lucide-react';
 import {
@@ -51,43 +48,22 @@ import WorkflowNode from './workflow-node';
 
 const nodeTypes = {
   workflowNode: WorkflowNode,
-  addNode: ({data}: { data: { onAdd: () => void, isOnlyNode: boolean }}) => (
-      <div className="flex flex-col items-center">
-        <Button size="icon" className="rounded-full z-10" onClick={data.onAdd}>
-            <Plus className="h-4 w-4" />
-        </Button>
-        {data.isOnlyNode && <div className="mt-4 text-sm font-semibold">Add a trigger to start</div>}
-      </div>
-  ),
-  endNode: () => (
-    <div className="flex flex-col items-center">
-        <div className="w-12 h-12 rounded-full bg-muted border-2 border-dashed flex items-center justify-center">
-            <div className="w-4 h-4 rounded-full bg-muted-foreground/50" />
-        </div>
-        <div className="mt-2 text-xs font-semibold text-muted-foreground">End of Workflow</div>
-    </div>
-  ),
 };
 
-const getNodePositions = (steps: WorkflowStepData[], layout: 'horizontal' | 'vertical') => {
+const getNodePositions = (steps: WorkflowStepData[]) => {
   const nodes = [];
   const edges = [];
   
   const nodeWidth = 320; 
-  const nodeHeight = 220; 
-  const horizontalGap = 180;
-  const verticalGap = 120;
-  const addNodeWidth = 50;
-  const endNodeHeight = 70;
+  const nodeHeight = 160; 
+  const horizontalGap = 80;
+  const verticalGap = 80;
 
   for (let i = 0; i < steps.length; i++) {
     const step = steps[i];
     
-    // Add the main workflow node
-    const position =
-      layout === 'horizontal'
-        ? { x: i * (nodeWidth + horizontalGap), y: 100 }
-        : { x: 100, y: i * (nodeHeight + verticalGap) };
+    // Position nodes in a simple vertical layout
+    const position = { x: 100, y: i * (nodeHeight + verticalGap) + 100 };
 
     nodes.push({
       id: step.id,
@@ -96,38 +72,11 @@ const getNodePositions = (steps: WorkflowStepData[], layout: 'horizontal' | 'ver
       data: { step },
     });
     
-    // Add the '+' node after it
-    const addNodePosition = 
-      layout === 'horizontal'
-      ? { x: position.x + nodeWidth + (horizontalGap - addNodeWidth) / 2, y: position.y + nodeHeight / 2 - 20 }
-      : { x: position.x + nodeWidth / 2 - 20, y: position.y + nodeHeight + (verticalGap - endNodeHeight) / 2 };
-
-    nodes.push({
-        id: `add-${step.id}`,
-        type: 'addNode',
-        position: addNodePosition,
-        data: { onAdd: () => {} }, // onAdd is now handled by node data mapping
-        draggable: false,
-    });
-
-
-    // Add edges
-    edges.push({
-        id: `e${step.id}-add-${step.id}`,
-        source: step.id,
-        target: `add-${step.id}`,
-        type: 'smoothstep',
-        sourceHandle: 'b',
-        targetHandle: 'a'
-    });
-
-    // Connect previous `add` node to this step
-    if (i === 0 && steps[0].type === 'trigger') {
-      // no incoming edge for first trigger
-    } else if (i > 0) {
+    // Connect to the previous node
+    if (i > 0) {
       edges.push({
-        id: `e-add-${steps[i-1].id}-to-${step.id}`,
-        source: `add-${steps[i-1].id}`,
+        id: `e${steps[i-1].id}-${step.id}`,
+        source: steps[i-1].id,
         target: step.id,
         type: 'smoothstep',
         sourceHandle: 'b',
@@ -135,45 +84,6 @@ const getNodePositions = (steps: WorkflowStepData[], layout: 'horizontal' | 'ver
       });
     }
   }
-
-  // Handle empty canvas state
-  if (steps.length === 0) {
-      nodes.push({
-        id: 'start-add',
-        type: 'addNode',
-        position: { x: 100, y: 100 },
-        data: { onAdd: () => {}, isOnlyNode: true }, // onAdd is now handled by node data mapping
-        draggable: false,
-      });
-  } else {
-      // Add a terminal "End" node
-      const lastStep = steps[steps.length - 1];
-      const lastStepPosition = layout === 'horizontal'
-          ? { x: (steps.length - 1) * (nodeWidth + horizontalGap), y: 100 }
-          : { x: 100, y: (steps.length - 1) * (nodeHeight + verticalGap) };
-      
-      const endNodePosition = 
-        layout === 'horizontal'
-        ? { x: lastStepPosition.x + nodeWidth + horizontalGap + (horizontalGap - addNodeWidth) / 2, y: lastStepPosition.y + nodeHeight / 2 - 35 }
-        : { x: lastStepPosition.x + nodeWidth / 2 - 25, y: lastStepPosition.y + nodeHeight + verticalGap };
-      
-      nodes.push({
-        id: 'end-node',
-        type: 'endNode',
-        position: endNodePosition,
-        draggable: false,
-      });
-
-      edges.push({
-        id: `e-add-${lastStep.id}-end`,
-        source: `add-${lastStep.id}`,
-        target: 'end-node',
-        type: 'smoothstep',
-        sourceHandle: 'b',
-        targetHandle: 'a'
-      });
-  }
-  
   return { nodes, edges };
 };
 
@@ -182,20 +92,17 @@ function WorkflowCanvasComponent({
   steps,
   setSteps,
   onEditStep,
-  onAddStep,
   workflowName,
   workflowDescription,
 }: {
   steps: WorkflowStepData[];
   setSteps: (steps: React.SetStateAction<WorkflowStepData[]>) => void;
   onEditStep: (step: WorkflowStepData, dataContext: any) => void;
-  onAddStep: (index: number) => void;
   workflowName: string;
   workflowDescription?: string;
 }) {
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
-  const [layout, setLayout] = React.useState<'horizontal' | 'vertical'>('horizontal');
   const [isClearDialogOpen, setIsClearDialogOpen] = useState(false);
   const { toast } = useToast();
   
@@ -209,6 +116,11 @@ function WorkflowCanvasComponent({
     }
     return {};
   }, [steps]);
+
+  const onConnect = useCallback(
+    (params: Connection | Edge) => setEdges((eds) => addEdge(params, eds)),
+    [setEdges]
+  );
 
   const handleDeleteStep = useCallback((stepIdToDelete: string) => {
     setSteps((prevSteps) => prevSteps.filter((step) => step.id !== stepIdToDelete));
@@ -230,34 +142,18 @@ function WorkflowCanvasComponent({
   }, [onEditStep, toast, dataContext]);
 
   useEffect(() => {
-    const { nodes: newNodes, edges: newEdges } = getNodePositions(steps, layout);
-
-    const nodesWithCallbacks = newNodes.map((node, i) => {
-      if (node.type === 'workflowNode') {
-          return {
-            ...node,
-            data: {
-                ...node.data,
-                layout: layout,
-                onEdit: () => handleEditStep(node.data.step),
-                onDelete: () => handleDeleteStep(node.id),
-            }
-          }
-      }
-      if (node.id === 'start-add') {
-        return { ...node, data: { ...node.data, onAdd: () => onAddStep(-1) } };
-      }
-      if (node.id.startsWith('add-')) {
-        const stepIndex = steps.findIndex(s => `add-${s.id}` === node.id);
-        return { ...node, data: { ...node.data, onAdd: () => onAddStep(stepIndex) }};
-      }
-      return node;
-    });
-
+    const { nodes: newNodes, edges: newEdges } = getNodePositions(steps);
+    const nodesWithCallbacks = newNodes.map(node => ({
+        ...node,
+        data: {
+            ...node.data,
+            onEdit: () => handleEditStep(node.data.step),
+            onDelete: () => handleDeleteStep(node.id),
+        }
+    }));
     setNodes(nodesWithCallbacks);
     setEdges(newEdges);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [steps, layout, handleEditStep, handleDeleteStep]);
+  }, [steps, handleEditStep, handleDeleteStep, setNodes, setEdges]);
   
   const handleConfirmClear = () => {
     setSteps([]);
@@ -266,7 +162,7 @@ function WorkflowCanvasComponent({
 
   return (
     <>
-    <div className="flex h-full flex-col space-y-6">
+    <div className="flex h-full flex-col space-y-6 p-4 md:p-6">
       <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
         <div className="flex-1 space-y-1">
           <h1 className="text-2xl font-bold font-headline">
@@ -275,7 +171,7 @@ function WorkflowCanvasComponent({
           <p className="text-muted-foreground">
             {workflowDescription || (steps.length > 0
               ? 'A sequence of automated actions.'
-              : 'Start building your new workflow by adding steps.')}
+              : 'Start building your new workflow by adding steps from the panel.')}
           </p>
         </div>
         <div className="flex flex-shrink-0 items-center gap-2">
@@ -295,26 +191,6 @@ function WorkflowCanvasComponent({
               </Button>
             </>
           )}
-          <div className="flex items-center gap-1 bg-muted p-1 rounded-md">
-            <Button
-              variant={layout === 'horizontal' ? 'secondary' : 'ghost'}
-              size="icon"
-              className="h-8 w-8"
-              onClick={() => setLayout('horizontal')}
-            >
-              <LayoutGrid className="h-4 w-4" />
-              <span className="sr-only">Horizontal Layout</span>
-            </Button>
-            <Button
-              variant={layout === 'vertical' ? 'secondary' : 'ghost'}
-              size="icon"
-              className="h-8 w-8"
-              onClick={() => setLayout('vertical')}
-            >
-              <List className="h-4 w-4" />
-              <span className="sr-only">Vertical Layout</span>
-            </Button>
-          </div>
           <Button variant="destructive-outline" onClick={() => setIsClearDialogOpen(true)} disabled={steps.length === 0}>
             <Trash2 className="mr-2 h-4 w-4" />
             Clear Canvas
@@ -324,12 +200,14 @@ function WorkflowCanvasComponent({
 
       <Separator />
 
-      <div className="flex-1 rounded-lg border bg-background">
+      <Card className="flex-1">
+        <CardContent className="h-full p-0">
           <ReactFlow
             nodes={nodes}
             edges={edges}
             onNodesChange={onNodesChange}
             onEdgesChange={onEdgesChange}
+            onConnect={onConnect}
             nodeTypes={nodeTypes}
             fitView
             className="bg-background"
@@ -338,7 +216,8 @@ function WorkflowCanvasComponent({
             <MiniMap nodeStrokeWidth={3} zoomable pannable />
             <Background variant="dots" gap={16} size={1} />
           </ReactFlow>
-      </div>
+        </CardContent>
+      </Card>
     </div>
     <AlertDialog 
         open={isClearDialogOpen} 
@@ -370,7 +249,6 @@ export function WorkflowCanvas(props: {
   steps: WorkflowStepData[];
   setSteps: (steps: React.SetStateAction<WorkflowStepData[]>) => void;
   onEditStep: (step: WorkflowStepData, dataContext: any) => void;
-  onAddStep: (index: number) => void;
   workflowName: string;
   workflowDescription?: string;
 }) {
