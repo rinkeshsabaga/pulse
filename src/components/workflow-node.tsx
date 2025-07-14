@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import React, { memo } from 'react';
@@ -37,7 +38,7 @@ const iconMap: Record<IconName, React.ElementType> = {
 
 type NodeData = {
   step: WorkflowStepData;
-  onEdit: (id: string) => void;
+  onEdit: (step: WorkflowStepData) => void;
   onDelete: (id: string) => void;
 };
 
@@ -97,7 +98,7 @@ const WorkflowNode = memo(({ data, id }: NodeProps<NodeData>) => {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => onEdit(id)} disabled={isEndNode}>
+                <DropdownMenuItem onClick={() => onEdit(step)} disabled={isEndNode}>
                   <Pencil className="mr-2 h-4 w-4" />
                   Edit
                 </DropdownMenuItem>
@@ -146,3 +147,4 @@ const WorkflowNode = memo(({ data, id }: NodeProps<NodeData>) => {
 WorkflowNode.displayName = 'WorkflowNode';
 
 export default WorkflowNode;
+

@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import React, { useCallback, useEffect, useMemo } from 'react';
@@ -25,7 +26,6 @@ import type { WorkflowStepData } from '@/lib/types';
 import WorkflowNode from './workflow-node';
 import { useToast } from '@/hooks/use-toast';
 import {
-  generateOutputContext,
   getLayoutedElements,
 } from '@/lib/flow-utils';
 
@@ -47,46 +47,11 @@ function WorkflowCanvasComponent({ steps, setSteps, onEditStep, workflowName, wo
   const { fitView } = useReactFlow();
   const { toast } = useToast();
 
-  const handleEditStep = useCallback((stepId: string) => {
-    const step = steps.find(s => s.id === stepId);
-    if (!step) return;
-    
-    const parentEdges = edges.filter(e => e.target === stepId);
-    const parentNodeIds = parentEdges.map(e => e.source);
-    
-    const dataContext = generateOutputContext(steps, parentNodeIds);
 
-    onEditStep(step, dataContext);
-  }, [steps, edges, onEditStep]);
-
-
-  const handleDeleteStep = useCallback((stepIdToDelete: string) => {
-    setSteps((prevSteps) => prevSteps.filter((step) => step.id !== stepIdToDelete));
-    toast({
-      title: 'Step Deleted',
-      description: 'The step has been removed from your workflow.',
-    });
-  }, [setSteps, toast]);
-
-  const onConnect = useCallback(
-    (params: Connection | Edge) => setEdges((eds) => addEdge({ ...params, type: 'smoothstep' }, eds)),
-    [setEdges]
-  );
-  
   const layoutedElements = useMemo(() => {
-    const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(steps);
-    
-    const nodesWithHandlers = layoutedNodes.map(node => ({
-      ...node,
-      data: {
-        ...node.data,
-        onEdit: handleEditStep,
-        onDelete: handleDeleteStep,
-      }
-    }));
-    return { nodes: nodesWithHandlers, edges: layoutedEdges };
-  }, [steps, handleEditStep, handleDeleteStep]);
-  
+    return getLayoutedElements(steps, onEditStep, setSteps);
+  }, [steps, onEditStep, setSteps]);
+
 
   useEffect(() => {
     setNodes(layoutedElements.nodes);
@@ -95,7 +60,7 @@ function WorkflowCanvasComponent({ steps, setSteps, onEditStep, workflowName, wo
         fitView();
     });
   }, [layoutedElements, fitView, setNodes, setEdges]);
-  
+
   const handleConfirmClear = () => {
     setSteps([]);
   }
@@ -133,7 +98,6 @@ function WorkflowCanvasComponent({ steps, setSteps, onEditStep, workflowName, wo
                 edges={edges}
                 onNodesChange={onNodesChange}
                 onEdgesChange={onEdgesChange}
-                onConnect={onConnect}
                 nodeTypes={nodeTypes}
                 fitView
                 className="bg-background"
@@ -154,3 +118,4 @@ export function WorkflowCanvas(props: WorkflowCanvasProps) {
     </ReactFlowProvider>
   )
 }
+

@@ -1,7 +1,8 @@
 
+
 'use client';
 
-import React from 'react';
+import React, { useCallback } from 'react';
 import { AIFunctionGenerator } from './ai-function-generator';
 import { EditTriggerDialog } from './edit-trigger-dialog';
 import { EditShopifyTriggerDialog } from './edit-shopify-trigger-dialog';
@@ -19,6 +20,7 @@ import { updateWorkflow } from '@/lib/db';
 import { v4 as uuidv4 } from 'uuid';
 import { DashboardLayout } from './dashboard-layout';
 import { WorkflowCanvas } from './workflow-canvas';
+import { generateOutputContext } from '@/lib/flow-utils';
 
 export function WorkflowCanvasWrapper({ workflow }: { workflow: WorkflowType }) {
   const [steps, setSteps] = React.useState<WorkflowStepData[]>(workflow.steps);
@@ -38,6 +40,15 @@ export function WorkflowCanvasWrapper({ workflow }: { workflow: WorkflowType }) 
     setSteps(newSteps);
     persistSteps(newSteps);
   };
+
+  const handleEditStep = useCallback((stepToEdit: WorkflowStepData, edges: any) => {
+    const parentEdges = edges.filter((e: any) => e.target === stepToEdit.id);
+    const parentNodeIds = parentEdges.map((e: any) => e.source);
+    
+    const dataContext = generateOutputContext(steps, parentNodeIds);
+
+    setEditingStepInfo({ step: stepToEdit, dataContext });
+  }, [steps]);
 
   const handleAddStep = (step: { type: 'trigger' | 'action', icon: IconName; title: string, description: string }) => {
     const newStep: WorkflowStepData = {
@@ -119,7 +130,7 @@ export function WorkflowCanvasWrapper({ workflow }: { workflow: WorkflowType }) 
             <WorkflowCanvas 
                 steps={steps}
                 setSteps={handleSetSteps}
-                onEditStep={(step, dataContext) => setEditingStepInfo({ step, dataContext })}
+                onEditStep={handleEditStep}
                 workflowName={workflow.name}
                 workflowDescription={workflow.description}
             />
@@ -224,3 +235,4 @@ export function WorkflowCanvasWrapper({ workflow }: { workflow: WorkflowType }) 
     </>
   );
 }
+
