@@ -157,7 +157,7 @@ export function MonitoringPanel() {
                 <TableBody>
                     {executions.map((exec) => (
                     <Collapsible asChild key={exec.id} open={openExecutionId === exec.id} onOpenChange={() => handleToggle(exec.id)}>
-                      <>
+                      <React.Fragment>
                         <CollapsibleTrigger asChild>
                              <TableRow className="cursor-pointer">
                                 <TableCell>
@@ -201,7 +201,7 @@ export function MonitoringPanel() {
                                 </td>
                             </tr>
                         </CollapsibleContent>
-                      </>
+                      </React.Fragment>
                     </Collapsible>
                     ))}
                 </TableBody>
