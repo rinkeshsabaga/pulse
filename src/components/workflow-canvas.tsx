@@ -15,6 +15,7 @@ import ReactFlow, {
   addEdge,
   Connection,
   Edge,
+  applyNodeChanges,
   applyEdgeChanges,
 } from 'reactflow';
 import { Button } from '@/components/ui/button';
@@ -39,7 +40,7 @@ import { Switch } from './ui/switch';
 import { Label } from './ui/label';
 import { VersionHistoryPanel } from './version-history-panel';
 import { runWorkflow } from '@/ai/flows/run-workflow-flow';
-import { updateWorkflow } from '@/lib/db';
+import { handleUpdate } from '@/app/actions';
 
 
 type WorkflowCanvasProps = {
@@ -126,41 +127,39 @@ function WorkflowCanvasComponent({
   }, [onStepsChange, setEdges]);
   
  const handleEdgesChange: OnEdgesChange = useCallback((changes) => {
-    setEdges((prevEdges) => applyEdgeChanges(changes, prevEdges));
+    setEdges((prevEdges) => {
+        const removedEdges = changes
+            .filter(change => change.type === 'remove')
+            .map(change => prevEdges.find(e => e.id === change.id))
+            .filter((e): e is Edge => !!e);
 
-    changes.forEach(change => {
-        if (change.type === 'remove') {
-            const edge = edges.find(e => e.id === change.id);
-            if (!edge || !edge.source) return;
-
+        if (removedEdges.length > 0) {
             onStepsChange(prevSteps => {
-                const newSteps = [...prevSteps];
-                const sourceStepIndex = newSteps.findIndex(s => s.id === edge.source);
-                if (sourceStepIndex === -1) return prevSteps;
+                const newSteps = JSON.parse(JSON.stringify(prevSteps));
+                removedEdges.forEach(edge => {
+                    const sourceStep = newSteps.find((s: WorkflowStepData) => s.id === edge.source);
+                    if (!sourceStep) return;
 
-                const sourceStep = newSteps[sourceStepIndex];
-                
-                if (sourceStep.title === 'Condition' && sourceStep.data?.conditionData) {
-                    if (edge.sourceHandle === 'default') {
-                        delete sourceStep.data.conditionData.defaultNextStepId;
-                    } else {
-                        const caseIndex = sourceStep.data.conditionData.cases.findIndex(c => c.id === edge.sourceHandle);
-                        if (caseIndex !== -1) {
-                            delete sourceStep.data.conditionData.cases[caseIndex].nextStepId;
+                    if (sourceStep.title === 'Condition' && sourceStep.data?.conditionData) {
+                        if (edge.sourceHandle === 'default') {
+                            delete sourceStep.data.conditionData.defaultNextStepId;
+                        } else {
+                            const caseToUpdate = sourceStep.data.conditionData.cases.find((c: any) => c.id === edge.sourceHandle);
+                            if (caseToUpdate) {
+                                delete caseToUpdate.nextStepId;
+                            }
                         }
-                    }
-                } else {
-                    if (sourceStep.data?.nextStepId === edge.target) {
+                    } else if (sourceStep.data?.nextStepId === edge.target) {
                         delete sourceStep.data.nextStepId;
                     }
-                }
-                
-                newSteps[sourceStepIndex] = sourceStep;
+                });
                 return newSteps;
             });
         }
+        
+        return applyEdgeChanges(changes, prevEdges);
     });
-}, [edges, onStepsChange, setEdges]);
+}, [onStepsChange, setEdges]);
 
 
 
@@ -217,7 +216,7 @@ function WorkflowCanvasComponent({
     setIsSaving(true);
     const newStatus = isPublished ? 'Published' : 'Draft';
     try {
-        const updatedWorkflow = await updateWorkflow(currentWorkflow.id, { status: newStatus });
+        const updatedWorkflow = await handleUpdate(currentWorkflow.id, { status: newStatus });
         if (updatedWorkflow) {
             setCurrentWorkflow(updatedWorkflow);
             toast({

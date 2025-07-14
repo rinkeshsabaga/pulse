@@ -38,20 +38,26 @@ export function WorkflowCanvasWrapper({ workflow: initialWorkflow }: WorkflowCan
     setSteps(initialWorkflow.steps);
   }, [initialWorkflow]);
 
-  const handleSetSteps = useCallback(async (newStepsOrFn: WorkflowStepData[] | ((prev: WorkflowStepData[]) => WorkflowStepData[])) => {
-    const updatedSteps = typeof newStepsOrFn === 'function' ? newStepsOrFn(steps) : newStepsOrFn;
+  const handleSetSteps = useCallback(async (newStepsOrFn: React.SetStateAction<WorkflowStepData[]>) => {
+    const newSteps = typeof newStepsOrFn === 'function' ? newStepsOrFn(steps) : newStepsOrFn;
     
-    // Assign nextStepId for linear workflows
-    for (let i = 0; i < updatedSteps.length; i++) {
-        const currentStep = updatedSteps[i];
-        if (currentStep.title !== 'Condition' && i + 1 < updatedSteps.length) {
-            if (!currentStep.data) currentStep.data = {};
-            currentStep.data.nextStepId = updatedSteps[i+1].id;
-        } else if (currentStep.title !== 'Condition') {
-             if (currentStep.data?.nextStepId) delete currentStep.data.nextStepId;
+    // Auto-connect linear (non-conditional) steps
+    const updatedSteps = newSteps.map((step, index) => {
+        if (step.title !== 'Condition' && index + 1 < newSteps.length) {
+            const nextStep = newSteps[index + 1];
+            return {
+                ...step,
+                data: { ...step.data, nextStepId: nextStep.id }
+            };
         }
-    }
-    
+        // Remove nextStepId if it's the last step or a condition
+        const { nextStepId, ...restData } = step.data || {};
+        if (step.title === 'Condition' || index === newSteps.length - 1) {
+             return { ...step, data: restData };
+        }
+        return step;
+    });
+
     setSteps(updatedSteps);
     const updatedWorkflow = await handleUpdate(workflow.id, { steps: updatedSteps });
     if(updatedWorkflow) {
