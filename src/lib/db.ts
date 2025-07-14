@@ -2,7 +2,7 @@
 // This is a mock database. In a real application, you would use a real database.
 'use server';
 
-import type { Workflow, WebhookEvent, Credential } from './types';
+import type { Workflow, WorkflowStepData, WebhookEvent, Credential } from './types';
 import { initialSteps } from './initial-data';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -102,7 +102,7 @@ export async function addWorkflow(workflowData: { name: string; description?: st
     status: 'Draft',
     steps: [],
     version: 1,
-    history: [{ version: 1, date: new Date().toISOString(), steps: [] }],
+    history: [], // Initialize with an empty history array
   };
   workflows.push(newWorkflow);
   return JSON.parse(JSON.stringify(newWorkflow));
@@ -123,18 +123,22 @@ export async function updateWorkflow(id: string, updatedData: Partial<Omit<Workf
         const currentWorkflow = workflows[index];
         const newVersionNumber = currentWorkflow.version + 1;
 
-        const newHistoryEntry = {
-          version: currentWorkflow.version,
-          date: new Date().toISOString(),
-          steps: JSON.parse(JSON.stringify(currentWorkflow.steps)),
-        };
+        // Don't save an entry if there are no steps to save
+        if (currentWorkflow.steps.length > 0) {
+          const newHistoryEntry = {
+            version: currentWorkflow.version,
+            date: new Date().toISOString(),
+            steps: JSON.parse(JSON.stringify(currentWorkflow.steps)),
+          };
+          currentWorkflow.history.push(newHistoryEntry);
+        }
 
         // Update workflow data
         const updatedWorkflow = {
           ...currentWorkflow,
           ...updatedData,
           version: newVersionNumber,
-          history: [...currentWorkflow.history, newHistoryEntry]
+          history: currentWorkflow.history
         }
         
         workflows[index] = updatedWorkflow;
@@ -143,7 +147,6 @@ export async function updateWorkflow(id: string, updatedData: Partial<Omit<Workf
     }
     return undefined;
 }
-
 
 export async function addTestWebhookEvent(workflowId: string, stepId: string): Promise<Workflow | null> {
     const workflow = await getWorkflowById(workflowId);
@@ -182,7 +185,11 @@ export async function addTestWebhookEvent(workflowId: string, stepId: string): P
     // This update should not create a new version
     const index = workflows.findIndex(wf => wf.id === workflowId);
     if (index !== -1) {
-        workflows[index].steps = workflow.steps;
+        const workflowToUpdate = workflows[index];
+        const stepToUpdate = workflowToUpdate.steps.find(s => s.id === stepId);
+        if (stepToUpdate) {
+            stepToUpdate.data = step.data;
+        }
         return JSON.parse(JSON.stringify(workflows[index]));
     }
     return null;
@@ -195,7 +202,8 @@ export async function getCredentials(): Promise<Credential[]> {
 }
 
 export async function getCredentialById(id: string): Promise<Credential | undefined> {
-  return credentials.find(c => c.id === id);
+  const credential = credentials.find(c => c.id === id);
+  return credential ? JSON.parse(JSON.stringify(credential)) : undefined;
 }
 
 export async function addCredential(credData: Omit<Credential, 'id'>): Promise<Credential> {

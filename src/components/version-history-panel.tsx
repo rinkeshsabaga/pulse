@@ -36,8 +36,10 @@ type VersionHistoryPanelProps = {
 
 export function VersionHistoryPanel({ isOpen, onClose, history, onRevert }: VersionHistoryPanelProps) {
 
-  // Sort history from newest to oldest
-  const sortedHistory = [...history].sort((a, b) => b.version - a.version);
+  // Sort history from newest to oldest, ensuring history is an array.
+  const sortedHistory = Array.isArray(history) 
+    ? [...history].sort((a, b) => b.version - a.version)
+    : [];
 
   return (
     <Sheet open={isOpen} onOpenChange={(open) => !open && onClose()}>
@@ -59,7 +61,7 @@ export function VersionHistoryPanel({ isOpen, onClose, history, onRevert }: Vers
                     <div className="p-2 bg-primary/10 rounded-full">
                         <GitCommit className="h-5 w-5 text-primary" />
                     </div>
-                    <div className="w-px h-16 bg-border mt-2"></div>
+                    {sortedHistory.length > 1 && version.version !== 1 && <div className="w-px h-16 bg-border mt-2"></div>}
                 </div>
                 <div className="flex-1">
                   <div className="flex items-center justify-between">
