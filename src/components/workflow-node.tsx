@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import React, { memo } from 'react';
@@ -147,4 +146,3 @@ const WorkflowNode = memo(({ data, id }: NodeProps<NodeData>) => {
 WorkflowNode.displayName = 'WorkflowNode';
 
 export default WorkflowNode;
-

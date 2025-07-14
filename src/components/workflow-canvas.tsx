@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import React, { useCallback, useEffect, useMemo } from 'react';
@@ -9,104 +8,123 @@ import ReactFlow, {
   MiniMap,
   useNodesState,
   useEdgesState,
-  addEdge,
   ReactFlowProvider,
-  type Connection,
   type Edge,
   useReactFlow,
   type Node,
 } from 'reactflow';
 import { Button } from '@/components/ui/button';
-import {
-  Play,
-  Trash2,
-} from 'lucide-react';
+import { Play, Trash2 } from 'lucide-react';
 import { Separator } from './ui/separator';
 import type { WorkflowStepData } from '@/lib/types';
 import WorkflowNode from './workflow-node';
 import { useToast } from '@/hooks/use-toast';
-import {
-  getLayoutedElements,
-} from '@/lib/flow-utils';
+import { getLayoutedElements } from '@/lib/flow-utils';
 
 const nodeTypes = {
   workflowNode: WorkflowNode,
 };
 
 type WorkflowCanvasProps = {
-    steps: WorkflowStepData[];
-    setSteps: React.Dispatch<React.SetStateAction<WorkflowStepData[]>>;
-    onEditStep: (step: WorkflowStepData, dataContext: any) => void;
-    workflowName: string;
-    workflowDescription?: string;
-}
+  steps: WorkflowStepData[];
+  setSteps: React.Dispatch<React.SetStateAction<WorkflowStepData[]>>;
+  onEditStep: (step: WorkflowStepData, dataContext: any) => void;
+  workflowName: string;
+  workflowDescription?: string;
+};
 
-function WorkflowCanvasComponent({ steps, setSteps, onEditStep, workflowName, workflowDescription }: WorkflowCanvasProps) {
+function WorkflowCanvasComponent({
+  steps,
+  setSteps,
+  onEditStep,
+  workflowName,
+  workflowDescription,
+}: WorkflowCanvasProps) {
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
   const { fitView } = useReactFlow();
   const { toast } = useToast();
 
-
+  const handleDeleteStep = useCallback((stepIdToDelete: string) => {
+      setSteps((prevSteps) =>
+        prevSteps.filter((step) => step.id !== stepIdToDelete)
+      );
+      toast({
+        title: 'Step Deleted',
+        description: 'The step has been removed from your workflow.',
+      });
+    }, [setSteps, toast]
+  );
+  
   const layoutedElements = useMemo(() => {
-    return getLayoutedElements(steps, onEditStep, setSteps);
-  }, [steps, onEditStep, setSteps]);
-
+    const onEdit = (step: WorkflowStepData) => {
+        onEditStep(step, edges);
+    }
+    const onDelete = (stepId: string) => {
+        handleDeleteStep(stepId);
+    }
+    return getLayoutedElements(steps, onEdit, onDelete);
+  }, [steps, onEditStep, handleDeleteStep, edges]);
 
   useEffect(() => {
     setNodes(layoutedElements.nodes);
     setEdges(layoutedElements.edges);
-     window.requestAnimationFrame(() => {
-        fitView();
+    window.requestAnimationFrame(() => {
+      fitView();
     });
   }, [layoutedElements, fitView, setNodes, setEdges]);
 
   const handleConfirmClear = () => {
     setSteps([]);
-  }
+  };
 
   return (
     <div className="flex h-full flex-col">
-        <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 p-4 md:p-6">
+      <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 p-4 md:p-6">
         <div className="flex-1 space-y-1">
-            <h1 className="text-2xl font-bold font-headline">
+          <h1 className="text-2xl font-bold font-headline">
             {workflowName || 'Untitled Workflow'}
-            </h1>
-            <p className="text-muted-foreground">
-            {workflowDescription || (steps.length > 0
+          </h1>
+          <p className="text-muted-foreground">
+            {workflowDescription ||
+              (steps.length > 0
                 ? 'A sequence of automated actions.'
                 : 'Start building your new workflow by adding steps from the panel.')}
-            </p>
+          </p>
         </div>
         <div className="flex flex-shrink-0 items-center gap-2">
-            <Button variant="outline">
-                <Play className="mr-2 h-4 w-4" />
-                Run Workflow
-            </Button>
-            <Button variant="destructive" onClick={handleConfirmClear} disabled={steps.length === 0}>
-                <Trash2 className="mr-2 h-4 w-4" />
-                Clear Canvas
-            </Button>
+          <Button variant="outline">
+            <Play className="mr-2 h-4 w-4" />
+            Run Workflow
+          </Button>
+          <Button
+            variant="destructive"
+            onClick={handleConfirmClear}
+            disabled={steps.length === 0}
+          >
+            <Trash2 className="mr-2 h-4 w-4" />
+            Clear Canvas
+          </Button>
         </div>
-        </div>
+      </div>
 
-        <Separator />
+      <Separator />
 
-        <div className="flex-1 h-full w-full">
-            <ReactFlow
-                nodes={nodes}
-                edges={edges}
-                onNodesChange={onNodesChange}
-                onEdgesChange={onEdgesChange}
-                nodeTypes={nodeTypes}
-                fitView
-                className="bg-background"
-            >
-                <Controls />
-                <MiniMap nodeStrokeWidth={3} zoomable pannable />
-                <Background variant="dots" gap={16} size={1} />
-            </ReactFlow>
-        </div>
+      <div className="flex-1 h-full w-full">
+        <ReactFlow
+          nodes={nodes}
+          edges={edges}
+          onNodesChange={onNodesChange}
+          onEdgesChange={onEdgesChange}
+          nodeTypes={nodeTypes}
+          fitView
+          className="bg-background"
+        >
+          <Controls />
+          <MiniMap nodeStrokeWidth={3} zoomable pannable />
+          <Background variant="dots" gap={16} size={1} />
+        </ReactFlow>
+      </div>
     </div>
   );
 }
@@ -116,6 +134,5 @@ export function WorkflowCanvas(props: WorkflowCanvasProps) {
     <ReactFlowProvider>
       <WorkflowCanvasComponent {...props} />
     </ReactFlowProvider>
-  )
+  );
 }
-

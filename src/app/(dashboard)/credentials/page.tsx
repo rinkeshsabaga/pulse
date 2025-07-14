@@ -23,8 +23,6 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Skeleton } from '@/components/ui/skeleton';
-import { AsanaIcon, HubSpotIcon, SalesforceIcon, ZohoIcon, Logo } from '@/components/icons';
-import { Github } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { Credential } from '@/lib/types';
 import { getCredentials, deleteCredential } from '@/lib/db';

@@ -1,8 +1,6 @@
 
-
 import type { Node, Edge } from 'reactflow';
 import type { WorkflowStepData } from './types';
-import { useToast } from '@/hooks/use-toast';
 
 const nodeWidth = 320;
 const nodeHeight = 90;
@@ -14,8 +12,7 @@ const horizontalGap = 150;
  * @param steps The array of workflow steps.
  * @returns An object containing the layouted nodes and edges.
  */
-export function getLayoutedElements(steps: WorkflowStepData[], onEdit: Function, setSteps: Function) {
-  const { toast } = useToast();
+export function getLayoutedElements(steps: WorkflowStepData[], onEdit: (step: WorkflowStepData) => void, onDelete: (id: string) => void) {
   const nodes: Node[] = [];
   const edges: Edge[] = [];
 
@@ -23,26 +20,18 @@ export function getLayoutedElements(steps: WorkflowStepData[], onEdit: Function,
     return { nodes, edges };
   }
   
-  const onDelete = (stepIdToDelete: string) => {
-    setSteps((prevSteps: WorkflowStepData[]) => prevSteps.filter((step) => step.id !== stepIdToDelete));
-    toast({
-      title: 'Step Deleted',
-      description: 'The step has been removed from your workflow.',
-    });
-  };
-
   let yPos = 0;
   let lastNodeId: string | null = null;
   
-  steps.forEach((step, index) => {
+  steps.forEach((step) => {
     const node: Node = {
       id: step.id,
       type: 'workflowNode',
       position: { x: 0, y: yPos },
       data: { 
         step,
-        onEdit: (step: WorkflowStepData) => onEdit(step, edges),
-        onDelete: onDelete
+        onEdit,
+        onDelete
        },
     };
     nodes.push(node);
@@ -94,4 +83,3 @@ export function generateOutputContext(steps: WorkflowStepData[], parentNodeIds: 
 
   return context;
 }
-

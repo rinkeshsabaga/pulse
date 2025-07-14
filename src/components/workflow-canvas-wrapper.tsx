@@ -1,8 +1,7 @@
 
-
 'use client';
 
-import React, { useCallback } from 'react';
+import React, { useCallback, useState, useEffect } from 'react';
 import { AIFunctionGenerator } from './ai-function-generator';
 import { EditTriggerDialog } from './edit-trigger-dialog';
 import { EditShopifyTriggerDialog } from './edit-shopify-trigger-dialog';
@@ -23,11 +22,11 @@ import { WorkflowCanvas } from './workflow-canvas';
 import { generateOutputContext } from '@/lib/flow-utils';
 
 export function WorkflowCanvasWrapper({ workflow }: { workflow: WorkflowType }) {
-  const [steps, setSteps] = React.useState<WorkflowStepData[]>(workflow.steps);
-  const [isAiGeneratorOpen, setIsAiGeneratorOpen] = React.useState(false);
-  const [editingStepInfo, setEditingStepInfo] = React.useState<{ step: WorkflowStepData, dataContext: any } | null>(null);
+  const [steps, setSteps] = useState<WorkflowStepData[]>(workflow.steps);
+  const [isAiGeneratorOpen, setIsAiGeneratorOpen] = useState(false);
+  const [editingStepInfo, setEditingStepInfo] = useState<{ step: WorkflowStepData, dataContext: any } | null>(null);
 
-  React.useEffect(() => {
+  useEffect(() => {
     setSteps(workflow.steps);
   }, [workflow]);
 
@@ -35,11 +34,11 @@ export function WorkflowCanvasWrapper({ workflow }: { workflow: WorkflowType }) 
     updateWorkflow(workflow.id, { steps: newSteps });
   };
   
-  const handleSetSteps = (newStepsOrFn: React.SetStateAction<WorkflowStepData[]>) => {
+  const handleSetSteps = useCallback((newStepsOrFn: React.SetStateAction<WorkflowStepData[]>) => {
     const newSteps = typeof newStepsOrFn === 'function' ? newStepsOrFn(steps) : newStepsOrFn;
     setSteps(newSteps);
     persistSteps(newSteps);
-  };
+  }, [steps]);
 
   const handleEditStep = useCallback((stepToEdit: WorkflowStepData, edges: any) => {
     const parentEdges = edges.filter((e: any) => e.target === stepToEdit.id);
@@ -57,7 +56,6 @@ export function WorkflowCanvasWrapper({ workflow }: { workflow: WorkflowType }) 
       status: 'default'
     };
     
-    // --- Initialize default data for specific step types ---
     if (newStep.type === 'trigger' && newStep.title === 'Webhook') {
       newStep.data = { webhookUrl: `https://api.sabagapulse.com/v1/webhooks/wf_${Date.now()}`, events: [], selectedEventId: null };
     }
@@ -235,4 +233,3 @@ export function WorkflowCanvasWrapper({ workflow }: { workflow: WorkflowType }) 
     </>
   );
 }
-
