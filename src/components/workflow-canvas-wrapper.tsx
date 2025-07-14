@@ -139,7 +139,8 @@ export function WorkflowCanvasWrapper({ workflow }: { workflow: WorkflowType }) 
   }
 
   return (
-    <DashboardLayout onAddStep={handleAddStep}>
+    <>
+      <DashboardLayout onAddStep={handleAddStep}>
         <div className="relative flex-1 bg-background h-full">
             <WorkflowCanvas 
                 steps={steps}
@@ -149,6 +150,7 @@ export function WorkflowCanvasWrapper({ workflow }: { workflow: WorkflowType }) 
                 workflowDescription={workflow.description}
             />
         </div>
+      </DashboardLayout>
         
         <AIFunctionGenerator
             open={isAiGeneratorOpen}
@@ -245,8 +247,6 @@ export function WorkflowCanvasWrapper({ workflow }: { workflow: WorkflowType }) 
             onOpenChange={(isOpen) => !isOpen && setEditingStepInfo(null)}
             onSave={handleSaveAction}
         />
-      </DashboardLayout>
+    </>
   );
 }
-
-    
