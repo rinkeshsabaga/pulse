@@ -15,6 +15,7 @@ import ReactFlow, {
   addEdge,
   Connection,
   Edge,
+  applyEdgeChanges,
 } from 'reactflow';
 import { Button } from '@/components/ui/button';
 import { Play, Trash2, History, Loader2 } from 'lucide-react';
@@ -124,47 +125,42 @@ function WorkflowCanvasComponent({
       setEdges((eds) => addEdge(params, eds));
   }, [onStepsChange, setEdges]);
   
-  const handleEdgesChange: OnEdgesChange = useCallback((changes) => {
-    onEdgesChange(changes);
-    
-    changes.forEach(change => {
-        if(change.type === 'remove') {
-            const edgeId = change.id;
-            const sourceIdMatch = edgeId.match(/e-(step-.*?)-/);
-            const sourceId = sourceIdMatch ? sourceIdMatch[1] : null;
+ const handleEdgesChange: OnEdgesChange = useCallback((changes) => {
+    setEdges((prevEdges) => applyEdgeChanges(changes, prevEdges));
 
-            if (sourceId) {
-                onStepsChange(prevSteps => {
-                    return prevSteps.map(step => {
-                        if (step.id === sourceId) {
-                            const newStep = {...step};
-                            if (newStep.title === 'Condition' && newStep.data?.conditionData) {
-                                // Clear nextStepId from the matching case
-                                newStep.data.conditionData.cases = newStep.data.conditionData.cases.map(c => {
-                                    if(edgeId.endsWith(c.id)) {
-                                        const newCase = {...c};
-                                        delete newCase.nextStepId;
-                                        return newCase;
-                                    }
-                                    return c;
-                                });
-                                // Clear default nextStepId
-                                if (edgeId.endsWith('-default')) {
-                                    delete newStep.data.conditionData.defaultNextStepId;
-                                }
-                            } else {
-                                // Clear linear nextStepId
-                                delete newStep.data?.nextStepId;
-                            }
-                            return newStep;
+    changes.forEach(change => {
+        if (change.type === 'remove') {
+            const edge = edges.find(e => e.id === change.id);
+            if (!edge || !edge.source) return;
+
+            onStepsChange(prevSteps => {
+                const newSteps = [...prevSteps];
+                const sourceStepIndex = newSteps.findIndex(s => s.id === edge.source);
+                if (sourceStepIndex === -1) return prevSteps;
+
+                const sourceStep = newSteps[sourceStepIndex];
+                
+                if (sourceStep.title === 'Condition' && sourceStep.data?.conditionData) {
+                    if (edge.sourceHandle === 'default') {
+                        delete sourceStep.data.conditionData.defaultNextStepId;
+                    } else {
+                        const caseIndex = sourceStep.data.conditionData.cases.findIndex(c => c.id === edge.sourceHandle);
+                        if (caseIndex !== -1) {
+                            delete sourceStep.data.conditionData.cases[caseIndex].nextStepId;
                         }
-                        return step;
-                    });
-                });
-            }
+                    }
+                } else {
+                    if (sourceStep.data?.nextStepId === edge.target) {
+                        delete sourceStep.data.nextStepId;
+                    }
+                }
+                
+                newSteps[sourceStepIndex] = sourceStep;
+                return newSteps;
+            });
         }
     });
-}, [onEdgesChange, onStepsChange]);
+}, [edges, onStepsChange, setEdges]);
 
 
 
