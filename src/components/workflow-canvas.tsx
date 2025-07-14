@@ -20,6 +20,16 @@ import type { WorkflowStepData } from '@/lib/types';
 import WorkflowNode from './workflow-node';
 import { useToast } from '@/hooks/use-toast';
 import { getLayoutedElements } from '@/lib/flow-utils';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 const nodeTypes = {
   workflowNode: WorkflowNode,
@@ -44,6 +54,7 @@ function WorkflowCanvasComponent({
 }: WorkflowCanvasProps) {
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
+  const [isClearAlertOpen, setIsClearAlertOpen] = useState(false);
   const { fitView } = useReactFlow();
   const { toast } = useToast();
 
@@ -70,9 +81,11 @@ function WorkflowCanvasComponent({
         title: 'Canvas Cleared',
         description: 'All steps have been removed from your workflow.',
     });
+    setIsClearAlertOpen(false);
   };
 
   return (
+    <>
     <div className="flex h-full flex-col">
       <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 p-4 md:p-6">
         <div className="flex-1 space-y-1">
@@ -93,7 +106,7 @@ function WorkflowCanvasComponent({
           </Button>
           <Button
             variant="destructive"
-            onClick={handleConfirmClear}
+            onClick={() => setIsClearAlertOpen(true)}
             disabled={steps.length === 0}
           >
             <Trash2 className="mr-2 h-4 w-4" />
@@ -108,8 +121,8 @@ function WorkflowCanvasComponent({
         <ReactFlow
           nodes={nodes}
           edges={edges}
-          onNodesChange={onNodesChange}
-          onEdgesChange={onEdgesChange}
+          onNodesChange={onNodesChange as OnNodesChange}
+          onEdgesChange={onEdgesChange as OnEdgesChange}
           nodeTypes={nodeTypes}
           fitView
           className="bg-background"
@@ -120,6 +133,26 @@ function WorkflowCanvasComponent({
         </ReactFlow>
       </div>
     </div>
+    <AlertDialog open={isClearAlertOpen} onOpenChange={setIsClearAlertOpen}>
+        <AlertDialogContent>
+            <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+                This action cannot be undone. This will permanently delete all steps from your workflow.
+            </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleConfirmClear}
+              className="bg-destructive hover:bg-destructive/90"
+            >
+              Clear Canvas
+            </AlertDialogAction>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+    </AlertDialog>
+    </>
   );
 }
 
