@@ -1,3 +1,4 @@
+
 import type { WorkflowStepData } from './types';
 
 export const initialSteps: WorkflowStepData[] = [
@@ -8,9 +9,6 @@ export const initialSteps: WorkflowStepData[] = [
       title: 'HTTP Request Recieved',
       description: 'via Webhook',
       status: 'success',
-      data: {
-        webhookUrl: `https://api.sabagapulse.com/v1/webhooks/wf_init_abc123`
-      }
     },
     {
       id: 'step-2',

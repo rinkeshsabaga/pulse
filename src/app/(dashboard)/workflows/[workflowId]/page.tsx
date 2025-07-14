@@ -3,7 +3,7 @@ import React from 'react';
 import { getWorkflowById } from '@/lib/db';
 import { notFound } from 'next/navigation';
 import type { Workflow } from '@/lib/types';
-import { WorkflowCanvasWrapper } from '@/components/workflow-canvas-wrapper';
+import { WorkflowCanvas } from '@/components/workflow-canvas';
 
 export default async function WorkflowEditorPage({ params }: { params: Promise<{ workflowId: string }> }) {
   const { workflowId } = await params;
@@ -13,5 +13,5 @@ export default async function WorkflowEditorPage({ params }: { params: Promise<{
     notFound();
   }
   
-  return <WorkflowCanvasWrapper workflow={workflow} />;
+  return <WorkflowCanvas workflow={workflow} />;
 }

@@ -33,8 +33,6 @@ const iconMap: Record<IconName, React.ElementType> = {
   Clock: icons.Clock,
   ShoppingCart: icons.ShoppingCart,
   StopCircle: icons.StopCircle,
-  Code: icons.Code,
-  AppWindow: icons.AppWindow,
 };
 
 const WorkflowNode = memo(({ data }: NodeProps<{ step: WorkflowStepData; onEdit: () => void; onDelete: () => void; }>) => {
