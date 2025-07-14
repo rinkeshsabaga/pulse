@@ -18,12 +18,9 @@ import { Button } from '@/components/ui/button';
 import {
   Play,
   Trash2,
-  GitBranchPlus,
-  PanelLeftClose,
-  PanelLeftOpen
 } from 'lucide-react';
 import { Separator } from './ui/separator';
-import type { WorkflowStepData, IconName } from '@/lib/types';
+import type { WorkflowStepData } from '@/lib/types';
 import WorkflowNode from './workflow-node';
 import { useToast } from '@/hooks/use-toast';
 import {
@@ -83,8 +80,8 @@ function WorkflowCanvasComponent({ steps, setSteps, onEditStep, workflowName, wo
         ...node,
         data: {
             ...node.data,
-            onEdit: () => handleEditStep(node.id),
-            onDelete: () => handleDeleteStep(node.id),
+            onEdit: handleEditStep,
+            onDelete: handleDeleteStep,
         }
     }));
     setNodes(nodesWithCallbacks);
