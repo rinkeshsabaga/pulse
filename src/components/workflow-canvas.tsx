@@ -130,43 +130,48 @@ function WorkflowCanvasComponent({
   
   const onEdgesChange: OnEdgesChange = useCallback(
     (changes) => {
-      onStepsChange(currentSteps => {
-        let nextSteps = [...currentSteps];
-        const edgesToRemove = changes.filter((c): c is EdgeChange & { type: 'remove' } => c.type === 'remove');
+      const edgesToRemove = changes.filter((c): c is EdgeChange & { type: 'remove' } => c.type === 'remove');
+      
+      if (edgesToRemove.length > 0) {
+        onStepsChange(currentSteps => {
+          let nextSteps = [...currentSteps];
+          
+          edgesToRemove.forEach(change => {
+            // Find the edge in the current state *before* it gets removed
+            const edgeToRemove = edges.find(edge => edge.id === change.id);
+            if (!edgeToRemove) return;
   
-        edgesToRemove.forEach(change => {
-          const edgeToRemove = edges.find(edge => edge.id === change.id);
-          if (!edgeToRemove) return;
+            const sourceStep = nextSteps.find(s => s.id === edgeToRemove.source);
+            if (!sourceStep) return;
   
-          nextSteps = nextSteps.map(step => {
-            if (step.id === edgeToRemove.source) {
-              const newStepData = { ...step.data };
-              
-              if (step.title === 'Condition' && newStepData.conditionData) {
-                // It's a condition node, check which handle was disconnected
-                if (edgeToRemove.sourceHandle === 'default') {
-                  delete newStepData.conditionData.defaultNextStepId;
-                } else {
-                  const caseToUpdate = newStepData.conditionData.cases.find(c => c.id === edgeToRemove.sourceHandle);
-                  if (caseToUpdate) {
-                    delete caseToUpdate.nextStepId;
-                  }
-                }
+            const newStep = { ...sourceStep, data: { ...sourceStep.data } };
+  
+            if (newStep.title === 'Condition' && newStep.data?.conditionData) {
+              // It's a condition node, check which handle was disconnected
+              if (edgeToRemove.sourceHandle === 'default') {
+                delete newStep.data.conditionData.defaultNextStepId;
               } else {
-                // It's a regular node
-                if (newStepData.nextStepId === edgeToRemove.target) {
-                  delete newStepData.nextStepId;
+                const caseToUpdate = newStep.data.conditionData.cases.find(c => c.id === edgeToRemove.sourceHandle);
+                if (caseToUpdate) {
+                  delete caseToUpdate.nextStepId;
                 }
               }
-              return { ...step, data: newStepData };
+            } else {
+              // It's a regular node
+              if (newStep.data?.nextStepId === edgeToRemove.target) {
+                delete newStep.data.nextStepId;
+              }
             }
-            return step;
-          });
-        });
-        
-        return nextSteps;
-      });
   
+            // Update the step in the steps array
+            nextSteps = nextSteps.map(s => s.id === newStep.id ? newStep : s);
+          });
+          
+          return nextSteps;
+        });
+      }
+  
+      // Apply the visual changes to the React Flow state
       setEdges((eds) => applyEdgeChanges(changes, eds));
     },
     [setEdges, onStepsChange, edges]
