@@ -47,11 +47,6 @@ function WorkflowCanvasComponent({ steps, setSteps, onEditStep, workflowName, wo
   const { fitView } = useReactFlow();
   const { toast } = useToast();
 
-  const onConnect = useCallback(
-    (params: Connection | Edge) => setEdges((eds) => addEdge({ ...params, type: 'smoothstep' }, eds)),
-    [setEdges]
-  );
-  
   const handleEditStep = useCallback((stepId: string) => {
     const step = steps.find(s => s.id === stepId);
     if (!step) return;
@@ -73,15 +68,20 @@ function WorkflowCanvasComponent({ steps, setSteps, onEditStep, workflowName, wo
     });
   }, [setSteps, toast]);
   
+  const onConnect = useCallback(
+    (params: Connection | Edge) => setEdges((eds) => addEdge({ ...params, type: 'smoothstep' }, eds)),
+    [setEdges]
+  );
+  
+  const layoutedElements = useMemo(() => getLayoutedElements(steps), [steps]);
 
   useEffect(() => {
-    const { nodes: newNodes, edges: newEdges } = getLayoutedElements(steps);
-    setNodes(newNodes);
-    setEdges(newEdges);
-    window.requestAnimationFrame(() => {
+    setNodes(layoutedElements.nodes);
+    setEdges(layoutedElements.edges);
+     window.requestAnimationFrame(() => {
         fitView();
     });
-  }, [steps, fitView, setNodes, setEdges]);
+  }, [layoutedElements, fitView, setNodes, setEdges]);
   
   const handleConfirmClear = () => {
     setSteps([]);
