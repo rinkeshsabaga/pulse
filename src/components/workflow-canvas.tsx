@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
@@ -14,7 +13,7 @@ import ReactFlow, {
   OnEdgesChange,
 } from 'reactflow';
 import { Button } from '@/components/ui/button';
-import { Play, Trash2, History } from 'lucide-react';
+import { Play, Trash2, History, Loader2 } from 'lucide-react';
 import { Separator } from './ui/separator';
 import type { Workflow as WorkflowType, WorkflowStepData, WorkflowVersion } from '@/lib/types';
 import WorkflowNode from './workflow-node';
@@ -32,6 +31,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Badge } from './ui/badge';
 import { VersionHistoryPanel } from './version-history-panel';
+import { runWorkflow } from '@/ai/flows/run-workflow-flow';
 
 type WorkflowCanvasProps = {
   workflow: WorkflowType;
@@ -58,6 +58,7 @@ function WorkflowCanvasComponent({
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
   const [isClearAlertOpen, setIsClearAlertOpen] = useState(false);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+  const [isExecuting, setIsExecuting] = useState(false);
   const { fitView } = useReactFlow();
   const { toast } = useToast();
 
@@ -92,6 +93,41 @@ function WorkflowCanvasComponent({
     setIsHistoryOpen(false);
   }
 
+  const handleRunWorkflow = async () => {
+    if (steps.length === 0) {
+      toast({
+        variant: 'destructive',
+        title: 'Empty Workflow',
+        description: 'Cannot run a workflow with no steps.',
+      });
+      return;
+    }
+    setIsExecuting(true);
+    try {
+      const result = await runWorkflow({ steps });
+      if (result.success) {
+        toast({
+          title: 'Workflow Run Successful',
+          description: result.message,
+        });
+      } else {
+         toast({
+          variant: 'destructive',
+          title: 'Workflow Run Failed',
+          description: result.message,
+        });
+      }
+    } catch (error: any) {
+        toast({
+          variant: 'destructive',
+          title: 'Execution Error',
+          description: `An unexpected error occurred: ${error.message}`,
+        });
+    } finally {
+        setIsExecuting(false);
+    }
+  }
+
   return (
     <>
     <div className="flex-1 flex flex-col h-full">
@@ -116,14 +152,14 @@ function WorkflowCanvasComponent({
             <History className="mr-2 h-4 w-4" />
             History
           </Button>
-          <Button variant="outline">
-            <Play className="mr-2 h-4 w-4" />
+          <Button variant="outline" onClick={handleRunWorkflow} disabled={isExecuting}>
+            {isExecuting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Play className="mr-2 h-4 w-4" />}
             Run Workflow
           </Button>
           <Button
             variant="destructive"
             onClick={() => setIsClearAlertOpen(true)}
-            disabled={steps.length === 0}
+            disabled={steps.length === 0 || isExecuting}
           >
             <Trash2 className="mr-2 h-4 w-4" />
             Clear Canvas
