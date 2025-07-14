@@ -22,7 +22,6 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Skeleton } from '@/components/ui/skeleton';
-import { AsanaIcon, HubSpotIcon, SalesforceIcon, ZohoIcon } from '@/components/icons';
 import { Github } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { Credential } from '@/lib/types';
@@ -31,10 +30,6 @@ import { CredentialDialog } from '@/components/credential-dialog';
 
 const iconMap: Record<string, React.ElementType> = {
   GitHub: Github,
-  Salesforce: SalesforceIcon,
-  Asana: AsanaIcon,
-  HubSpot: HubSpotIcon,
-  Zoho: ZohoIcon,
   default: KeyRound,
 };
 
