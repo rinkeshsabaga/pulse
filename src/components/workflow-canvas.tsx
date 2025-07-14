@@ -191,7 +191,7 @@ function WorkflowCanvasComponent({
               </Button>
             </>
           )}
-          <Button variant="destructive-outline" onClick={() => setIsClearDialogOpen(true)} disabled={steps.length === 0}>
+          <Button variant="destructive" onClick={() => setIsClearDialogOpen(true)} disabled={steps.length === 0}>
             <Trash2 className="mr-2 h-4 w-4" />
             Clear Canvas
           </Button>
