@@ -9,9 +9,8 @@ import ReactFlow, {
   useNodesState,
   useEdgesState,
   ReactFlowProvider,
-  type Edge,
   useReactFlow,
-  type Node,
+  type OnConnect,
 } from 'reactflow';
 import { Button } from '@/components/ui/button';
 import { Play, Trash2 } from 'lucide-react';
@@ -46,26 +45,32 @@ function WorkflowCanvasComponent({
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
   const { fitView } = useReactFlow();
   const { toast } = useToast();
-  
-  const layoutedElements = useMemo(() => {
-    const nodeData = { 
-        onEdit: onEditStep,
-        onDelete: onDeleteStep
-    };
-    return getLayoutedElements(steps, nodeData);
-  }, [steps, onEditStep, onDeleteStep]);
 
+  const onConnect: OnConnect = useCallback(
+    (params) => {
+        // This is where you would handle new connections if you wanted to.
+        // For now, we will not automatically add edges.
+    },
+    []
+  );
+
+  const memoizedNodeCallbacks = useMemo(() => ({
+    onEdit: onEditStep,
+    onDelete: onDeleteStep
+  }), [onEditStep, onDeleteStep]);
+  
   useEffect(() => {
-    setNodes(layoutedElements.nodes);
-    setEdges(layoutedElements.edges);
+    const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(steps, memoizedNodeCallbacks);
+    setNodes(layoutedNodes);
+    setEdges(layoutedEdges);
     
-    // Fit view after a short delay to ensure layout is complete
     const timer = setTimeout(() => {
         fitView({ duration: 300, padding: 0.1 });
     }, 10);
 
     return () => clearTimeout(timer);
-  }, [layoutedElements, setNodes, setEdges, fitView]);
+  }, [steps, memoizedNodeCallbacks, setNodes, setEdges, fitView]);
+
 
   const handleConfirmClear = () => {
     onStepsChange([]);
@@ -113,6 +118,7 @@ function WorkflowCanvasComponent({
           edges={edges}
           onNodesChange={onNodesChange}
           onEdgesChange={onEdgesChange}
+          onConnect={onConnect}
           nodeTypes={nodeTypes}
           fitView
           className="bg-background"

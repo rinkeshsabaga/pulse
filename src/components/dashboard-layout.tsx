@@ -27,17 +27,14 @@ import {
 } from '@/components/ui/accordion';
 import {
   SidebarProvider,
-  Sidebar,
-  SidebarTrigger,
   SidebarInset,
-  useSidebar
 } from '@/components/ui/sidebar';
 
 import { MonitoringPanel } from './monitoring-panel';
-import type { WorkflowStepData, IconName } from '@/lib/types';
+import type { IconName } from '@/lib/types';
 import * as icons from 'lucide-react';
 import { Button } from './ui/button';
-import { PanelLeft, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
+import { PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 
 const Triggers = [
     { type: 'trigger' as const, icon: 'Webhook' as const, title: 'Webhook', description: 'Trigger via HTTP POST' },
@@ -77,7 +74,7 @@ function DashboardLayoutInternal({ children, onAddStep }: { children: React.Reac
   const [isSidebarOpen, setIsSidebarOpen] = React.useState(true);
 
   return (
-    <div className="relative h-screen overflow-hidden">
+    <div className="relative h-full w-full overflow-hidden">
         <Sheet open={isSidebarOpen} onOpenChange={setIsSidebarOpen}>
             <SheetContent side="left" className="p-0 border-r w-[400px] sm:w-[400px]" hideCloseButton>
                  <SheetHeader className="sr-only">
@@ -145,7 +142,7 @@ function DashboardLayoutInternal({ children, onAddStep }: { children: React.Reac
                 </div>
             </SheetContent>
         </Sheet>
-        <SidebarInset style={{ marginLeft: isSidebarOpen ? '400px' : '0' }}>
+        <SidebarInset style={{ marginLeft: isSidebarOpen ? '400px' : '0' }} className="h-full">
             <div className="absolute top-4 left-4 z-10">
               <Button size="icon" variant="outline" onClick={() => setIsSidebarOpen(!isSidebarOpen)}>
                 {isSidebarOpen ? <PanelLeftClose /> : <PanelLeftOpen />}

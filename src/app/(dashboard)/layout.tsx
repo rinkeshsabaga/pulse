@@ -43,7 +43,7 @@ export default function DashboardLayout({
 
   return (
     <SidebarProvider>
-      <div className="flex min-h-screen w-full bg-muted/40">
+      <div className="flex h-screen w-full bg-muted/40">
         <Sidebar>
           <SidebarHeader>
             <div className="flex items-center gap-2">
@@ -141,7 +141,7 @@ export default function DashboardLayout({
             </DropdownMenu>
           </SidebarFooter>
         </Sidebar>
-        <main className="flex flex-col flex-1">
+        <main className="flex flex-col flex-1 h-full">
           {children}
         </main>
       </div>

@@ -38,7 +38,7 @@ export function WorkflowCanvasWrapper({ workflow }: { workflow: WorkflowType }) 
     setSteps(newSteps);
     persistSteps(newSteps);
   }, [persistSteps]);
-
+  
   const handleEditStep = useCallback((stepToEditId: string) => {
     const stepToEdit = steps.find(s => s.id === stepToEditId);
     if (!stepToEdit) return;
@@ -46,7 +46,7 @@ export function WorkflowCanvasWrapper({ workflow }: { workflow: WorkflowType }) 
     const dataContext = generateOutputContext(steps, stepToEdit.id);
     setEditingStepInfo({ step: stepToEdit, dataContext });
   }, [steps]);
-  
+
   const handleDeleteStep = useCallback((stepIdToDelete: string) => {
       const newSteps = steps.filter((step) => step.id !== stepIdToDelete);
       handleSetSteps(newSteps);
@@ -127,7 +127,7 @@ export function WorkflowCanvasWrapper({ workflow }: { workflow: WorkflowType }) 
   }
 
   return (
-    <>
+    <div className="h-full w-full">
       <DashboardLayout onAddStep={handleAddStep}>
         <WorkflowCanvas 
             steps={steps}
@@ -234,6 +234,6 @@ export function WorkflowCanvasWrapper({ workflow }: { workflow: WorkflowType }) 
             onOpenChange={(isOpen) => !isOpen && setEditingStepInfo(null)}
             onSave={handleSaveAction}
         />
-    </>
+    </div>
   );
 }
