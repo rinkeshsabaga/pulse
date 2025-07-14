@@ -291,7 +291,7 @@ export default function BillingPage() {
           </Card>
         </div>
         
-        <div className="lg:col-span-1">
+        <div className="lg:col-span-1 space-y-8">
              <Card>
                 <CardHeader className="p-4">
                     <CardTitle>Current Plan Usage</CardTitle>
