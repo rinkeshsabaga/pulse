@@ -15,13 +15,12 @@ import { EditCronJobDialog } from './edit-cron-job-dialog';
 import { EditSendEmailDialog } from './edit-send-email-dialog';
 import { EditDatabaseQueryDialog } from './edit-database-query-dialog';
 import type { Workflow as WorkflowType, WorkflowStepData, IconName } from '@/lib/types';
-import { updateWorkflow } from '@/lib/db';
 import { v4 as uuidv4 } from 'uuid';
 import { DashboardLayout } from './dashboard-layout';
 import { WorkflowCanvas } from './workflow-canvas';
 import { generateOutputContext } from '@/lib/flow-utils';
 
-export function WorkflowCanvasWrapper({ workflow }: { workflow: WorkflowType }) {
+export function WorkflowCanvasWrapper({ workflow, onUpdate }: { workflow: WorkflowType, onUpdate: (data: Partial<WorkflowType>) => void }) {
   const [steps, setSteps] = useState<WorkflowStepData[]>(workflow.steps);
   const [isAiGeneratorOpen, setIsAiGeneratorOpen] = useState(false);
   const [editingStepInfo, setEditingStepInfo] = useState<{ step: WorkflowStepData, dataContext: any }| null>(null);
@@ -30,14 +29,10 @@ export function WorkflowCanvasWrapper({ workflow }: { workflow: WorkflowType }) 
     setSteps(workflow.steps);
   }, [workflow]);
 
-  const persistSteps = useCallback(async (newSteps: WorkflowStepData[]) => {
-    await updateWorkflow(workflow.id, { steps: newSteps });
-  }, [workflow.id]);
-  
-  const handleSetSteps = useCallback((newSteps: WorkflowStepData[]) => {
+  const handleSetSteps = useCallback(async (newSteps: WorkflowStepData[]) => {
     setSteps(newSteps);
-    persistSteps(newSteps);
-  }, [persistSteps]);
+    await onUpdate({ steps: newSteps });
+  }, [onUpdate]);
   
   const handleEditStep = useCallback((stepToEditId: string) => {
     const stepToEdit = steps.find(s => s.id === stepToEditId);
@@ -127,7 +122,7 @@ export function WorkflowCanvasWrapper({ workflow }: { workflow: WorkflowType }) 
   }
 
   return (
-    <div className="h-full w-full">
+    <div className="h-screen w-full flex flex-col">
       <DashboardLayout onAddStep={handleAddStep}>
         <WorkflowCanvas 
             steps={steps}

@@ -149,7 +149,7 @@ export default function BillingPage() {
 
   return (
     <>
-    <div className="grid flex-1 items-start gap-8 p-4 sm:px-6 sm:py-0 md:gap-8">
+    <div className="grid flex-1 items-start gap-8">
       <div className="space-y-2">
         <h1 className="text-3xl font-bold font-headline">Billing & Plans</h1>
         <p className="text-muted-foreground">Manage your subscription and billing details.</p>

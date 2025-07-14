@@ -60,7 +60,7 @@ const Sidebar = React.forwardRef<HTMLElement, SidebarProps>(
     return (
       <aside
         ref={ref}
-        className={cn(sidebarVariants({ side }), className)}
+        className={cn("bg-sidebar border-r p-2 w-64", sidebarVariants({ side }), className)}
         data-collapsed={collapsed}
         {...props}
       />
@@ -112,13 +112,13 @@ const SidebarFooter = React.forwardRef<
 SidebarFooter.displayName = "SidebarFooter"
 
 const SidebarMenu = React.forwardRef<
-  HTMLDivElement,
-  React.HTMLAttributes<HTMLDivElement>
+  HTMLUListElement,
+  React.HTMLAttributes<HTMLUListElement>
 >(({ className, ...props }, ref) => {
   return (
-    <div
+    <ul
       ref={ref}
-      className={cn("flex w-full flex-col gap-2 px-2", className)}
+      className={cn("flex w-full flex-col gap-2 px-2 list-none", className)}
       {...props}
     />
   )

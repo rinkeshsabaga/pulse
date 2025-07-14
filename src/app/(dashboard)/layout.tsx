@@ -40,6 +40,12 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const isWorkflowEditor = /^\/workflows\/wf_/.test(pathname);
+  
+  if (isWorkflowEditor) {
+    return <main className="flex flex-col flex-1 h-full">{children}</main>;
+  }
+
 
   return (
     <SidebarProvider>
@@ -141,8 +147,8 @@ export default function DashboardLayout({
             </DropdownMenu>
           </SidebarFooter>
         </Sidebar>
-        <main className="flex flex-col flex-1 h-full">
-          {children}
+        <main className="flex flex-col flex-1 h-full overflow-y-auto">
+          <div className="p-4 sm:p-6">{children}</div>
         </main>
       </div>
     </SidebarProvider>
