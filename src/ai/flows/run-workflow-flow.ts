@@ -73,7 +73,12 @@ const runWorkflowFlow = ai.defineFlow(
                         subject: resolveVariables(step.data.emailData.subject || '', dataContext),
                         body: resolveVariables(step.data.emailData.body || '', dataContext),
                     };
-                    stepOutput = await sendEmail(resolvedInput);
+                    if (!resolvedInput.to) {
+                        console.warn(`Skipping "Send Email" step ${step.id} because 'To' address is empty.`);
+                        stepOutput = { success: false, note: `Skipped: 'To' address was empty.` };
+                    } else {
+                        stepOutput = await sendEmail(resolvedInput);
+                    }
                 }
                 break;
             case 'Database Query':
