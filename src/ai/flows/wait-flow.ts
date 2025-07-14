@@ -9,7 +9,7 @@
  */
 
 import { ai } from '@/ai/genkit';
-import { sleep } from 'genkit/utils';
+import { sleep } from 'genkit';
 import { z } from 'zod';
 import {
   parse,
