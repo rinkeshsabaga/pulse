@@ -4,7 +4,6 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import ReactFlow, {
-  addEdge,
   Background,
   Controls,
   MiniMap,
@@ -33,6 +32,7 @@ import {
   Workflow,
   LayoutGrid,
   List,
+  Trash2,
 } from 'lucide-react';
 import {
   AlertDialog,
@@ -69,7 +69,7 @@ const nodeTypes = {
   ),
 };
 
-const getNodePositions = (steps: WorkflowStepData[], layout: 'horizontal' | 'vertical', onAddStep: (index: number) => void) => {
+const getNodePositions = (steps: WorkflowStepData[], layout: 'horizontal' | 'vertical') => {
   const nodes = [];
   const edges = [];
   
@@ -106,23 +106,12 @@ const getNodePositions = (steps: WorkflowStepData[], layout: 'horizontal' | 'ver
         id: `add-${step.id}`,
         type: 'addNode',
         position: addNodePosition,
-        data: { onAdd: () => onAddStep(i) },
+        data: { onAdd: () => {} }, // onAdd is now handled by node data mapping
         draggable: false,
     });
 
 
     // Add edges
-    if (i > 0) {
-      edges.push({
-        id: `e${steps[i-1].id}-add-${steps[i-1].id}`,
-        source: `add-${steps[i-1].id}`,
-        target: step.id,
-        type: 'smoothstep',
-        sourceHandle: 'b',
-        targetHandle: 'a'
-      });
-    }
-
     edges.push({
         id: `e${step.id}-add-${step.id}`,
         source: step.id,
@@ -131,6 +120,20 @@ const getNodePositions = (steps: WorkflowStepData[], layout: 'horizontal' | 'ver
         sourceHandle: 'b',
         targetHandle: 'a'
     });
+
+    // Connect previous `add` node to this step
+    if (i === 0 && steps[0].type === 'trigger') {
+      // no incoming edge for first trigger
+    } else if (i > 0) {
+      edges.push({
+        id: `e-add-${steps[i-1].id}-to-${step.id}`,
+        source: `add-${steps[i-1].id}`,
+        target: step.id,
+        type: 'smoothstep',
+        sourceHandle: 'b',
+        targetHandle: 'a'
+      });
+    }
   }
 
   // Handle empty canvas state
@@ -139,7 +142,7 @@ const getNodePositions = (steps: WorkflowStepData[], layout: 'horizontal' | 'ver
         id: 'start-add',
         type: 'addNode',
         position: { x: 100, y: 100 },
-        data: { onAdd: () => onAddStep(-1), isOnlyNode: true },
+        data: { onAdd: () => {}, isOnlyNode: true }, // onAdd is now handled by node data mapping
         draggable: false,
       });
   } else {
@@ -151,7 +154,7 @@ const getNodePositions = (steps: WorkflowStepData[], layout: 'horizontal' | 'ver
       
       const endNodePosition = 
         layout === 'horizontal'
-        ? { x: lastStepPosition.x + nodeWidth + horizontalGap, y: lastStepPosition.y + nodeHeight / 2 - 35 }
+        ? { x: lastStepPosition.x + nodeWidth + horizontalGap + (horizontalGap - addNodeWidth) / 2, y: lastStepPosition.y + nodeHeight / 2 - 35 }
         : { x: lastStepPosition.x + nodeWidth / 2 - 25, y: lastStepPosition.y + nodeHeight + verticalGap };
       
       nodes.push({
@@ -227,9 +230,9 @@ function WorkflowCanvasComponent({
   }, [onEditStep, toast, dataContext]);
 
   useEffect(() => {
-    const { nodes: newNodes, edges: newEdges } = getNodePositions(steps, layout, onAddStep);
+    const { nodes: newNodes, edges: newEdges } = getNodePositions(steps, layout);
 
-    const nodesWithCallbacks = newNodes.map(node => {
+    const nodesWithCallbacks = newNodes.map((node, i) => {
       if (node.type === 'workflowNode') {
           return {
             ...node,
@@ -241,18 +244,20 @@ function WorkflowCanvasComponent({
             }
           }
       }
+      if (node.id === 'start-add') {
+        return { ...node, data: { ...node.data, onAdd: () => onAddStep(-1) } };
+      }
+      if (node.id.startsWith('add-')) {
+        const stepIndex = steps.findIndex(s => `add-${s.id}` === node.id);
+        return { ...node, data: { ...node.data, onAdd: () => onAddStep(stepIndex) }};
+      }
       return node;
     });
 
     setNodes(nodesWithCallbacks);
     setEdges(newEdges);
-  }, [steps, layout, handleEditStep, handleDeleteStep, onAddStep, setNodes, setEdges]);
-
-
-  const onConnect = useCallback(
-    (params: Connection | Edge) => setEdges((eds) => addEdge(params, eds)),
-    [setEdges]
-  );
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [steps, layout, handleEditStep, handleDeleteStep]);
   
   const handleConfirmClear = () => {
     setSteps([]);
@@ -310,8 +315,8 @@ function WorkflowCanvasComponent({
               <span className="sr-only">Vertical Layout</span>
             </Button>
           </div>
-          <Button variant="outline" onClick={() => setIsClearDialogOpen(true)}>
-            <Plus className="mr-2 h-4 w-4" />
+          <Button variant="destructive-outline" onClick={() => setIsClearDialogOpen(true)} disabled={steps.length === 0}>
+            <Trash2 className="mr-2 h-4 w-4" />
             Clear Canvas
           </Button>
         </div>
@@ -325,7 +330,6 @@ function WorkflowCanvasComponent({
             edges={edges}
             onNodesChange={onNodesChange}
             onEdgesChange={onEdgesChange}
-            onConnect={onConnect}
             nodeTypes={nodeTypes}
             fitView
             className="bg-background"

@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -42,8 +43,6 @@ const triggerSteps: StepDefinition[] = [
     { type: 'trigger' as const, icon: 'Clock' as const, title: 'Cron Job', description: 'Run on a schedule' },
     { type: 'trigger' as const, icon: 'ShoppingCart' as const, title: 'Shopify', description: 'Trigger on a Shopify event' },
 ];
-
-const allSteps = [...triggerSteps, ...actionSteps];
 
 const iconMap: Record<IconName, React.ElementType> = {
   Webhook: icons.Webhook,
