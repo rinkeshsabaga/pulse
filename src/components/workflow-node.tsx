@@ -132,29 +132,48 @@ const WorkflowNode = memo(({ data, id }: NodeProps<NodeData>) => {
       )}
       
        {isConditionNode && (
-        <>
+        <div className="absolute top-0 right-0 h-full w-px">
             {caseHandles.map((caseItem, index) => (
-              <Handle
-                key={caseItem.id}
-                type="source"
-                position={Position.Right}
-                id={caseItem.id}
-                style={{ top: `calc(${startY} + ${index * handleHeight}px)` }}
-                className="!bg-green-500"
-              >
-                  <div className="absolute -left-20 -translate-y-1/2 text-xs bg-background p-1 rounded-md border text-muted-foreground w-max">{caseItem.name}</div>
-              </Handle>
+                <React.Fragment key={caseItem.id}>
+                    <Handle
+                        type="source"
+                        position={Position.Right}
+                        id={caseItem.id}
+                        style={{ top: `calc(${startY} + ${index * handleHeight}px)` }}
+                        className="!bg-green-500 z-10"
+                    />
+                    <div 
+                        className="absolute text-xs bg-background p-1 rounded-md border text-muted-foreground w-max"
+                        style={{ 
+                            left: '1.5rem', 
+                            top: `calc(${startY} + ${index * handleHeight}px)`,
+                            transform: 'translateY(-50%)' 
+                        }}
+                    >
+                        {caseItem.name}
+                    </div>
+                </React.Fragment>
             ))}
-            <Handle
-                type="source"
-                position={Position.Right}
-                id="default"
-                style={{ top: `calc(${startY} + ${caseHandles.length * handleHeight}px)` }}
-                className="!bg-gray-500"
-            >
-                <div className="absolute -left-20 -translate-y-1/2 text-xs bg-background p-1 rounded-md border text-muted-foreground w-max">Default</div>
-            </Handle>
-        </>
+            <React.Fragment>
+                <Handle
+                    type="source"
+                    position={Position.Right}
+                    id="default"
+                    style={{ top: `calc(${startY} + ${caseHandles.length * handleHeight}px)` }}
+                    className="!bg-gray-500 z-10"
+                />
+                 <div 
+                    className="absolute text-xs bg-background p-1 rounded-md border text-muted-foreground w-max"
+                    style={{ 
+                        left: '1.5rem', 
+                        top: `calc(${startY} + ${caseHandles.length * handleHeight}px)`,
+                        transform: 'translateY(-50%)' 
+                    }}
+                >
+                    Default
+                </div>
+            </React.Fragment>
+        </div>
       )}
     </>
   );
