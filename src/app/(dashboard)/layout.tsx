@@ -52,12 +52,12 @@ export default function DashboardLayout({
       <div className="flex h-screen w-full bg-muted/40">
         <Sidebar>
           <SidebarHeader>
-            <div className="flex items-center gap-2">
+            <Link href="/home" className="flex items-center gap-2">
               <Logo className="w-8 h-8 text-primary" />
               <span className="text-lg font-semibold font-headline text-primary">
                 SabagaPulse
               </span>
-            </div>
+            </Link>
           </SidebarHeader>
           <SidebarContent>
             <SidebarMenu>
@@ -65,11 +65,10 @@ export default function DashboardLayout({
                 <SidebarMenuButton
                   asChild
                   isActive={pathname === '/home'}
-                  className="justify-start"
                 >
                   <Link href="/home">
-                    <Home className="mr-2 h-4 w-4" />
-                    Home
+                    <Home />
+                    <span>Home</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
@@ -77,27 +76,26 @@ export default function DashboardLayout({
                 <SidebarMenuButton
                   asChild
                   isActive={pathname.startsWith('/workflows')}
-                  className="justify-start"
                 >
                   <Link href="/workflows">
-                    <Workflow className="mr-2 h-4 w-4" />
-                    Workflows
+                    <Workflow />
+                    <span>Workflows</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
-                <SidebarMenuButton asChild isActive={pathname.startsWith('/credentials')} className="justify-start">
+                <SidebarMenuButton asChild isActive={pathname.startsWith('/credentials')}>
                   <Link href="/credentials">
-                    <KeyRound className="mr-2 h-4 w-4" />
-                    Credentials
+                    <KeyRound />
+                    <span>Credentials</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
-                <SidebarMenuButton asChild isActive={pathname.startsWith('/billing')} className="justify-start">
+                <SidebarMenuButton asChild isActive={pathname.startsWith('/billing')}>
                   <Link href="/billing">
-                    <CreditCard className="mr-2 h-4 w-4" />
-                    Billing
+                    <CreditCard />
+                    <span>Billing</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
@@ -106,13 +104,13 @@ export default function DashboardLayout({
           <SidebarFooter>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <div className="flex items-center gap-3 p-2 rounded-md hover:bg-sidebar-accent cursor-pointer">
+                <div className="flex items-center gap-3 p-2 rounded-md hover:bg-sidebar-accent cursor-pointer w-full">
                   <Avatar className="h-8 w-8">
                     <AvatarImage src="https://placehold.co/100x100.png" alt="@user" data-ai-hint="profile picture" />
                     <AvatarFallback>N</AvatarFallback>
                   </Avatar>
-                  <div className="text-left">
-                    <p className="font-semibold text-sm">Sabaga User</p>
+                  <div className="text-left flex-1">
+                    <p className="font-semibold text-sm truncate">Sabaga User</p>
                     <p className="text-xs text-muted-foreground">Free Plan</p>
                   </div>
                 </div>

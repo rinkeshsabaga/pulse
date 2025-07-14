@@ -74,7 +74,7 @@ function DashboardLayoutInternal({ children, onAddStep }: { children: React.Reac
   const [isSidebarOpen, setIsSidebarOpen] = React.useState(true);
 
   return (
-    <div className="relative h-full w-full overflow-hidden">
+    <div className="relative h-full w-full overflow-hidden flex">
         <Sheet open={isSidebarOpen} onOpenChange={setIsSidebarOpen}>
             <SheetContent side="left" className="p-0 border-r w-[400px] sm:w-[400px]" hideCloseButton>
                  <SheetHeader className="sr-only">
@@ -142,7 +142,7 @@ function DashboardLayoutInternal({ children, onAddStep }: { children: React.Reac
                 </div>
             </SheetContent>
         </Sheet>
-        <SidebarInset style={{ marginLeft: isSidebarOpen ? '400px' : '0' }} className="h-full">
+        <SidebarInset style={{ marginLeft: isSidebarOpen ? '400px' : '0' }} className="h-full flex-1">
             <div className="absolute top-4 left-4 z-10">
               <Button size="icon" variant="outline" onClick={() => setIsSidebarOpen(!isSidebarOpen)}>
                 {isSidebarOpen ? <PanelLeftClose /> : <PanelLeftOpen />}

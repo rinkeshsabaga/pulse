@@ -10,7 +10,6 @@ import ReactFlow, {
   useEdgesState,
   ReactFlowProvider,
   useReactFlow,
-  type OnConnect,
 } from 'reactflow';
 import { Button } from '@/components/ui/button';
 import { Play, Trash2 } from 'lucide-react';
@@ -26,7 +25,7 @@ const nodeTypes = {
 
 type WorkflowCanvasProps = {
   steps: WorkflowStepData[];
-  onStepsChange: (steps: WorkflowStepData[]) => void;
+  onStepsChange: (steps: WorkflowStepData[] | ((prev: WorkflowStepData[]) => WorkflowStepData[])) => void;
   onEditStep: (stepId: string) => void;
   onDeleteStep: (stepId: string) => void;
   workflowName: string;
@@ -45,14 +44,6 @@ function WorkflowCanvasComponent({
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
   const { fitView } = useReactFlow();
   const { toast } = useToast();
-
-  const onConnect: OnConnect = useCallback(
-    (params) => {
-        // This is where you would handle new connections if you wanted to.
-        // For now, we will not automatically add edges.
-    },
-    []
-  );
 
   const memoizedNodeCallbacks = useMemo(() => ({
     onEdit: onEditStep,
@@ -118,7 +109,6 @@ function WorkflowCanvasComponent({
           edges={edges}
           onNodesChange={onNodesChange}
           onEdgesChange={onEdgesChange}
-          onConnect={onConnect}
           nodeTypes={nodeTypes}
           fitView
           className="bg-background"

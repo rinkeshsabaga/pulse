@@ -19,21 +19,24 @@ import { v4 as uuidv4 } from 'uuid';
 import { DashboardLayout } from './dashboard-layout';
 import { WorkflowCanvas } from './workflow-canvas';
 import { generateOutputContext } from '@/lib/flow-utils';
+import { useToast } from '@/hooks/use-toast';
 
 export function WorkflowCanvasWrapper({ workflow, onUpdate }: { workflow: WorkflowType, onUpdate: (data: Partial<WorkflowType>) => void }) {
   const [steps, setSteps] = useState<WorkflowStepData[]>(workflow.steps);
   const [isAiGeneratorOpen, setIsAiGeneratorOpen] = useState(false);
   const [editingStepInfo, setEditingStepInfo] = useState<{ step: WorkflowStepData, dataContext: any }| null>(null);
+  const { toast } = useToast();
 
   useEffect(() => {
     setSteps(workflow.steps);
   }, [workflow]);
 
-  const handleSetSteps = useCallback(async (newSteps: WorkflowStepData[]) => {
-    setSteps(newSteps);
-    await onUpdate({ steps: newSteps });
-  }, [onUpdate]);
-  
+  const handleSetSteps = useCallback(async (newSteps: WorkflowStepData[] | ((prev: WorkflowStepData[]) => WorkflowStepData[])) => {
+    const updatedSteps = typeof newSteps === 'function' ? newSteps(steps) : newSteps;
+    setSteps(updatedSteps);
+    await onUpdate({ steps: updatedSteps });
+  }, [onUpdate, steps]);
+
   const handleEditStep = useCallback((stepToEditId: string) => {
     const stepToEdit = steps.find(s => s.id === stepToEditId);
     if (!stepToEdit) return;
@@ -41,14 +44,30 @@ export function WorkflowCanvasWrapper({ workflow, onUpdate }: { workflow: Workfl
     const dataContext = generateOutputContext(steps, stepToEdit.id);
     setEditingStepInfo({ step: stepToEdit, dataContext });
   }, [steps]);
-
+  
   const handleDeleteStep = useCallback((stepIdToDelete: string) => {
-      const newSteps = steps.filter((step) => step.id !== stepIdToDelete);
-      handleSetSteps(newSteps);
-    }, [steps, handleSetSteps]
+      handleSetSteps(prev => prev.filter((step) => step.id !== stepIdToDelete));
+    }, [handleSetSteps]
   );
 
-  const handleAddStep = (step: { type: 'trigger' | 'action', icon: IconName; title: string, description: string }) => {
+  const handleAddStep = useCallback((step: { type: 'trigger' | 'action', icon: IconName; title: string, description: string }) => {
+    if (steps.length === 0 && step.type === 'action') {
+        toast({
+            variant: 'destructive',
+            title: 'Invalid Start',
+            description: 'A workflow must begin with a trigger step.'
+        });
+        return;
+    }
+     if (steps.some(s => s.type === 'trigger') && step.type === 'trigger') {
+        toast({
+            variant: 'destructive',
+            title: 'Trigger Exists',
+            description: 'A workflow can only have one trigger step.'
+        });
+        return;
+    }
+    
     const newStep: WorkflowStepData = {
       id: `step-${uuidv4()}`,
       ...step,
@@ -99,8 +118,8 @@ export function WorkflowCanvasWrapper({ workflow, onUpdate }: { workflow: Workfl
         newStep.data = { conditionData: { cases: [{ id: uuidv4(), name: 'Case 1', logicalOperator: 'AND', rules: [{ id: uuidv4(), variable: '', operator: 'equals', value: '' }] }] } };
     }
 
-    handleSetSteps([...steps, newStep]);
-  };
+    handleSetSteps(prev => [...prev, newStep]);
+  }, [steps, handleSetSteps, toast]);
 
   const handleFunctionGenerated = (code: string, language: string, intent: string) => {
     const newStep = {
@@ -112,28 +131,25 @@ export function WorkflowCanvasWrapper({ workflow, onUpdate }: { workflow: Workfl
         content: { code, language },
         status: 'default' as const
     };
-    handleSetSteps([...steps, newStep]);
+    handleSetSteps(prev => [...prev, newStep]);
   };
 
   const handleSaveAction = (updatedStep: WorkflowStepData) => {
-    const newSteps = steps.map(s => s.id === updatedStep.id ? updatedStep : s)
-    handleSetSteps(newSteps);
+    handleSetSteps(prev => prev.map(s => s.id === updatedStep.id ? updatedStep : s));
     setEditingStepInfo(null);
   }
 
   return (
     <div className="h-full flex flex-col">
       <DashboardLayout onAddStep={handleAddStep}>
-        <div className="flex-1 h-full w-full">
-            <WorkflowCanvas 
-                steps={steps}
-                onEditStep={handleEditStep}
-                onDeleteStep={handleDeleteStep}
-                onStepsChange={handleSetSteps}
-                workflowName={workflow.name}
-                workflowDescription={workflow.description}
-            />
-        </div>
+        <WorkflowCanvas 
+            steps={steps}
+            onEditStep={handleEditStep}
+            onDeleteStep={handleDeleteStep}
+            onStepsChange={handleSetSteps}
+            workflowName={workflow.name}
+            workflowDescription={workflow.description}
+        />
       </DashboardLayout>
         
         <AIFunctionGenerator
