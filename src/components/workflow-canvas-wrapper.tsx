@@ -226,6 +226,7 @@ export function WorkflowCanvasWrapper({ workflow }: { workflow: WorkflowType }) 
         )}
         <EditCustomCodeDialog
             step={editingStepInfo?.step}
+            dataContext={editingStepInfo?.dataContext}
             open={!!editingStepInfo && (editingStepInfo.step.title === 'Custom Code' || editingStepInfo.step.title === 'Custom AI Function')}
             onOpenChange={(isOpen) => !isOpen && setEditingStepInfo(null)}
             onSave={handleSaveAction}
@@ -247,3 +248,5 @@ export function WorkflowCanvasWrapper({ workflow }: { workflow: WorkflowType }) 
       </DashboardLayout>
   );
 }
+
+    

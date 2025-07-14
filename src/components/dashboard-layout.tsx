@@ -77,7 +77,7 @@ export function DashboardLayout({ children, onAddStep }: { children: React.React
             <Sidebar>
                 <Sheet open>
                     <SheetContent side="left" className="p-0 border-r" hideCloseButton>
-                        <SheetHeader className="sr-only">
+                         <SheetHeader className="sr-only">
                           <SheetTitle>Workflow Tools</SheetTitle>
                           <SheetDescription>Select tools and view logs for the current workflow.</SheetDescription>
                         </SheetHeader>
@@ -151,3 +151,5 @@ export function DashboardLayout({ children, onAddStep }: { children: React.React
     </SidebarProvider>
   );
 }
+
+    
