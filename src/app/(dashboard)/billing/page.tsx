@@ -1,4 +1,7 @@
 
+'use client';
+
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -20,6 +23,7 @@ import {
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { Download, CreditCard, CheckCircle2, ArrowRight, PlusCircle } from 'lucide-react';
+import { UpdateCardDialog } from '@/components/update-card-dialog';
 
 const billingHistory = [
     { invoice: 'INV-2024-005', date: 'June 1, 2024', amount: '$50.00', status: 'Paid' },
@@ -108,7 +112,18 @@ const plans = [
 ];
 
 export default function BillingPage() {
+  const [isUpdateCardOpen, setIsUpdateCardOpen] = useState(false);
+  const [cardInfo, setCardInfo] = useState({
+      endingIn: '4242',
+      expires: '06/2028'
+  });
+
+  const handleCardUpdate = (newCardData: { endingIn: string; expires: string; }) => {
+    setCardInfo(newCardData);
+  }
+
   return (
+    <>
     <div className="grid flex-1 items-start gap-8 p-4 sm:px-6 sm:py-0 md:gap-8">
       <div className="space-y-2">
         <h1 className="text-3xl font-bold font-headline">Billing & Plans</h1>
@@ -174,11 +189,11 @@ export default function BillingPage() {
                         <div className="flex items-center gap-3">
                             <CreditCard className="h-8 w-8 text-muted-foreground" />
                             <div>
-                                <p className="font-semibold">Visa ending in **** 4242</p>
-                                <p className="text-sm text-muted-foreground">Expires 06/2028</p>
+                                <p className="font-semibold">Visa ending in **** {cardInfo.endingIn}</p>
+                                <p className="text-sm text-muted-foreground">Expires {cardInfo.expires}</p>
                             </div>
                         </div>
-                         <Button variant="outline">Update</Button>
+                         <Button variant="outline" onClick={() => setIsUpdateCardOpen(true)}>Update</Button>
                     </div>
                 </CardContent>
             </Card>
@@ -260,5 +275,11 @@ export default function BillingPage() {
         </div>
       </div>
     </div>
+    <UpdateCardDialog 
+        open={isUpdateCardOpen} 
+        onOpenChange={setIsUpdateCardOpen}
+        onCardUpdated={handleCardUpdate}
+    />
+    </>
   );
 }
