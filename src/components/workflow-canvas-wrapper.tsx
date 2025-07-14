@@ -41,31 +41,8 @@ export function WorkflowCanvasWrapper({ workflow: initialWorkflow }: WorkflowCan
   const handleSetSteps = useCallback(async (newStepsOrFn: React.SetStateAction<WorkflowStepData[]>) => {
     const newSteps = typeof newStepsOrFn === 'function' ? newStepsOrFn(steps) : newStepsOrFn;
     
-    // Auto-connect linear (non-conditional) steps
-    const updatedSteps = newSteps.map((step, index, arr) => {
-        // We only want to auto-connect if the current step is NOT a condition node.
-        if (step.title !== 'Condition' && index < arr.length - 1) {
-            const nextStep = arr[index + 1];
-            // And the next step is not a condition node either (to prevent auto-connecting into a branch)
-            if (nextStep.title !== 'Condition') {
-                return {
-                    ...step,
-                    data: { ...step.data, nextStepId: nextStep.id }
-                };
-            }
-        }
-        // For condition nodes or the last node, ensure nextStepId is not incorrectly carried over
-        // unless it's part of the condition's internal logic (which is handled separately).
-        if (step.title !== 'Condition') {
-             const { nextStepId, ...restData } = step.data || {};
-             return { ...step, data: restData };
-        }
-
-        return step;
-    });
-
-    setSteps(updatedSteps);
-    const updatedWorkflow = await handleUpdate(workflow.id, { steps: updatedSteps });
+    setSteps(newSteps);
+    const updatedWorkflow = await handleUpdate(workflow.id, { steps: newSteps });
     if(updatedWorkflow) {
         setWorkflow(updatedWorkflow);
     }
