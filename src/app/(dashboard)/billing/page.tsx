@@ -19,7 +19,7 @@ import {
 } from '@/components/ui/table';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
-import { Download, CreditCard, CheckCircle2, ArrowRight } from 'lucide-react';
+import { Download, CreditCard, CheckCircle2, ArrowRight, PlusCircle } from 'lucide-react';
 
 const billingHistory = [
     { invoice: 'INV-2024-005', date: 'June 1, 2024', amount: '$50.00', status: 'Paid' },
@@ -40,6 +40,10 @@ const plans = [
         'Community Support',
         'Basic Integrations',
       ],
+      credits: {
+          price: '$10',
+          amount: '1,000 Credits'
+      },
       isCurrent: true,
       buttonText: 'Current Plan',
       variant: 'outline' as const
@@ -56,6 +60,10 @@ const plans = [
         'Advanced Integrations',
         'Access to AI Features',
       ],
+      credits: {
+          price: '$10',
+          amount: '1,200 Credits'
+      },
       buttonText: 'Upgrade',
       variant: 'default' as const
     },
@@ -71,6 +79,10 @@ const plans = [
         'Custom Integrations',
         'Dedicated AI Models',
       ],
+       credits: {
+          price: '$10',
+          amount: '1,500 Credits'
+      },
        buttonText: 'Upgrade',
        variant: 'default' as const
     },
@@ -86,6 +98,10 @@ const plans = [
         'On-premise Deployment',
         'Security & Compliance Reviews',
       ],
+      credits: {
+          price: 'Custom',
+          amount: 'Custom Credits'
+      },
       buttonText: 'Contact Sales',
       variant: 'outline' as const
     },
@@ -119,6 +135,20 @@ export default function BillingPage() {
                         </li>
                     ))}
                 </ul>
+                <Separator />
+                <div className="space-y-3">
+                    <h4 className="font-semibold text-sm">Need more credits?</h4>
+                    <div className="flex justify-between items-center">
+                        <div>
+                            <p className="font-medium">{plan.credits.amount}</p>
+                            <p className="text-sm text-muted-foreground">{plan.credits.price}</p>
+                        </div>
+                        <Button variant="outline" size="sm">
+                            <PlusCircle className="mr-2 h-4 w-4" />
+                            Buy
+                        </Button>
+                    </div>
+                </div>
             </CardContent>
             <CardFooter>
                  <Button className="w-full" variant={plan.variant} disabled={plan.isCurrent}>
