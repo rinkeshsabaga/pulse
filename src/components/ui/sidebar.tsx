@@ -31,10 +31,10 @@ const SidebarContext = React.createContext<{
 })
 
 function SidebarProvider({
-  collapsed,
+  collapsed = false, // Default to not collapsed
   children,
 }: {
-  collapsed: boolean
+  collapsed?: boolean
   children: React.ReactNode
 }) {
   return (
@@ -133,6 +133,27 @@ const SidebarMenuItem = React.forwardRef<
 })
 SidebarMenuItem.displayName = "SidebarMenuItem"
 
+const sidebarButtonVariants = cva(
+  "flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+  {
+    variants: {
+      isActive: {
+        true: "bg-sidebar-accent text-sidebar-accent-foreground",
+        false:
+          "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+      },
+      isCollapsed: {
+        true: "justify-center",
+        false: "justify-start",
+      },
+    },
+    defaultVariants: {
+      isActive: false,
+      isCollapsed: false,
+    },
+  }
+);
+
 const SidebarMenuButton = React.forwardRef<
   HTMLButtonElement,
   React.ButtonHTMLAttributes<HTMLButtonElement> & {
@@ -145,19 +166,32 @@ const SidebarMenuButton = React.forwardRef<
   return (
     <Comp
       ref={ref}
-      className={cn(
-        "flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
-        isActive
-          ? "bg-sidebar-accent text-sidebar-accent-foreground"
-          : "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
-        collapsed && "justify-center",
-        className
-      )}
+      className={cn(sidebarButtonVariants({ isActive, isCollapsed: collapsed }), className)}
       {...props}
     />
   )
 })
 SidebarMenuButton.displayName = "SidebarMenuButton"
+
+const SidebarTrigger = React.forwardRef<
+  HTMLButtonElement,
+  React.ButtonHTMLAttributes<HTMLButtonElement>
+>((props, ref) => <button ref={ref} {...props} />);
+SidebarTrigger.displayName = "SidebarTrigger";
+
+
+const SidebarInset = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
+  ({ className, ...props }, ref) => {
+    return (
+      <main
+        ref={ref}
+        className={cn("transition-[margin-left] duration-300 ease-in-out", className)}
+        {...props}
+      />
+    );
+  }
+);
+SidebarInset.displayName = "SidebarInset";
 
 export {
   Sidebar,
@@ -168,5 +202,7 @@ export {
   SidebarMenuItem,
   SidebarMenuButton,
   SidebarProvider,
+  SidebarTrigger,
+  SidebarInset,
   useSidebar,
 }
