@@ -42,6 +42,7 @@ import { Logo } from '@/components/icons';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { cn } from '@/lib/utils';
 import { useTheme } from 'next-themes';
+import { DashboardLayout as EditorLayout } from '@/components/dashboard-layout';
 
 export default function DashboardLayout({
   children,
@@ -56,7 +57,9 @@ export default function DashboardLayout({
 
 
   if (isEditorPage) {
-    return <div className="min-h-screen flex flex-col bg-muted/40">{children}</div>;
+    // The editor has its own complex layout, so we render it directly.
+    // We pass `children` which will be the page component rendered by Next.js.
+    return <EditorLayout>{children}</EditorLayout>;
   }
 
   return (

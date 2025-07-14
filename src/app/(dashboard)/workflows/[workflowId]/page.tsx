@@ -1,9 +1,9 @@
 
 import React from 'react';
-import { DashboardLayout } from '@/components/dashboard-layout';
 import { getWorkflowById } from '@/lib/db';
 import { notFound } from 'next/navigation';
 import type { Workflow } from '@/lib/types';
+import { WorkflowCanvasWrapper } from '@/components/workflow-canvas-wrapper';
 
 export default async function WorkflowEditorPage({ params }: { params: Promise<{ workflowId: string }> }) {
   const { workflowId } = await params;
@@ -13,5 +13,5 @@ export default async function WorkflowEditorPage({ params }: { params: Promise<{
     notFound();
   }
   
-  return <DashboardLayout workflow={workflow} />;
+  return <WorkflowCanvasWrapper workflow={workflow} />;
 }
