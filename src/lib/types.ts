@@ -195,7 +195,7 @@ export const RunWorkflowOutputSchema = z.object({
 export type RunWorkflowOutput = z.infer<typeof RunWorkflowOutputSchema>;
 
 
-export type StepData = WaitData & ShopifyTriggerData & ApiRequestData & EmailData & DatabaseQueryData & AppTriggerData & ConditionData & {
+export type StepData = WaitData & ShopifyTriggerData & ApiRequestData & EmailData & DatabaseQueryData & AppTriggerData & AppActionData & ConditionData & {
     nextStepId?: string;
     webhookUrl?: string;
     events?: WebhookEvent[];
