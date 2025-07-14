@@ -70,17 +70,6 @@ export default function SettingsPage() {
         </CardFooter>
       </Card>
       
-      <Card className="border-destructive">
-        <CardHeader>
-          <CardTitle>Delete Account</CardTitle>
-          <CardDescription>
-            Permanently delete your account and all of your content. This action is not reversible.
-          </CardDescription>
-        </CardHeader>
-        <CardFooter className="flex justify-start border-t border-destructive/50 px-6 py-4">
-          <Button variant="destructive">Delete Account</Button>
-        </CardFooter>
-      </Card>
     </div>
   );
 }
