@@ -35,10 +35,13 @@ import {
   User,
   Settings,
   ChevronRight,
+  Sun,
+  Moon,
 } from 'lucide-react';
 import { Logo } from '@/components/icons';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { cn } from '@/lib/utils';
+import { useTheme } from 'next-themes';
 
 export default function DashboardLayout({
   children,
@@ -48,6 +51,8 @@ export default function DashboardLayout({
   const pathname = usePathname();
   const pathParts = pathname.split('/').filter(Boolean);
   const isEditorPage = pathParts[0] === 'workflows' && pathParts.length > 1;
+  const { setTheme } = useTheme();
+
 
   if (isEditorPage) {
     return <div className="min-h-screen flex flex-col bg-muted/40">{children}</div>;
@@ -139,15 +144,24 @@ export default function DashboardLayout({
                   <User className="mr-2 h-4 w-4" />
                   <span>Profile</span>
                 </DropdownMenuItem>
-                <DropdownMenuItem disabled>
-                  <CreditCard className="mr-2 h-4 w-4" />
-                  <span>Billing</span>
+                <DropdownMenuItem asChild>
+                  <Link href="/billing">
+                    <CreditCard className="mr-2 h-4 w-4" />
+                    <span>Billing</span>
+                  </Link>
                 </DropdownMenuItem>
-                <DropdownMenuItem disabled>
+                <DropdownMenuItem>
                   <Settings className="mr-2 h-4 w-4" />
                   <span>Settings</span>
                 </DropdownMenuItem>
-                <ThemeToggle inMenu={true} />
+                <DropdownMenuItem onClick={() => setTheme('light')}>
+                  <Sun className="mr-2 h-4 w-4" />
+                  <span>Light</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setTheme('dark')}>
+                    <Moon className="mr-2 h-4 w-4" />
+                    <span>Dark</span>
+                </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem>
                   <LogOut className="mr-2 h-4 w-4" />
