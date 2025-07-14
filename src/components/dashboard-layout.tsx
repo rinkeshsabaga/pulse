@@ -179,42 +179,25 @@ export function DashboardLayout({ workflow }: { workflow: WorkflowType }) {
     <div className="grid grid-cols-1 md:grid-cols-[300px_1fr] lg:grid-cols-[350px_1fr] xl:grid-cols-[400px_1fr] h-full">
       <Sheet defaultOpen>
         <SheetContent side="left" className="p-0 border-r" hideCloseButton>
-          <div className="flex h-full flex-col p-4 md:p-6">
-            <Tabs defaultValue="designer" className="flex h-full w-full flex-col">
-              <TabsList className="mb-4">
-                <TabsTrigger value="designer">Designer</TabsTrigger>
-                <TabsTrigger value="logs">Monitoring & Logs</TabsTrigger>
-              </TabsList>
-              <TabsContent value="designer" className="flex-1">
-                 <Accordion type="single" collapsible defaultValue="actions" className="w-full">
-                    <AccordionItem value="triggers">
-                        <AccordionTrigger>Triggers</AccordionTrigger>
-                        <AccordionContent>
-                            <div className="grid grid-cols-1 gap-2">
-                            {Triggers.map((tool) => {
-                                const Icon = iconMap[tool.icon];
-                                return (
-                                <Card key={tool.title} onClick={() => handleAddStep(tool)} className="cursor-pointer hover:bg-muted/50">
-                                    <CardContent className="p-3 flex items-start gap-4">
-                                        <Icon className="h-5 w-5 text-muted-foreground mt-1" />
-                                        <div>
-                                            <h3 className="font-semibold">{tool.title}</h3>
-                                            <p className="text-sm text-muted-foreground">{tool.description}</p>
-                                        </div>
-                                    </CardContent>
-                                </Card>
-                                );
-                            })}
-                            </div>
-                        </AccordionContent>
-                    </AccordionItem>
-                     <AccordionItem value="actions">
-                        <AccordionTrigger>Actions</AccordionTrigger>
-                        <AccordionContent>
-                            <div className="grid grid-cols-1 gap-2">
-                                {Actions.map((tool) => {
-                                const Icon = iconMap[tool.icon];
-                                return (
+            <SheetHeader className="sr-only">
+              <SheetTitle>Workflow Tools Panel</SheetTitle>
+              <SheetDescription>Select tools and view logs for the current workflow.</SheetDescription>
+            </SheetHeader>
+            <div className="flex h-full flex-col p-4 md:p-6">
+                <Tabs defaultValue="designer" className="flex h-full w-full flex-col">
+                <TabsList className="mb-4">
+                    <TabsTrigger value="designer">Designer</TabsTrigger>
+                    <TabsTrigger value="logs">Monitoring & Logs</TabsTrigger>
+                </TabsList>
+                <TabsContent value="designer" className="flex-1">
+                    <Accordion type="single" collapsible defaultValue="actions" className="w-full">
+                        <AccordionItem value="triggers">
+                            <AccordionTrigger>Triggers</AccordionTrigger>
+                            <AccordionContent>
+                                <div className="grid grid-cols-1 gap-2">
+                                {Triggers.map((tool) => {
+                                    const Icon = iconMap[tool.icon];
+                                    return (
                                     <Card key={tool.title} onClick={() => handleAddStep(tool)} className="cursor-pointer hover:bg-muted/50">
                                         <CardContent className="p-3 flex items-start gap-4">
                                             <Icon className="h-5 w-5 text-muted-foreground mt-1" />
@@ -224,18 +207,39 @@ export function DashboardLayout({ workflow }: { workflow: WorkflowType }) {
                                             </div>
                                         </CardContent>
                                     </Card>
-                                );
+                                    );
                                 })}
-                            </div>
-                        </AccordionContent>
-                    </AccordionItem>
-                </Accordion>
-              </TabsContent>
-              <TabsContent value="logs" className="flex-1">
-                <MonitoringPanel />
-              </TabsContent>
-            </Tabs>
-          </div>
+                                </div>
+                            </AccordionContent>
+                        </AccordionItem>
+                        <AccordionItem value="actions">
+                            <AccordionTrigger>Actions</AccordionTrigger>
+                            <AccordionContent>
+                                <div className="grid grid-cols-1 gap-2">
+                                    {Actions.map((tool) => {
+                                    const Icon = iconMap[tool.icon];
+                                    return (
+                                        <Card key={tool.title} onClick={() => handleAddStep(tool)} className="cursor-pointer hover:bg-muted/50">
+                                            <CardContent className="p-3 flex items-start gap-4">
+                                                <Icon className="h-5 w-5 text-muted-foreground mt-1" />
+                                                <div>
+                                                    <h3 className="font-semibold">{tool.title}</h3>
+                                                    <p className="text-sm text-muted-foreground">{tool.description}</p>
+                                                </div>
+                                            </CardContent>
+                                        </Card>
+                                    );
+                                    })}
+                                </div>
+                            </AccordionContent>
+                        </AccordionItem>
+                    </Accordion>
+                </TabsContent>
+                <TabsContent value="logs" className="flex-1">
+                    <MonitoringPanel />
+                </TabsContent>
+                </Tabs>
+            </div>
         </SheetContent>
       </Sheet>
         <div className="relative flex-1 bg-background h-full">
