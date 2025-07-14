@@ -144,6 +144,8 @@ export function DashboardLayout({ workflow }: { workflow: WorkflowType }) {
     setEditingStepInfo(null);
   }
 
+  const isAddingFirstStep = addStepAfterIndex === -1;
+
   return (
       <div className="flex-1 flex flex-col h-full">
           <div className="flex h-full flex-col p-4 md:p-6">
@@ -172,6 +174,7 @@ export function DashboardLayout({ workflow }: { workflow: WorkflowType }) {
             open={isAddStepDialogOpen}
             onOpenChange={setIsAddStepDialogOpen}
             onStepSelect={handleAddStep}
+            stepType={isAddingFirstStep ? 'trigger' : 'action'}
         />
         <AIFunctionGenerator
             open={isAiGeneratorOpen}

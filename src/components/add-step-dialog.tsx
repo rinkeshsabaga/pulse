@@ -64,18 +64,23 @@ type AddStepDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onStepSelect: (step: StepDefinition) => void;
+  stepType: 'trigger' | 'action';
 };
 
-export function AddStepDialog({ open, onOpenChange, onStepSelect }: AddStepDialogProps) {
+export function AddStepDialog({ open, onOpenChange, onStepSelect, stepType }: AddStepDialogProps) {
   const [searchTerm, setSearchTerm] = useState('');
 
+  const availableSteps = useMemo(() => {
+    return stepType === 'trigger' ? triggerSteps : actionSteps;
+  }, [stepType]);
+
   const filteredSteps = useMemo(() => {
-    if (!searchTerm) return allSteps;
-    return allSteps.filter(step => 
+    if (!searchTerm) return availableSteps;
+    return availableSteps.filter(step => 
       step.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       step.description.toLowerCase().includes(searchTerm.toLowerCase())
     );
-  }, [searchTerm]);
+  }, [searchTerm, availableSteps]);
 
   const handleSelect = (step: StepDefinition) => {
     onStepSelect(step);
@@ -88,14 +93,19 @@ export function AddStepDialog({ open, onOpenChange, onStepSelect }: AddStepDialo
     }
     onOpenChange(isOpen);
   }
+  
+  const dialogTitle = stepType === 'trigger' ? 'Add a new trigger' : 'Add a new action';
+  const dialogDescription = stepType === 'trigger'
+    ? 'Choose a trigger to start your workflow.'
+    : 'Choose an action to add to your workflow.';
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Add a new step</DialogTitle>
+          <DialogTitle>{dialogTitle}</DialogTitle>
           <DialogDescription>
-            Choose a trigger or an action to add to your workflow.
+            {dialogDescription}
           </DialogDescription>
         </DialogHeader>
         <div className="py-4">
