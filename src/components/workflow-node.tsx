@@ -61,6 +61,10 @@ const WorkflowNode = memo(({ data }: NodeProps<{ step: WorkflowStepData; layout:
   const Icon = iconMap[step.icon];
 
   const renderHandles = () => {
+    if (isEndNode) {
+        return null; // Do not render any source handles for the end node.
+    }
+
     // For vertical layout, conditional handles need a different logic
     if (isConditional && layout === 'vertical') {
       const totalHandles = cases.length + 1;
@@ -136,10 +140,9 @@ const WorkflowNode = memo(({ data }: NodeProps<{ step: WorkflowStepData; layout:
     
     return (
         <Handle
-        type="source"
-        position={sourcePosition}
-        className="!bg-muted-foreground/80"
-        style={{ visibility: isEndNode ? 'hidden' : 'visible' }}
+            type="source"
+            position={sourcePosition}
+            className="!bg-muted-foreground/80"
         />
     );
   }
