@@ -78,9 +78,8 @@ export default function DashboardLayout({
                   asChild
                   isActive={pathname === '/home'}
                   className="justify-start"
-                  disabled
                 >
-                  <Link href="#">
+                  <Link href="/home">
                     <Home className="mr-2 h-4 w-4" />
                     Home
                   </Link>
@@ -191,8 +190,8 @@ export default function DashboardLayout({
             <div className="flex items-center gap-4">
               <SidebarTrigger className="md:hidden" />
               <div className="flex items-center text-sm font-medium text-muted-foreground">
-                <Link href="/workflows" className="hover:text-foreground">Dashboard</Link>
-                {pathParts.map((part, index) => (
+                <Link href="/home" className="hover:text-foreground">Home</Link>
+                {pathParts.filter(p => p !== 'home').map((part, index) => (
                   <React.Fragment key={part}>
                     <ChevronRight className="h-4 w-4 mx-1" />
                     <Link
