@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useCallback, useEffect, useState, useMemo } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import ReactFlow, {
   Background,
   Controls,
@@ -13,6 +13,7 @@ import ReactFlow, {
   type Connection,
   type Edge,
   useReactFlow,
+  type Node,
 } from 'reactflow';
 import { Button } from '@/components/ui/button';
 import {
@@ -55,7 +56,6 @@ function WorkflowCanvasComponent({ steps, setSteps, onEditStep, workflowName, wo
     const step = steps.find(s => s.id === stepId);
     if (!step) return;
     
-    // Find the parent steps to build the data context
     const parentEdges = edges.filter(e => e.target === stepId);
     const parentNodeIds = parentEdges.map(e => e.source);
     
@@ -73,23 +73,28 @@ function WorkflowCanvasComponent({ steps, setSteps, onEditStep, workflowName, wo
     });
   }, [setSteps, toast]);
 
-  useEffect(() => {
+  const memoizedElements = useMemo(() => {
     const { nodes: newNodes, edges: newEdges } = getLayoutedElements(steps);
-    
     const nodesWithCallbacks = newNodes.map(node => ({
-        ...node,
-        data: {
-            ...node.data,
-            onEdit: handleEditStep,
-            onDelete: handleDeleteStep,
-        }
+      ...node,
+      data: {
+        ...node.data,
+        onEdit: handleEditStep,
+        onDelete: handleDeleteStep,
+      }
     }));
-    setNodes(nodesWithCallbacks);
-    setEdges(newEdges);
-     window.requestAnimationFrame(() => {
-        fitView();
-    });
-  }, [steps, handleEditStep, handleDeleteStep, setNodes, setEdges, fitView]);
+    return { nodes: nodesWithCallbacks, edges: newEdges };
+  }, [steps, handleEditStep, handleDeleteStep]);
+
+  useEffect(() => {
+    setNodes(memoizedElements.nodes);
+    setEdges(memoizedElements.edges);
+    if (memoizedElements.nodes.length > 0) {
+        window.requestAnimationFrame(() => {
+            fitView();
+        });
+    }
+  }, [memoizedElements, setNodes, setEdges, fitView]);
   
   const handleConfirmClear = () => {
     setSteps([]);

@@ -17,7 +17,6 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { MoreVertical, Pencil, Trash2 } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
 import type { WorkflowStepData, IconName } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import * as icons from 'lucide-react';
@@ -36,7 +35,7 @@ const iconMap: Record<IconName, React.ElementType> = {
   AppWindow: icons.AppWindow,
 };
 
-const WorkflowNode = memo(({ data }: NodeProps<{ step: WorkflowStepData; onEdit: () => void; onDelete: () => void; }>) => {
+const WorkflowNode = memo(({ data, id }: NodeProps<{ step: WorkflowStepData; onEdit: (id: string) => void; onDelete: (id: string) => void; }>) => {
   const { step, onEdit, onDelete } = data;
   const isTrigger = step.type === 'trigger';
   const isEndNode = step.title === 'End Automation';
@@ -91,14 +90,14 @@ const WorkflowNode = memo(({ data }: NodeProps<{ step: WorkflowStepData; onEdit:
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={onEdit} disabled={isEndNode}>
+                <DropdownMenuItem onClick={() => onEdit(id)} disabled={isEndNode}>
                   <Pencil className="mr-2 h-4 w-4" />
                   Edit
                 </DropdownMenuItem>
                 <DropdownMenuItem
-                  onClick={onDelete}
+                  onClick={() => onDelete(id)}
                   className="text-destructive focus:text-destructive"
-                  disabled={isTrigger && !onDelete} // Simple guard for now
+                  disabled={isTrigger && !onDelete}
                 >
                   <Trash2 className="mr-2 h-4 w-4" />
                   Delete
