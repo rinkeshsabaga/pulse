@@ -20,7 +20,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { MoreVertical, Pencil, Trash2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import type { WorkflowStepData, IconName, Case } from '@/lib/types';
+import type { WorkflowStepData, IconName } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import * as icons from 'lucide-react';
 
@@ -38,15 +38,10 @@ const iconMap: Record<IconName, React.ElementType> = {
   AppWindow: icons.AppWindow,
 };
 
-const HANDLE_SPACING = 25; // Spacing between handles in pixels
-
 const WorkflowNode = memo(({ data }: NodeProps<{ step: WorkflowStepData; onEdit: () => void; onDelete: () => void; }>) => {
   const { step, onEdit, onDelete } = data;
   const isTrigger = step.type === 'trigger';
   const isEndNode = step.title === 'End Automation';
-  const isConditional = step.title === 'Condition';
-  
-  const cases = step.data?.conditionData?.cases || [];
 
   const sourcePosition = Position.Bottom;
   const targetPosition = Position.Top;
@@ -59,43 +54,6 @@ const WorkflowNode = memo(({ data }: NodeProps<{ step: WorkflowStepData; onEdit:
   };
 
   const Icon = iconMap[step.icon];
-
-  const renderConditionalHandles = () => {
-    if (!isConditional) return null;
-
-    const totalHandles = cases.length + 1; // cases + default
-    const handleGap = 100 / (totalHandles + 1);
-     return (
-       <>
-        {cases.map((caseItem: Case, index: number) => (
-           <React.Fragment key={caseItem.id}>
-             <Handle
-                type="source"
-                position={Position.Bottom}
-                id={caseItem.name}
-                style={{ left: `${(index + 1) * handleGap}%` }}
-                className="!bg-primary"
-            />
-            <div className="absolute text-xs text-foreground font-semibold" style={{ bottom: -25, left: `${(index + 1) * handleGap}%`, transform: 'translateX(-50%)' }}>
-                {caseItem.name}
-            </div>
-           </React.Fragment>
-        ))}
-         <React.Fragment>
-            <Handle
-                type="source"
-                position={Position.Bottom}
-                id="default"
-                style={{ left: `${(cases.length + 1) * handleGap}%` }}
-                className="!bg-muted-foreground"
-            />
-             <div className="absolute text-xs text-muted-foreground font-semibold" style={{ bottom: -25, left: `${(cases.length + 1) * handleGap}%`, transform: 'translateX(-50%)' }}>
-                Default
-            </div>
-         </React.Fragment>
-      </>
-     )
-  }
 
   return (
     <>
@@ -181,8 +139,7 @@ const WorkflowNode = memo(({ data }: NodeProps<{ step: WorkflowStepData; onEdit:
           </CardContent>
         )}
       </Card>
-      
-      {isConditional ? renderConditionalHandles() : !isEndNode && (
+      {!isEndNode && (
           <Handle
             type="source"
             position={sourcePosition}
