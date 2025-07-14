@@ -19,17 +19,19 @@ import { v4 as uuidv4 } from 'uuid';
 import { DashboardLayout } from './dashboard-layout';
 import { WorkflowCanvas } from './workflow-canvas';
 import { generateOutputContext } from '@/lib/flow-utils';
+import { useToast } from '@/hooks/use-toast';
 
 export function WorkflowCanvasWrapper({ workflow, onUpdate }: { workflow: WorkflowType, onUpdate: (data: Partial<WorkflowType>) => void }) {
   const [steps, setSteps] = useState<WorkflowStepData[]>(workflow.steps);
   const [isAiGeneratorOpen, setIsAiGeneratorOpen] = useState(false);
   const [editingStepInfo, setEditingStepInfo] = useState<{ step: WorkflowStepData, dataContext: any }| null>(null);
+  const { toast } = useToast();
 
   useEffect(() => {
     setSteps(workflow.steps);
   }, [workflow]);
 
-  const handleSetSteps = useCallback(async (newSteps: WorkflowStepData[]) => {
+  const handleSetSteps = useCallback(async (newSteps: WorkflowStep_Data[]) => {
     setSteps(newSteps);
     await onUpdate({ steps: newSteps });
   }, [onUpdate]);
@@ -49,6 +51,28 @@ export function WorkflowCanvasWrapper({ workflow, onUpdate }: { workflow: Workfl
   );
 
   const handleAddStep = (step: { type: 'trigger' | 'action', icon: IconName; title: string, description: string }) => {
+    // Rule: The first step must be a trigger.
+    if (steps.length === 0 && step.type === 'action') {
+        toast({
+            variant: 'destructive',
+            title: 'Invalid Starting Step',
+            description: 'A workflow must start with a trigger, not an action.',
+        });
+        return;
+    }
+
+    // Rule: Only one trigger is allowed per workflow.
+    const hasTrigger = steps.some(s => s.type === 'trigger');
+    if (hasTrigger && step.type === 'trigger') {
+        toast({
+            variant: 'destructive',
+            title: 'Trigger Already Exists',
+            description: 'A workflow can only have one trigger.',
+        });
+        return;
+    }
+
+
     const newStep: WorkflowStepData = {
       id: `step-${uuidv4()}`,
       ...step,
@@ -122,7 +146,7 @@ export function WorkflowCanvasWrapper({ workflow, onUpdate }: { workflow: Workfl
   }
 
   return (
-    <div className="h-screen w-full flex flex-col">
+    <div className="h-full w-full flex flex-col">
       <DashboardLayout onAddStep={handleAddStep}>
         <WorkflowCanvas 
             steps={steps}
