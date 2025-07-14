@@ -96,7 +96,7 @@ function WorkflowCanvasComponent({
 
   }, [steps, nodeCallbacks, setNodes, setEdges, fitView]);
 
-  const handleConnect = useCallback((params: Connection) => {
+  const onConnect = useCallback((params: Connection) => {
       const { source, sourceHandle, target } = params;
       if (!source || !target) return;
 
@@ -105,74 +105,86 @@ function WorkflowCanvasComponent({
           const sourceStepIndex = newSteps.findIndex(s => s.id === source);
           if (sourceStepIndex === -1) return prevSteps;
 
-          const sourceStep = newSteps[sourceStepIndex];
+          const sourceStep = { ...newSteps[sourceStepIndex] };
           
           if (sourceStep.title === 'Condition' && sourceStep.data?.conditionData) {
+              const conditionData = { ...sourceStep.data.conditionData };
+              const cases = [...conditionData.cases];
+
               if (sourceHandle === 'default') {
-                  sourceStep.data.conditionData.defaultNextStepId = target;
+                  conditionData.defaultNextStepId = target;
               } else {
-                  const caseIndex = sourceStep.data.conditionData.cases.findIndex(c => c.id === sourceHandle);
+                  const caseIndex = cases.findIndex(c => c.id === sourceHandle);
                   if (caseIndex !== -1) {
-                      sourceStep.data.conditionData.cases[caseIndex].nextStepId = target;
+                      cases[caseIndex] = { ...cases[caseIndex], nextStepId: target };
                   }
               }
+              sourceStep.data = { ...sourceStep.data, conditionData: { ...conditionData, cases } };
+
           } else {
-              if (!sourceStep.data) sourceStep.data = {};
-              sourceStep.data.nextStepId = target;
+              sourceStep.data = { ...sourceStep.data, nextStepId: target };
           }
 
           newSteps[sourceStepIndex] = sourceStep;
           return newSteps;
       });
 
-      setEdges((eds) => addEdge(params, eds));
-  }, [onStepsChange, setEdges]);
+  }, [onStepsChange]);
   
   const onEdgesChange: OnEdgesChange = useCallback(
     (changes) => {
-      const edgesToRemove = changes.filter((c): c is EdgeChange & { type: 'remove' } => c.type === 'remove');
+        // Find all the edges that are being removed
+        const edgesToRemove = changes.filter((c): c is EdgeChange & { type: 'remove' } => c.type === 'remove');
+
+        if (edgesToRemove.length > 0) {
+            onStepsChange(currentSteps => {
+                let nextSteps = [...currentSteps];
+
+                edgesToRemove.forEach(change => {
+                    // Find the edge in the current state *before* it gets removed to get its details
+                    const edgeToRemove = edges.find(edge => edge.id === change.id);
+                    if (!edgeToRemove) return;
+
+                    const sourceStepIndex = nextSteps.findIndex(s => s.id === edgeToRemove.source);
+                    if (sourceStepIndex === -1) return;
+                    
+                    const sourceStep = { ...nextSteps[sourceStepIndex] };
+
+                    if (sourceStep.title === 'Condition' && sourceStep.data?.conditionData) {
+                        const conditionData = { ...sourceStep.data.conditionData };
+                        const cases = [...conditionData.cases];
+                        let caseModified = false;
+
+                        if (edgeToRemove.sourceHandle === 'default') {
+                            delete conditionData.defaultNextStepId;
+                            caseModified = true;
+                        } else {
+                            const caseIndex = cases.findIndex(c => c.id === edgeToRemove.sourceHandle);
+                            if (caseIndex !== -1) {
+                                delete cases[caseIndex].nextStepId;
+                                caseModified = true;
+                            }
+                        }
+
+                        if (caseModified) {
+                           sourceStep.data = { ...sourceStep.data, conditionData: { ...conditionData, cases } };
+                           nextSteps[sourceStepIndex] = sourceStep;
+                        }
+
+                    } else if (sourceStep.data?.nextStepId === edgeToRemove.target) {
+                        // It's a regular node
+                        const { nextStepId, ...restData } = sourceStep.data;
+                        sourceStep.data = restData;
+                        nextSteps[sourceStepIndex] = sourceStep;
+                    }
+                });
+
+                return nextSteps;
+            });
+        }
       
-      if (edgesToRemove.length > 0) {
-        onStepsChange(currentSteps => {
-          let nextSteps = [...currentSteps];
-          
-          edgesToRemove.forEach(change => {
-            // Find the edge in the current state *before* it gets removed
-            const edgeToRemove = edges.find(edge => edge.id === change.id);
-            if (!edgeToRemove) return;
-  
-            const sourceStep = nextSteps.find(s => s.id === edgeToRemove.source);
-            if (!sourceStep) return;
-  
-            const newStep = { ...sourceStep, data: { ...sourceStep.data } };
-  
-            if (newStep.title === 'Condition' && newStep.data?.conditionData) {
-              // It's a condition node, check which handle was disconnected
-              if (edgeToRemove.sourceHandle === 'default') {
-                delete newStep.data.conditionData.defaultNextStepId;
-              } else {
-                const caseToUpdate = newStep.data.conditionData.cases.find(c => c.id === edgeToRemove.sourceHandle);
-                if (caseToUpdate) {
-                  delete caseToUpdate.nextStepId;
-                }
-              }
-            } else {
-              // It's a regular node
-              if (newStep.data?.nextStepId === edgeToRemove.target) {
-                delete newStep.data.nextStepId;
-              }
-            }
-  
-            // Update the step in the steps array
-            nextSteps = nextSteps.map(s => s.id === newStep.id ? newStep : s);
-          });
-          
-          return nextSteps;
-        });
-      }
-  
-      // Apply the visual changes to the React Flow state
-      setEdges((eds) => applyEdgeChanges(changes, eds));
+        // Apply the visual changes to the React Flow state
+        setEdges((eds) => applyEdgeChanges(changes, eds));
     },
     [setEdges, onStepsChange, edges]
   );
@@ -311,7 +323,7 @@ function WorkflowCanvasComponent({
           edges={edges}
           onNodesChange={onNodesChange}
           onEdgesChange={onEdgesChange}
-          onConnect={handleConnect}
+          onConnect={onConnect}
           nodeTypes={nodeTypes}
           fitView
           className="bg-background"
