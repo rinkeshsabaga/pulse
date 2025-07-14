@@ -156,7 +156,7 @@ export function WorkflowCanvasWrapper({ workflow: initialWorkflow, onUpdate, onR
                 onEditStep={handleEditStep}
                 onDeleteStep={handleDeleteStep}
                 onStepsChange={handleSetSteps}
-                onRevert={handleRevertVersion}
+                onRevert={(version) => handleRevertVersion(version)}
             />
         </div>
       </DashboardLayout>

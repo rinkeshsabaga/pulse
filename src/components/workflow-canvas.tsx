@@ -44,7 +44,7 @@ type WorkflowCanvasProps = {
   onStepsChange: (steps: WorkflowStepData[] | ((prev: WorkflowStepData[]) => WorkflowStepData[])) => void;
   onEditStep: (stepId: string) => void;
   onDeleteStep: (stepId: string) => void;
-  onRevert: (steps: WorkflowStepData[]) => void;
+  onRevert: (version: WorkflowVersion) => void;
 };
 
 const nodeTypes = {
@@ -100,7 +100,7 @@ function WorkflowCanvasComponent({
   };
   
   const handleRevertVersion = (version: WorkflowVersion) => {
-    onRevert(version.steps);
+    onRevert(version);
     setIsHistoryOpen(false);
   }
 
