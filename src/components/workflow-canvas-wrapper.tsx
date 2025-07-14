@@ -14,7 +14,7 @@ import { EditConditionDialog } from './edit-condition-dialog';
 import { EditCronJobDialog } from './edit-cron-job-dialog';
 import { EditSendEmailDialog } from './edit-send-email-dialog';
 import { EditDatabaseQueryDialog } from './edit-database-query-dialog';
-import type { Workflow as WorkflowType, WorkflowStepData, IconName } from '@/lib/types';
+import type { Workflow as WorkflowType, WorkflowStepData, IconName, WorkflowVersion } from '@/lib/types';
 import { v4 as uuidv4 } from 'uuid';
 import { DashboardLayout } from './dashboard-layout';
 import { WorkflowCanvas } from './workflow-canvas';
@@ -48,14 +48,15 @@ export function WorkflowCanvasWrapper({ workflow: initialWorkflow, onUpdate, onR
     }
   }, [onUpdate, steps]);
 
-  const handleRevertVersion = useCallback(async (revertedSteps: WorkflowStepData[]) => {
+  const handleRevertVersion = useCallback(async (version: WorkflowVersion) => {
+    const revertedSteps = version.steps;
     const updatedWorkflow = await onRevert(revertedSteps);
     if (updatedWorkflow) {
       setWorkflow(updatedWorkflow);
       setSteps(updatedWorkflow.steps);
       toast({
         title: 'Workflow Reverted',
-        description: `Successfully reverted to a previous version.`
+        description: `Successfully reverted to Version ${version.version}.`
       });
     }
   }, [onRevert, toast]);

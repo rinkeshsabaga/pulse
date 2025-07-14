@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
@@ -13,7 +14,7 @@ import ReactFlow, {
   OnEdgesChange,
 } from 'reactflow';
 import { Button } from '@/components/ui/button';
-import { Play, Trash2, History, Loader2 } from 'lucide-react';
+import { Play, Trash2, History, Loader2, Save } from 'lucide-react';
 import { Separator } from './ui/separator';
 import type { Workflow as WorkflowType, WorkflowStepData, WorkflowVersion } from '@/lib/types';
 import WorkflowNode from './workflow-node';
@@ -30,8 +31,12 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Badge } from './ui/badge';
+import { Switch } from './ui/switch';
+import { Label } from './ui/label';
 import { VersionHistoryPanel } from './version-history-panel';
 import { runWorkflow } from '@/ai/flows/run-workflow-flow';
+import { updateWorkflow } from '@/lib/db';
+
 
 type WorkflowCanvasProps = {
   workflow: WorkflowType;
@@ -59,8 +64,14 @@ function WorkflowCanvasComponent({
   const [isClearAlertOpen, setIsClearAlertOpen] = useState(false);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [isExecuting, setIsExecuting] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [currentWorkflow, setCurrentWorkflow] = useState(workflow);
   const { fitView } = useReactFlow();
   const { toast } = useToast();
+
+  useEffect(() => {
+    setCurrentWorkflow(workflow);
+  }, [workflow]);
 
   const nodeCallbacks = useMemo(() => ({
     onEdit: onEditStep,
@@ -126,22 +137,55 @@ function WorkflowCanvasComponent({
     } finally {
         setIsExecuting(false);
     }
-  }
+  };
+
+  const handleStatusChange = async (isPublished: boolean) => {
+    setIsSaving(true);
+    const newStatus = isPublished ? 'Published' : 'Draft';
+    try {
+        const updatedWorkflow = await updateWorkflow(currentWorkflow.id, { status: newStatus });
+        if (updatedWorkflow) {
+            setCurrentWorkflow(updatedWorkflow);
+            toast({
+                title: 'Status Updated',
+                description: `Workflow is now ${newStatus}.`
+            });
+        }
+    } catch (error) {
+        toast({
+            variant: 'destructive',
+            title: 'Error',
+            description: 'Failed to update workflow status.'
+        });
+    } finally {
+        setIsSaving(false);
+    }
+  };
 
   return (
     <>
     <div className="flex-1 flex flex-col h-full">
       <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 p-4 md:p-6">
         <div className="flex-1 space-y-1">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 flex-wrap">
              <h1 className="text-2xl font-bold font-headline">
-              {workflow.name || 'Untitled Workflow'}
+              {currentWorkflow.name || 'Untitled Workflow'}
             </h1>
-            <Badge variant="outline">v{workflow.version}</Badge>
-            <Badge variant={workflow.status === 'Draft' ? 'secondary' : 'default'}>{workflow.status}</Badge>
+            <Badge variant="outline">v{currentWorkflow.version}</Badge>
+            <div className="flex items-center space-x-2">
+                <Switch 
+                    id="publish-toggle" 
+                    checked={currentWorkflow.status === 'Published'}
+                    onCheckedChange={handleStatusChange}
+                    disabled={isSaving}
+                />
+                <Label htmlFor="publish-toggle" className="text-sm font-medium">
+                    {isSaving ? 'Saving...' : (currentWorkflow.status === 'Published' ? 'Published' : 'Draft')}
+                </Label>
+            </div>
           </div>
           <p className="text-muted-foreground">
-            {workflow.description ||
+            {currentWorkflow.description ||
               (steps.length > 0
                 ? 'A sequence of automated actions.'
                 : 'Start building your new workflow by adding steps from the panel.')}
@@ -207,7 +251,7 @@ function WorkflowCanvasComponent({
     <VersionHistoryPanel
         isOpen={isHistoryOpen}
         onClose={() => setIsHistoryOpen(false)}
-        history={workflow.history}
+        history={currentWorkflow.history}
         onRevert={handleRevertVersion}
     />
     </>
