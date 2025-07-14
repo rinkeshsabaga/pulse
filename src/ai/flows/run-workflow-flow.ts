@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview A flow to execute a complete workflow from steps.
@@ -15,19 +16,7 @@ import { wait } from './wait-flow';
 import { sendEmail } from './send-email-flow';
 import { databaseQuery } from './database-query-flow';
 import { resolveVariables } from '@/lib/utils';
-
-
-export const RunWorkflowInputSchema = z.object({
-  steps: z.any().describe("An array of workflow step objects."),
-});
-export type RunWorkflowInput = z.infer<typeof RunWorkflowInputSchema>;
-
-export const RunWorkflowOutputSchema = z.object({
-    success: z.boolean(),
-    message: z.string(),
-    finalDataContext: z.record(z.any()).optional(),
-});
-export type RunWorkflowOutput = z.infer<typeof RunWorkflowOutputSchema>;
+import { RunWorkflowInputSchema, RunWorkflowOutputSchema, type RunWorkflowInput, type RunWorkflowOutput } from '@/lib/types';
 
 
 const runWorkflowFlow = ai.defineFlow(

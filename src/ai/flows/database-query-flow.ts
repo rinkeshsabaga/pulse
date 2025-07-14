@@ -13,21 +13,7 @@
 import { ai } from '@/ai/genkit';
 import { getCredentialById } from '@/lib/db';
 import { resolveVariables } from '@/lib/utils';
-import { z } from 'zod';
-
-const DatabaseQueryInputSchema = z.object({
-  credentialId: z.string().describe('The ID of the credential for the database connection.'),
-  query: z.string().describe('The SQL query to execute.'),
-  dataContext: z.record(z.any()).optional().describe('The data context from previous steps to resolve variables in the query.'),
-});
-export type DatabaseQueryInput = z.infer<typeof DatabaseQueryInputSchema>;
-
-const DatabaseQueryOutputSchema = z.object({
-  success: z.boolean().describe('Whether the query was successful.'),
-  rows: z.array(z.record(z.any())).describe('The rows returned by the query.'),
-  error: z.string().optional().describe('An error message if the query failed.'),
-});
-export type DatabaseQueryOutput = z.infer<typeof DatabaseQueryOutputSchema>;
+import { DatabaseQueryInputSchema, DatabaseQueryOutputSchema, type DatabaseQueryInput, type DatabaseQueryOutput } from '@/lib/types';
 
 
 const databaseQueryFlow = ai.defineFlow(

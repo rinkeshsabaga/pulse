@@ -119,6 +119,20 @@ export type EmailData = {
   body?: string;
 };
 
+export const DatabaseQueryInputSchema = z.object({
+  credentialId: z.string().describe('The ID of the credential for the database connection.'),
+  query: z.string().describe('The SQL query to execute.'),
+  dataContext: z.record(z.any()).optional().describe('The data context from previous steps to resolve variables in the query.'),
+});
+export type DatabaseQueryInput = z.infer<typeof DatabaseQueryInputSchema>;
+
+export const DatabaseQueryOutputSchema = z.object({
+  success: z.boolean().describe('Whether the query was successful.'),
+  rows: z.array(z.record(z.any())).describe('The rows returned by the query.'),
+  error: z.string().optional().describe('An error message if the query failed.'),
+});
+export type DatabaseQueryOutput = z.infer<typeof DatabaseQueryOutputSchema>;
+
 export type DatabaseQueryData = {
     credentialId?: string;
     query?: string;
@@ -166,8 +180,20 @@ export type ConditionData = {
   cases: Case[];
 };
 
+export const RunWorkflowInputSchema = z.object({
+  steps: z.any().describe("An array of workflow step objects."),
+});
+export type RunWorkflowInput = z.infer<typeof RunWorkflowInputSchema>;
 
-export type StepData = WaitData & ShopifyTriggerData & ApiRequestData & EmailData & DatabaseQueryData & AppTriggerData & AppActionData & ConditionData & {
+export const RunWorkflowOutputSchema = z.object({
+    success: z.boolean(),
+    message: z.string(),
+    finalDataContext: z.record(z.any()).optional(),
+});
+export type RunWorkflowOutput = z.infer<typeof RunWorkflowOutputSchema>;
+
+
+export type StepData = WaitData & ShopifyTriggerData & ApiRequestData & EmailData & DatabaseQueryData & AppTriggerData & ConditionData & {
     webhookUrl?: string;
     events?: WebhookEvent[];
     selectedEventId?: string | null;
