@@ -24,6 +24,7 @@ import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { Download, CreditCard, CheckCircle2, ArrowRight, PlusCircle } from 'lucide-react';
 import { UpdateCardDialog } from '@/components/update-card-dialog';
+import { useToast } from '@/hooks/use-toast';
 
 const billingHistory = [
     { invoice: 'INV-2024-005', date: 'June 1, 2024', amount: '$50.00', status: 'Paid' },
@@ -32,7 +33,7 @@ const billingHistory = [
     { invoice: 'INV-2024-002', date: 'March 1, 2024', amount: '$50.00', status: 'Paid' },
 ];
 
-const plans = [
+const plansData = [
     {
       name: 'Free',
       price: '$0',
@@ -48,9 +49,6 @@ const plans = [
           price: '$10',
           amount: '1,000 Credits'
       },
-      isCurrent: true,
-      buttonText: 'Current Plan',
-      variant: 'outline' as const
     },
     {
       name: 'Growth',
@@ -68,8 +66,6 @@ const plans = [
           price: '$10',
           amount: '1,200 Credits'
       },
-      buttonText: 'Upgrade',
-      variant: 'default' as const
     },
     {
       name: 'Advanced',
@@ -87,8 +83,6 @@ const plans = [
           price: '$10',
           amount: '1,500 Credits'
       },
-       buttonText: 'Upgrade',
-       variant: 'default' as const
     },
     {
       name: 'Enterprise',
@@ -106,21 +100,40 @@ const plans = [
           price: 'Custom',
           amount: 'Custom Credits'
       },
-      buttonText: 'Contact Sales',
-      variant: 'outline' as const
     },
 ];
 
 export default function BillingPage() {
   const [isUpdateCardOpen, setIsUpdateCardOpen] = useState(false);
+  const [currentPlan, setCurrentPlan] = useState('Free');
   const [cardInfo, setCardInfo] = useState({
       endingIn: '4242',
       expires: '06/2028'
   });
+  const { toast } = useToast();
 
   const handleCardUpdate = (newCardData: { endingIn: string; expires: string; }) => {
     setCardInfo(newCardData);
   }
+
+  const handlePlanChange = (planName: string) => {
+    if (planName === 'Enterprise') {
+        toast({
+            title: 'Contact Sales',
+            description: 'Please get in touch with our sales team to discuss your needs.'
+        });
+        // Optionally, you could open a mailto link:
+        // window.location.href = "mailto:sales@sabagapulse.com";
+        return;
+    }
+    setCurrentPlan(planName);
+    toast({
+        title: 'Plan Updated!',
+        description: `You have successfully upgraded to the ${planName} plan.`
+    });
+  }
+  
+  const currentPlanDetails = plansData.find(p => p.name === currentPlan);
 
   return (
     <>
@@ -131,48 +144,60 @@ export default function BillingPage() {
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-4 lg:gap-8">
-        {plans.map((plan) => (
-          <Card key={plan.name} className={`flex flex-col ${plan.name === 'Growth' ? 'border-primary shadow-lg' : ''}`}>
-            <CardHeader className="pb-4">
-              <CardTitle>{plan.name}</CardTitle>
-              <CardDescription>{plan.description}</CardDescription>
-            </CardHeader>
-            <CardContent className="flex-1 space-y-6">
-                <div className="flex items-baseline">
-                    <span className="text-4xl font-bold">{plan.price}</span>
-                    {plan.priceFrequency && <span className="text-muted-foreground ml-1">{plan.priceFrequency}</span>}
-                </div>
-                <ul className="space-y-3">
-                    {plan.features.map((feature) => (
-                        <li key={feature} className="flex items-center gap-2">
-                            <CheckCircle2 className="h-5 w-5 text-green-500" />
-                            <span className="text-sm">{feature}</span>
-                        </li>
-                    ))}
-                </ul>
-                <Separator />
-                <div className="space-y-3">
-                    <h4 className="font-semibold text-sm">Need more credits?</h4>
-                    <div className="flex justify-between items-center">
-                        <div>
-                            <p className="font-medium">{plan.credits.amount}</p>
-                            <p className="text-sm text-muted-foreground">{plan.credits.price}</p>
-                        </div>
-                        <Button variant="outline" size="sm">
-                            <PlusCircle className="mr-2 h-4 w-4" />
-                            Buy
-                        </Button>
-                    </div>
-                </div>
-            </CardContent>
-            <CardFooter>
-                 <Button className="w-full" variant={plan.variant} disabled={plan.isCurrent}>
-                    {plan.buttonText}
-                    {!plan.isCurrent && <ArrowRight className="ml-2 h-4 w-4" />}
-                </Button>
-            </CardFooter>
-          </Card>
-        ))}
+        {plansData.map((plan) => {
+          const isCurrent = plan.name === currentPlan;
+          let buttonText = 'Upgrade';
+          if (isCurrent) buttonText = 'Current Plan';
+          if (plan.name === 'Enterprise') buttonText = 'Contact Sales';
+
+          return (
+            <Card key={plan.name} className={`flex flex-col ${isCurrent ? 'border-primary shadow-lg' : ''}`}>
+              <CardHeader className="pb-4">
+                <CardTitle>{plan.name}</CardTitle>
+                <CardDescription>{plan.description}</CardDescription>
+              </CardHeader>
+              <CardContent className="flex-1 space-y-6">
+                  <div className="flex items-baseline">
+                      <span className="text-4xl font-bold">{plan.price}</span>
+                      {plan.priceFrequency && <span className="text-muted-foreground ml-1">{plan.priceFrequency}</span>}
+                  </div>
+                  <ul className="space-y-3">
+                      {plan.features.map((feature) => (
+                          <li key={feature} className="flex items-center gap-2">
+                              <CheckCircle2 className="h-5 w-5 text-green-500" />
+                              <span className="text-sm">{feature}</span>
+                          </li>
+                      ))}
+                  </ul>
+                  <Separator />
+                  <div className="space-y-3">
+                      <h4 className="font-semibold text-sm">Need more credits?</h4>
+                      <div className="flex justify-between items-center">
+                          <div>
+                              <p className="font-medium">{plan.credits.amount}</p>
+                              <p className="text-sm text-muted-foreground">{plan.credits.price}</p>
+                          </div>
+                          <Button variant="outline" size="sm">
+                              <PlusCircle className="mr-2 h-4 w-4" />
+                              Buy
+                          </Button>
+                      </div>
+                  </div>
+              </CardContent>
+              <CardFooter>
+                  <Button 
+                    className="w-full" 
+                    variant={isCurrent || plan.name === 'Enterprise' ? 'outline' : 'default'}
+                    disabled={isCurrent}
+                    onClick={() => handlePlanChange(plan.name)}
+                  >
+                      {buttonText}
+                      {!isCurrent && <ArrowRight className="ml-2 h-4 w-4" />}
+                  </Button>
+              </CardFooter>
+            </Card>
+          )
+        })}
       </div>
       
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -247,20 +272,20 @@ export default function BillingPage() {
              <Card>
                 <CardHeader className="p-4">
                     <CardTitle>Current Plan Usage</CardTitle>
-                    <CardDescription>You are on the <span className="font-semibold text-primary">Free</span> Plan.</CardDescription>
+                    <CardDescription>You are on the <span className="font-semibold text-primary">{currentPlan}</span> Plan.</CardDescription>
                 </CardHeader>
                 <CardContent className="p-4 pt-0 grid gap-4">
                      <div className="space-y-2">
                         <div className="flex justify-between text-sm font-medium">
                             <span>Workflow Runs</span>
-                            <span>250 / 1,000</span>
+                            <span>250 / {currentPlanDetails?.features[0].split(' ')[0]}</span>
                         </div>
                         <Progress value={25} aria-label="25% of workflow runs used" />
                      </div>
                      <div className="space-y-2">
                         <div className="flex justify-between text-sm font-medium">
                             <span>Team Members</span>
-                            <span>1 / 2</span>
+                            <span>1 / {currentPlanDetails?.features[1].split(' ')[0]}</span>
                         </div>
                         <Progress value={50} aria-label="50% of team member seats used" />
                      </div>
