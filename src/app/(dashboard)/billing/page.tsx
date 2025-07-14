@@ -22,7 +22,7 @@ import {
 } from '@/components/ui/table';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
-import { Download, CreditCard, CheckCircle2, ArrowRight, PlusCircle } from 'lucide-react';
+import { Download, CreditCard, CheckCircle2, ArrowRight, PlusCircle, Zap } from 'lucide-react';
 import { UpdateCardDialog } from '@/components/update-card-dialog';
 import { useToast } from '@/hooks/use-toast';
 
@@ -40,7 +40,7 @@ const plansData = [
       priceFrequency: '/ month',
       description: 'For individuals and small teams just getting started.',
       features: [
-        '1,000 Workflow Runs',
+        '1,000 Credits / month',
         '2 Team Members',
         'Community Support',
         'Basic Integrations',
@@ -49,6 +49,7 @@ const plansData = [
           price: '$10',
           amount: '1,000 Credits'
       },
+      monthlyCredits: 1000,
     },
     {
       name: 'Growth',
@@ -56,7 +57,7 @@ const plansData = [
       priceFrequency: '/ month',
       description: 'For growing teams that need more power and automation.',
       features: [
-        '10,000 Workflow Runs',
+        '10,000 Credits / month',
         '5 Team Members',
         'Email & Chat Support',
         'Advanced Integrations',
@@ -66,6 +67,7 @@ const plansData = [
           price: '$10',
           amount: '1,200 Credits'
       },
+      monthlyCredits: 10000,
     },
     {
       name: 'Advanced',
@@ -73,7 +75,7 @@ const plansData = [
       priceFrequency: '/ month',
       description: 'For businesses that require advanced features and support.',
       features: [
-        '50,000 Workflow Runs',
+        '50,000 Credits / month',
         '15 Team Members',
         'Priority Support',
         'Custom Integrations',
@@ -83,6 +85,7 @@ const plansData = [
           price: '$10',
           amount: '1,500 Credits'
       },
+      monthlyCredits: 50000,
     },
     {
       name: 'Enterprise',
@@ -90,7 +93,7 @@ const plansData = [
       priceFrequency: '',
       description: 'For large organizations with custom needs and security requirements.',
       features: [
-        'Unlimited Workflow Runs',
+        'Unlimited Credits',
         'Unlimited Team Members',
         '24/7 Dedicated Support',
         'On-premise Deployment',
@@ -100,7 +103,16 @@ const plansData = [
           price: 'Custom',
           amount: 'Custom Credits'
       },
+      monthlyCredits: 'Unlimited',
     },
+];
+
+const creditPricing = [
+    { node: 'Any Trigger', cost: '1 Credit' },
+    { node: 'API Request', cost: '1 Credit' },
+    { node: 'Custom Code / AI Function', cost: '1 Credit' },
+    { node: 'Other Actions', cost: '1 Credit' },
+    { node: 'Wait Node', cost: '1 Credit / day' },
 ];
 
 export default function BillingPage() {
@@ -192,7 +204,7 @@ export default function BillingPage() {
                     onClick={() => handlePlanChange(plan.name)}
                   >
                       {buttonText}
-                      {!isCurrent && <ArrowRight className="ml-2 h-4 w-4" />}
+                      {!isCurrent && plan.name !== 'Enterprise' && <ArrowRight className="ml-2 h-4 w-4" />}
                   </Button>
               </CardFooter>
             </Card>
@@ -204,22 +216,33 @@ export default function BillingPage() {
         <div className="lg:col-span-2 space-y-8">
             <Card>
                 <CardHeader>
-                    <CardTitle>Payment Method</CardTitle>
+                    <CardTitle>Credit Usage & Pricing</CardTitle>
                     <CardDescription>
-                        Manage your payment information.
+                        Credits are used for each operation within your workflows.
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <div className="flex items-center justify-between rounded-lg border border-dashed p-4">
-                        <div className="flex items-center gap-3">
-                            <CreditCard className="h-8 w-8 text-muted-foreground" />
-                            <div>
-                                <p className="font-semibold">Visa ending in **** {cardInfo.endingIn}</p>
-                                <p className="text-sm text-muted-foreground">Expires {cardInfo.expires}</p>
-                            </div>
-                        </div>
-                         <Button variant="outline" onClick={() => setIsUpdateCardOpen(true)}>Update</Button>
-                    </div>
+                     <Table>
+                        <TableHeader>
+                        <TableRow>
+                            <TableHead>Node Type</TableHead>
+                            <TableHead className="text-right">Credits per Use</TableHead>
+                        </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                        {creditPricing.map((item) => (
+                            <TableRow key={item.node}>
+                                <TableCell>
+                                    <div className="font-medium flex items-center gap-2">
+                                        <Zap className="h-4 w-4 text-primary/70" />
+                                        {item.node}
+                                    </div>
+                                </TableCell>
+                                <TableCell className="text-right">{item.cost}</TableCell>
+                            </TableRow>
+                        ))}
+                        </TableBody>
+                    </Table>
                 </CardContent>
             </Card>
 
@@ -277,10 +300,10 @@ export default function BillingPage() {
                 <CardContent className="p-4 pt-0 grid gap-4">
                      <div className="space-y-2">
                         <div className="flex justify-between text-sm font-medium">
-                            <span>Workflow Runs</span>
-                            <span>250 / {currentPlanDetails?.features[0].split(' ')[0]}</span>
+                            <span>Monthly Credits</span>
+                            <span>250 / {currentPlanDetails?.monthlyCredits}</span>
                         </div>
-                        <Progress value={25} aria-label="25% of workflow runs used" />
+                        <Progress value={(250 / (currentPlanDetails?.monthlyCredits === 'Unlimited' ? Infinity : currentPlanDetails?.monthlyCredits || 1)) * 100} aria-label="Credit usage" />
                      </div>
                      <div className="space-y-2">
                         <div className="flex justify-between text-sm font-medium">
@@ -294,8 +317,28 @@ export default function BillingPage() {
                     <p className="text-sm text-muted-foreground">
                         Your plan renews on July 1, 2024.
                     </p>
-                    <Button variant="link" size="sm" className="p-0 h-auto">Manage Subscription</Button>
+                    <div className="flex w-full items-center justify-between">
+                         <Button variant="link" size="sm" className="p-0 h-auto">Manage Subscription</Button>
+                         <Button variant="outline" size="sm">Add Credits</Button>
+                    </div>
                 </CardFooter>
+            </Card>
+            <Card>
+                <CardHeader>
+                    <CardTitle>Payment Method</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <div className="flex items-center justify-between rounded-lg border border-dashed p-4">
+                        <div className="flex items-center gap-3">
+                            <CreditCard className="h-8 w-8 text-muted-foreground" />
+                            <div>
+                                <p className="font-semibold">Visa ending in **** {cardInfo.endingIn}</p>
+                                <p className="text-sm text-muted-foreground">Expires {cardInfo.expires}</p>
+                            </div>
+                        </div>
+                         <Button variant="outline" onClick={() => setIsUpdateCardOpen(true)}>Update</Button>
+                    </div>
+                </CardContent>
             </Card>
         </div>
       </div>
