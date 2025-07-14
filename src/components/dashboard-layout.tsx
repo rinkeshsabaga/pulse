@@ -44,8 +44,11 @@ const Triggers = [
 ];
 
 const Actions = [
+    { type: 'action' as const, icon: 'GitBranch' as const, title: 'If/Else', description: 'Branch based on a condition' },
+    { type: 'action' as const, icon: 'GitCommit' as const, title: 'Switch', description: 'Multi-path branching logic' },
+    { type: 'action' as const, icon: 'Split' as const, title: 'Parallel', description: 'Run branches simultaneously' },
+    { type: 'action' as const, icon: 'Filter' as const, title: 'Filter', description: 'Stop if condition not met' },
     { type: 'action' as const, icon: 'AppWindow' as const, title: 'App Action', description: 'Perform an action in an app' },
-    { type: 'action' as const, icon: 'GitBranch' as const, title: 'Condition', description: 'Branch workflow on conditions' },
     { type: 'action' as const, icon: 'Clock' as const, title: 'Wait', description: 'Delay workflow execution' },
     { type: 'action' as const, icon: 'Code' as const, title: 'Custom Code', description: 'Write and run custom code' },
     { type: 'action' as const, icon: 'FlaskConical' as const, title: 'Custom AI Function', description: 'Generate code with AI' },
@@ -67,6 +70,9 @@ const iconMap: Record<IconName, React.ElementType> = {
   StopCircle: icons.StopCircle,
   Code: icons.Code,
   AppWindow: icons.AppWindow,
+  GitCommit: icons.GitCommit,
+  Split: icons.Split,
+  Filter: icons.Filter,
 };
 
 

@@ -120,10 +120,14 @@ export function WorkflowCanvasWrapper({ workflow: initialWorkflow }: WorkflowCan
         newStep.description = 'Click Edit to compose email';
         newStep.data = { emailData: { to: '', from: 'noreply@sabagapulse.com', subject: '', body: '' } };
     }
-     if (newStep.title === 'Condition') {
+     if (newStep.title === 'If/Else' || newStep.title === 'Switch') {
         newStep.description = 'Click Edit to set conditions';
         newStep.data = { conditionData: { cases: [{ id: uuidv4(), name: 'Case 1', logicalOperator: 'AND', rules: [{ id: uuidv4(), variable: '', operator: 'equals', value: '' }] }] } };
     }
+     if (newStep.title === 'Parallel' || newStep.title === 'Filter') {
+        newStep.description = 'Functionality not yet implemented';
+    }
+
 
     handleSetSteps(prev => [...prev, newStep]);
   }, [handleSetSteps, toast]);
@@ -249,7 +253,7 @@ export function WorkflowCanvasWrapper({ workflow: initialWorkflow }: WorkflowCan
             onOpenChange={(isOpen) => !isOpen && setEditingStepInfo(null)}
             onSave={handleSaveAction}
         />
-        {editingStepInfo && editingStepInfo.step.title === 'Condition' && (
+        {editingStepInfo && (editingStepInfo.step.title === 'If/Else' || editingStepInfo.step.title === 'Switch') && (
              <EditConditionDialog
                 step={editingStepInfo.step}
                 allSteps={steps}

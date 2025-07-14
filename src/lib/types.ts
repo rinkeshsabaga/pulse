@@ -15,7 +15,10 @@ export type IconName =
   | 'ShoppingCart'
   | 'StopCircle'
   | 'Code'
-  | 'AppWindow';
+  | 'AppWindow'
+  | 'GitCommit'
+  | 'Split'
+  | 'Filter';
 
 export type WaitMode = 'duration' | 'datetime' | 'office_hours' | 'timestamp' | 'specific_day';
 export type OfficeHoursDay = 'sun' | 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat';

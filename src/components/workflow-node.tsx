@@ -33,6 +33,9 @@ const iconMap: Record<IconName, React.ElementType> = {
   StopCircle: icons.StopCircle,
   Code: icons.Code,
   AppWindow: icons.AppWindow,
+  GitCommit: icons.GitCommit,
+  Split: icons.Split,
+  Filter: icons.Filter,
 };
 
 type NodeData = {
@@ -46,7 +49,7 @@ const WorkflowNode = memo(({ data, id }: NodeProps<NodeData>) => {
   
   const isTrigger = step.type === 'trigger';
   const isEndNode = step.title === 'End Automation';
-  const isConditionNode = step.title === 'Condition';
+  const isConditionNode = step.title === 'If/Else' || step.title === 'Switch';
 
   const sourcePosition = Position.Bottom;
   const targetPosition = Position.Top;
@@ -139,11 +142,11 @@ const WorkflowNode = memo(({ data, id }: NodeProps<NodeData>) => {
                         type="source"
                         position={Position.Right}
                         id={caseItem.id}
-                        style={{ top: `calc(${startY} + ${index * handleHeight}px)` }}
-                        className="!bg-green-500 z-10"
+                        style={{ top: `calc(${startY} + ${index * handleHeight}px)`, zIndex: 10 }}
+                        className="!bg-green-500"
                     />
                     <div 
-                        className="absolute text-xs bg-background p-1 rounded-md border text-muted-foreground w-max"
+                        className="absolute text-xs bg-background p-1 rounded-md border text-muted-foreground w-max pointer-events-none"
                         style={{ 
                             left: '1.5rem', 
                             top: `calc(${startY} + ${index * handleHeight}px)`,
@@ -159,11 +162,11 @@ const WorkflowNode = memo(({ data, id }: NodeProps<NodeData>) => {
                     type="source"
                     position={Position.Right}
                     id="default"
-                    style={{ top: `calc(${startY} + ${caseHandles.length * handleHeight}px)` }}
-                    className="!bg-gray-500 z-10"
+                    style={{ top: `calc(${startY} + ${caseHandles.length * handleHeight}px)`, zIndex: 10 }}
+                    className="!bg-gray-500"
                 />
                  <div 
-                    className="absolute text-xs bg-background p-1 rounded-md border text-muted-foreground w-max"
+                    className="absolute text-xs bg-background p-1 rounded-md border text-muted-foreground w-max pointer-events-none"
                     style={{ 
                         left: '1.5rem', 
                         top: `calc(${startY} + ${caseHandles.length * handleHeight}px)`,
