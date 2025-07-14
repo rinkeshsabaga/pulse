@@ -19,8 +19,7 @@ import {
 } from '@/components/ui/table';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
-import { Download, CreditCard, PlusCircle, ExternalLink } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { Download, CreditCard, CheckCircle2, ArrowRight } from 'lucide-react';
 
 const billingHistory = [
     { invoice: 'INV-2024-005', date: 'June 1, 2024', amount: '$50.00', status: 'Paid' },
@@ -29,10 +28,110 @@ const billingHistory = [
     { invoice: 'INV-2024-002', date: 'March 1, 2024', amount: '$50.00', status: 'Paid' },
 ];
 
+const plans = [
+    {
+      name: 'Free',
+      price: '$0',
+      priceFrequency: '/ month',
+      description: 'For individuals and small teams just getting started.',
+      features: [
+        '1,000 Workflow Runs',
+        '2 Team Members',
+        'Community Support',
+        'Basic Integrations',
+      ],
+      isCurrent: true,
+      buttonText: 'Current Plan',
+      variant: 'outline' as const
+    },
+    {
+      name: 'Growth',
+      price: '$49',
+      priceFrequency: '/ month',
+      description: 'For growing teams that need more power and automation.',
+      features: [
+        '10,000 Workflow Runs',
+        '5 Team Members',
+        'Email & Chat Support',
+        'Advanced Integrations',
+        'Access to AI Features',
+      ],
+      buttonText: 'Upgrade',
+      variant: 'default' as const
+    },
+    {
+      name: 'Advanced',
+      price: '$99',
+      priceFrequency: '/ month',
+      description: 'For businesses that require advanced features and support.',
+      features: [
+        '50,000 Workflow Runs',
+        '15 Team Members',
+        'Priority Support',
+        'Custom Integrations',
+        'Dedicated AI Models',
+      ],
+       buttonText: 'Upgrade',
+       variant: 'default' as const
+    },
+    {
+      name: 'Enterprise',
+      price: 'Custom',
+      priceFrequency: '',
+      description: 'For large organizations with custom needs and security requirements.',
+      features: [
+        'Unlimited Workflow Runs',
+        'Unlimited Team Members',
+        '24/7 Dedicated Support',
+        'On-premise Deployment',
+        'Security & Compliance Reviews',
+      ],
+      buttonText: 'Contact Sales',
+      variant: 'outline' as const
+    },
+];
+
 export default function BillingPage() {
   return (
-    <div className="grid flex-1 items-start gap-4 p-4 sm:px-6 sm:py-0 md:gap-8 lg:grid-cols-3 xl:grid-cols-3">
-        <div className="grid auto-rows-max items-start gap-4 md:gap-8 lg:col-span-2">
+    <div className="grid flex-1 items-start gap-8 p-4 sm:px-6 sm:py-0 md:gap-8">
+      <div className="space-y-2">
+        <h1 className="text-3xl font-bold font-headline">Billing & Plans</h1>
+        <p className="text-muted-foreground">Manage your subscription and billing details.</p>
+      </div>
+
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-4 lg:gap-8">
+        {plans.map((plan) => (
+          <Card key={plan.name} className={`flex flex-col ${plan.name === 'Growth' ? 'border-primary shadow-lg' : ''}`}>
+            <CardHeader className="pb-4">
+              <CardTitle>{plan.name}</CardTitle>
+              <CardDescription>{plan.description}</CardDescription>
+            </CardHeader>
+            <CardContent className="flex-1 space-y-6">
+                <div className="flex items-baseline">
+                    <span className="text-4xl font-bold">{plan.price}</span>
+                    {plan.priceFrequency && <span className="text-muted-foreground ml-1">{plan.priceFrequency}</span>}
+                </div>
+                <ul className="space-y-3">
+                    {plan.features.map((feature) => (
+                        <li key={feature} className="flex items-center gap-2">
+                            <CheckCircle2 className="h-5 w-5 text-green-500" />
+                            <span className="text-sm">{feature}</span>
+                        </li>
+                    ))}
+                </ul>
+            </CardContent>
+            <CardFooter>
+                 <Button className="w-full" variant={plan.variant} disabled={plan.isCurrent}>
+                    {plan.buttonText}
+                    {!plan.isCurrent && <ArrowRight className="ml-2 h-4 w-4" />}
+                </Button>
+            </CardFooter>
+          </Card>
+        ))}
+      </div>
+      
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="lg:col-span-2 space-y-8">
             <Card>
                 <CardHeader>
                     <CardTitle>Payment Method</CardTitle>
@@ -99,25 +198,11 @@ export default function BillingPage() {
           </Card>
         </div>
         
-        <div className="grid auto-rows-max items-start gap-4 md:gap-8 lg:col-span-1">
-            <Card className="shadow-none border-dashed">
-                <CardHeader className="p-4">
-                    <CardTitle>Upgrade to Pro</CardTitle>
-                    <CardDescription>
-                        Unlock more workflow runs, advanced features, and priority support.
-                    </CardDescription>
-                </CardHeader>
-                <CardContent className="p-4 pt-0">
-                    <Button size="sm" className="w-full">
-                       <ExternalLink className="mr-2 h-4 w-4" />
-                        Upgrade
-                    </Button>
-                </CardContent>
-            </Card>
+        <div className="lg:col-span-1">
              <Card>
                 <CardHeader className="p-4">
-                    <CardTitle>Current Plan</CardTitle>
-                    <CardDescription>You are currently on the Free Plan.</CardDescription>
+                    <CardTitle>Current Plan Usage</CardTitle>
+                    <CardDescription>You are on the <span className="font-semibold text-primary">Free</span> Plan.</CardDescription>
                 </CardHeader>
                 <CardContent className="p-4 pt-0 grid gap-4">
                      <div className="space-y-2">
@@ -130,9 +215,9 @@ export default function BillingPage() {
                      <div className="space-y-2">
                         <div className="flex justify-between text-sm font-medium">
                             <span>Team Members</span>
-                            <span>1 / 1</span>
+                            <span>1 / 2</span>
                         </div>
-                        <Progress value={100} aria-label="100% of team member seats used" />
+                        <Progress value={50} aria-label="50% of team member seats used" />
                      </div>
                 </CardContent>
                  <CardFooter className="flex flex-col items-start gap-2 border-t p-4">
@@ -143,6 +228,7 @@ export default function BillingPage() {
                 </CardFooter>
             </Card>
         </div>
+      </div>
     </div>
   );
 }
