@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo } from 'react';
 import ReactFlow, {
   Background,
   Controls,
@@ -73,7 +73,19 @@ function WorkflowCanvasComponent({ steps, setSteps, onEditStep, workflowName, wo
     [setEdges]
   );
   
-  const layoutedElements = useMemo(() => getLayoutedElements(steps), [steps]);
+  const layoutedElements = useMemo(() => {
+    const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(steps);
+    // Inject handlers into node data
+    const nodesWithHandlers = layoutedNodes.map(node => ({
+      ...node,
+      data: {
+        ...node.data,
+        onEdit: handleEditStep,
+        onDelete: handleDeleteStep,
+      }
+    }));
+    return { nodes: nodesWithHandlers, edges: layoutedEdges };
+  }, [steps, handleEditStep, handleDeleteStep]);
 
   useEffect(() => {
     setNodes(layoutedElements.nodes);
@@ -86,12 +98,6 @@ function WorkflowCanvasComponent({ steps, setSteps, onEditStep, workflowName, wo
   const handleConfirmClear = () => {
     setSteps([]);
   }
-
-  const reactFlowProOptions = {
-      onEdit: handleEditStep,
-      onDelete: handleDeleteStep
-  };
-
 
   return (
     <div className="flex h-full flex-col">
@@ -128,7 +134,6 @@ function WorkflowCanvasComponent({ steps, setSteps, onEditStep, workflowName, wo
                 onEdgesChange={onEdgesChange}
                 onConnect={onConnect}
                 nodeTypes={nodeTypes}
-                proOptions={reactFlowProOptions as any}
                 fitView
                 className="bg-background"
             >
