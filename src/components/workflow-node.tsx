@@ -153,5 +153,3 @@ const WorkflowNode = memo(({ data }: NodeProps<{ step: WorkflowStepData; onEdit:
 WorkflowNode.displayName = 'WorkflowNode';
 
 export default WorkflowNode;
-
-    
