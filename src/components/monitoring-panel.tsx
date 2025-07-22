@@ -156,50 +156,52 @@ export function MonitoringPanel() {
                 </TableHeader>
                 <TableBody>
                     {executions.map((exec) => (
-                    <Collapsible key={exec.id} open={openExecutionId === exec.id} onOpenChange={() => handleToggle(exec.id)}>
-                        <CollapsibleTrigger asChild>
-                             <TableRow className="cursor-pointer">
-                                <TableCell>
-                                    <ChevronRight className={cn("h-4 w-4 transition-transform", openExecutionId === exec.id && "rotate-90")} />
-                                </TableCell>
-                                <TableCell>
-                                    {formatDistance(exec.startTime, new Date(), { addSuffix: true })}
-                                </TableCell>
-                                <TableCell>
-                                    <Badge variant={getBadgeVariant(exec.status)}>{exec.status}</Badge>
-                                </TableCell>
-                                <TableCell>
-                                    {exec.duration}s
-                                </TableCell>
-                                <TableCell className="font-mono text-xs">{exec.id}</TableCell>
-                            </TableRow>
-                        </CollapsibleTrigger>
-                        <CollapsibleContent asChild>
-                            <tr className="bg-muted/50 hover:bg-muted/50">
-                                <td colSpan={5} className="p-0">
-                                    <div className="p-4">
-                                        <Table>
-                                             <TableHeader>
-                                                <TableRow>
-                                                    <TableHead className="w-[200px]">Timestamp</TableHead>
-                                                    <TableHead className="w-[100px]">Level</TableHead>
-                                                    <TableHead>Message</TableHead>
-                                                </TableRow>
-                                            </TableHeader>
-                                            <TableBody>
-                                                {exec.logs.map((log) => (
-                                                    <TableRow key={log.timestamp}>
-                                                        <TableCell className="font-mono text-xs">{log.date.toLocaleString()}</TableCell>
-                                                        <TableCell><Badge variant={getBadgeVariant(log.level)}>{log.level}</Badge></TableCell>
-                                                        <TableCell>{log.message}</TableCell>
+                    <Collapsible asChild key={exec.id} open={openExecutionId === exec.id} onOpenChange={() => handleToggle(exec.id)}>
+                        <>
+                            <CollapsibleTrigger asChild>
+                                <TableRow className="cursor-pointer">
+                                    <TableCell>
+                                        <ChevronRight className={cn("h-4 w-4 transition-transform", openExecutionId === exec.id && "rotate-90")} />
+                                    </TableCell>
+                                    <TableCell>
+                                        {formatDistance(exec.startTime, new Date(), { addSuffix: true })}
+                                    </TableCell>
+                                    <TableCell>
+                                        <Badge variant={getBadgeVariant(exec.status)}>{exec.status}</Badge>
+                                    </TableCell>
+                                    <TableCell>
+                                        {exec.duration}s
+                                    </TableCell>
+                                    <TableCell className="font-mono text-xs">{exec.id}</TableCell>
+                                </TableRow>
+                            </CollapsibleTrigger>
+                            <CollapsibleContent asChild>
+                                <tr className="bg-muted/50 hover:bg-muted/50">
+                                    <td colSpan={5} className="p-0">
+                                        <div className="p-4">
+                                            <Table>
+                                                <TableHeader>
+                                                    <TableRow>
+                                                        <TableHead className="w-[200px]">Timestamp</TableHead>
+                                                        <TableHead className="w-[100px]">Level</TableHead>
+                                                        <TableHead>Message</TableHead>
                                                     </TableRow>
-                                                ))}
-                                            </TableBody>
-                                        </Table>
-                                    </div>
-                                </td>
-                            </tr>
-                        </CollapsibleContent>
+                                                </TableHeader>
+                                                <TableBody>
+                                                    {exec.logs.map((log) => (
+                                                        <TableRow key={log.timestamp}>
+                                                            <TableCell className="font-mono text-xs">{log.date.toLocaleString()}</TableCell>
+                                                            <TableCell><Badge variant={getBadgeVariant(log.level)}>{log.level}</Badge></TableCell>
+                                                            <TableCell>{log.message}</TableCell>
+                                                        </TableRow>
+                                                    ))}
+                                                </TableBody>
+                                            </Table>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </CollapsibleContent>
+                        </>
                     </Collapsible>
                     ))}
                 </TableBody>
