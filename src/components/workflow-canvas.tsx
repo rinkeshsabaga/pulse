@@ -278,7 +278,7 @@ function WorkflowCanvasComponent({
   return (
     <>
     <div className="flex-1 flex flex-col h-full">
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 p-4 md:p-6 md:pl-20">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 p-4 md:p-6 pl-20">
         <div className="flex-1 space-y-1 min-w-0">
           <div className="flex items-center gap-3">
              <h1 className="text-2xl font-bold font-headline truncate">
