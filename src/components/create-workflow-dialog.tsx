@@ -63,19 +63,21 @@ export function CreateWorkflowDialog({ open, onOpenChange, onWorkflowCreated }: 
       const newWorkflow = await addWorkflow(values);
       toast({
         title: 'Workflow Created',
-        description: `Successfully created "${newWorkflow.name}".`,
+        description: `Successfully created "${newWorkflow.name}". Redirecting...`,
       });
       onOpenChange(false);
       form.reset();
       onWorkflowCreated(); // This will trigger a re-fetch in the parent component
-      router.push(`/workflows/${newWorkflow.id}`);
+      
+      // Use window.location.href for a full reload to ensure the new workflow page loads correctly.
+      window.location.href = `/workflows/${newWorkflow.id}`;
+
     } catch (error) {
       toast({
         variant: 'destructive',
         title: 'Error',
         description: 'Failed to create the workflow. Please try again.',
       });
-    } finally {
       setIsCreating(false);
     }
   }
