@@ -278,26 +278,26 @@ function WorkflowCanvasComponent({
   return (
     <>
     <div className="flex-1 flex flex-col h-full">
-      <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 p-4 md:p-6">
-        <div className="flex-1 space-y-1">
-          <div className="flex items-center gap-3 flex-wrap">
-             <h1 className="text-2xl font-bold font-headline">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 p-4 md:p-6">
+        <div className="flex-1 space-y-1 min-w-0">
+          <div className="flex items-center gap-3">
+             <h1 className="text-2xl font-bold font-headline truncate">
               {currentWorkflow.name || 'Untitled Workflow'}
             </h1>
             <Badge variant="outline">v{currentWorkflow.version}</Badge>
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-2 ml-auto md:ml-0">
                 <Switch 
                     id="publish-toggle" 
                     checked={currentWorkflow.status === 'Published'}
                     onCheckedChange={handleStatusChange}
                     disabled={isSaving}
                 />
-                <Label htmlFor="publish-toggle" className="text-sm font-medium">
+                <Label htmlFor="publish-toggle" className="text-sm font-medium whitespace-nowrap">
                     {isSaving ? 'Saving...' : (currentWorkflow.status === 'Published' ? 'Published' : 'Draft')}
                 </Label>
             </div>
           </div>
-          <p className="text-muted-foreground">
+          <p className="text-muted-foreground truncate">
             {currentWorkflow.description ||
               (steps.length > 0
                 ? 'A sequence of automated actions.'
