@@ -48,6 +48,7 @@ export function EditDatabaseQueryDialog({ open, onOpenChange, onSave, step, data
 
   useEffect(() => {
     const fetchCredentials = async () => {
+      // In a real app, you would get org ID from the user's session
       const creds = await getCredentials();
       setCredentials(creds);
     };

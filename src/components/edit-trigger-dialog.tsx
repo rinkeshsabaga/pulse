@@ -1,5 +1,4 @@
 
-
 // src/components/edit-trigger-dialog.tsx
 'use client';
 
@@ -68,6 +67,7 @@ export function EditTriggerDialog({ step, workflowId, open, onOpenChange, onSave
   const handleGenerateTestEvent = async () => {
     setIsGenerating(true);
     try {
+      // In a real app, you'd get the org ID from the user's session
       const updatedWorkflow = await addTestWebhookEvent(workflowId, step.id);
       if (updatedWorkflow) {
         const updatedStep = updatedWorkflow.steps.find(s => s.id === step.id);

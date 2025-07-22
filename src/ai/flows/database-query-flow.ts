@@ -23,7 +23,8 @@ const databaseQueryFlow = ai.defineFlow(
     outputSchema: DatabaseQueryOutputSchema,
   },
   async (input) => {
-    // In a real application, you would use the credential to connect to the database.
+    // In a real application, you would get the organization ID from the user's session
+    // and pass it to getCredentialById.
     const credential = await getCredentialById(input.credentialId);
     if (!credential) {
       console.error(`Credential with ID ${input.credentialId} not found.`);

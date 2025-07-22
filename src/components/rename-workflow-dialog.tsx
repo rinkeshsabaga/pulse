@@ -64,6 +64,7 @@ export function RenameWorkflowDialog({ open, onOpenChange, onWorkflowRenamed, wo
 
     setIsSaving(true);
     try {
+      // In a real app, you would get the org ID from the user's session
       await updateWorkflow(workflow.id, { name: values.name });
       toast({
         title: 'Workflow Renamed',

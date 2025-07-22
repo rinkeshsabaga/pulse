@@ -56,7 +56,8 @@ export default function CredentialsPage() {
   const loadCredentials = useCallback(async () => {
     setIsLoading(true);
     try {
-      const allCredentials = await getCredentials();
+      // In a real app, you'd get the org ID from the user's session
+      const allCredentials = await getCredentials(); 
       setCredentials(allCredentials);
     } catch (error) {
       toast({
@@ -81,6 +82,7 @@ export default function CredentialsPage() {
   const handleDelete = async () => {
     if (!credentialToDelete) return;
 
+    // In a real app, you'd get the org ID from the user's session
     await deleteCredential(credentialToDelete.id);
     setCredentials(prev => prev.filter((cred) => cred.id !== credentialToDelete.id));
 

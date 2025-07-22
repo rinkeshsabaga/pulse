@@ -13,9 +13,12 @@ declare global {
   var __credentials__: Credential[] | undefined;
 }
 
+const DEFAULT_ORG_ID = 'org_default_123';
+
 const initialWorkflows: Workflow[] = [
   { 
     id: 'wf_1', 
+    organizationId: DEFAULT_ORG_ID,
     name: 'Onboarding Email Sequence', 
     description: 'Sends a series of emails to new users.', 
     status: 'Published', 
@@ -27,6 +30,7 @@ const initialWorkflows: Workflow[] = [
   },
   { 
     id: 'wf_2', 
+    organizationId: DEFAULT_ORG_ID,
     name: 'Daily Report', 
     description: 'Generates and emails a daily sales report.', 
     status: 'Published', 
@@ -38,6 +42,7 @@ const initialWorkflows: Workflow[] = [
   },
   { 
     id: 'wf_3', 
+    organizationId: DEFAULT_ORG_ID,
     name: 'Failed Payment Alert', 
     description: 'Notifies the team on Slack about failed payments.', 
     status: 'Draft', 
@@ -52,6 +57,7 @@ const initialWorkflows: Workflow[] = [
 const initialCredentials: Credential[] = [
   {
     id: 'cred_1',
+    organizationId: DEFAULT_ORG_ID,
     appName: 'GitHub',
     accountName: 'personal-github',
     type: 'API_KEY',
@@ -59,6 +65,7 @@ const initialCredentials: Credential[] = [
   },
    {
     id: 'cred_2',
+    organizationId: DEFAULT_ORG_ID,
     appName: 'Slack',
     accountName: 'work-slack',
     type: 'API_KEY',
@@ -81,22 +88,24 @@ const workflows: Workflow[] = global.__workflows__;
 const credentials: Credential[] = global.__credentials__;
 
 
-export async function getWorkflows(): Promise<Workflow[]> {
+export async function getWorkflows(organizationId = DEFAULT_ORG_ID): Promise<Workflow[]> {
   // In a real app, you'd fetch this from a database
-  return JSON.parse(JSON.stringify(workflows));
+  const orgWorkflows = workflows.filter(wf => wf.organizationId === organizationId);
+  return JSON.parse(JSON.stringify(orgWorkflows));
 }
 
-export async function getWorkflowById(id: string): Promise<Workflow | undefined> {
-  const workflow = workflows.find((wf) => wf.id === id);
+export async function getWorkflowById(id: string, organizationId = DEFAULT_ORG_ID): Promise<Workflow | undefined> {
+  const workflow = workflows.find((wf) => wf.id === id && wf.organizationId === organizationId);
   if (!workflow) {
     return undefined;
   }
   return JSON.parse(JSON.stringify(workflow));
 }
 
-export async function addWorkflow(workflowData: { name: string; description?: string }): Promise<Workflow> {
+export async function addWorkflow(workflowData: { name: string; description?: string }, organizationId = DEFAULT_ORG_ID): Promise<Workflow> {
   const newWorkflow: Workflow = {
     id: `wf_${Date.now()}`,
+    organizationId,
     name: workflowData.name,
     description: workflowData.description || '',
     status: 'Draft',
@@ -108,8 +117,8 @@ export async function addWorkflow(workflowData: { name: string; description?: st
   return JSON.parse(JSON.stringify(newWorkflow));
 }
 
-export async function duplicateWorkflow(id: string): Promise<Workflow> {
-  const originalWorkflow = await getWorkflowById(id);
+export async function duplicateWorkflow(id: string, organizationId = DEFAULT_ORG_ID): Promise<Workflow> {
+  const originalWorkflow = await getWorkflowById(id, organizationId);
   if (!originalWorkflow) {
     throw new Error('Workflow not found');
   }
@@ -125,8 +134,8 @@ export async function duplicateWorkflow(id: string): Promise<Workflow> {
   return JSON.parse(JSON.stringify(newWorkflow));
 }
 
-export async function deleteWorkflow(id: string): Promise<{ success: boolean }> {
-  const index = workflows.findIndex((wf) => wf.id === id);
+export async function deleteWorkflow(id: string, organizationId = DEFAULT_ORG_ID): Promise<{ success: boolean }> {
+  const index = workflows.findIndex((wf) => wf.id === id && wf.organizationId === organizationId);
   if (index > -1) {
     workflows.splice(index, 1);
     return { success: true };
@@ -134,8 +143,8 @@ export async function deleteWorkflow(id: string): Promise<{ success: boolean }> 
   return { success: false };
 }
 
-export async function updateWorkflow(id: string, updatedData: Partial<Omit<Workflow, 'id' | 'version' | 'history'>>): Promise<Workflow | undefined> {
-    const index = workflows.findIndex(wf => wf.id === id);
+export async function updateWorkflow(id: string, updatedData: Partial<Omit<Workflow, 'id' | 'version' | 'history' | 'organizationId'>>, organizationId = DEFAULT_ORG_ID): Promise<Workflow | undefined> {
+    const index = workflows.findIndex(wf => wf.id === id && wf.organizationId === organizationId);
     if (index !== -1) {
         const currentWorkflow = workflows[index];
         const newVersionNumber = currentWorkflow.version + 1;
@@ -166,8 +175,8 @@ export async function updateWorkflow(id: string, updatedData: Partial<Omit<Workf
     return undefined;
 }
 
-export async function addTestWebhookEvent(workflowId: string, stepId: string): Promise<Workflow | null> {
-    const workflow = await getWorkflowById(workflowId);
+export async function addTestWebhookEvent(workflowId: string, stepId: string, organizationId = DEFAULT_ORG_ID): Promise<Workflow | null> {
+    const workflow = await getWorkflowById(workflowId, organizationId);
     if (!workflow) return null;
 
     const step = workflow.steps.find(s => s.id === stepId);
@@ -201,7 +210,7 @@ export async function addTestWebhookEvent(workflowId: string, stepId: string): P
     step.data.selectedEventId = newEvent.id;
 
     // This update should not create a new version
-    const index = workflows.findIndex(wf => wf.id === workflowId);
+    const index = workflows.findIndex(wf => wf.id === workflowId && wf.organizationId === organizationId);
     if (index !== -1) {
         const workflowToUpdate = workflows[index];
         const stepToUpdate = workflowToUpdate.steps.find(s => s.id === stepId);
@@ -215,35 +224,37 @@ export async function addTestWebhookEvent(workflowId: string, stepId: string): P
 
 
 // Credentials Management
-export async function getCredentials(): Promise<Credential[]> {
-  return JSON.parse(JSON.stringify(credentials));
+export async function getCredentials(organizationId = DEFAULT_ORG_ID): Promise<Credential[]> {
+  const orgCredentials = credentials.filter(c => c.organizationId === organizationId);
+  return JSON.parse(JSON.stringify(orgCredentials));
 }
 
-export async function getCredentialById(id: string): Promise<Credential | undefined> {
-  const credential = credentials.find(c => c.id === id);
+export async function getCredentialById(id: string, organizationId = DEFAULT_ORG_ID): Promise<Credential | undefined> {
+  const credential = credentials.find(c => c.id === id && c.organizationId === organizationId);
   return credential ? JSON.parse(JSON.stringify(credential)) : undefined;
 }
 
-export async function addCredential(credData: Omit<Credential, 'id'>): Promise<Credential> {
+export async function addCredential(credData: Omit<Credential, 'id' | 'organizationId'>, organizationId = DEFAULT_ORG_ID): Promise<Credential> {
   const newCredential: Credential = {
     id: `cred_${Date.now()}`,
+    organizationId,
     ...credData,
   };
   credentials.push(newCredential);
   return JSON.parse(JSON.stringify(newCredential));
 }
 
-export async function updateCredential(id: string, updatedData: Omit<Credential, 'id'>): Promise<Credential | undefined> {
-  const index = credentials.findIndex(c => c.id === id);
+export async function updateCredential(id: string, updatedData: Omit<Credential, 'id' | 'organizationId'>, organizationId = DEFAULT_ORG_ID): Promise<Credential | undefined> {
+  const index = credentials.findIndex(c => c.id === id && c.organizationId === organizationId);
   if (index > -1) {
-    credentials[index] = { id, ...updatedData };
+    credentials[index] = { id, organizationId, ...updatedData };
     return JSON.parse(JSON.stringify(credentials[index]));
   }
   return undefined;
 }
 
-export async function deleteCredential(id: string): Promise<{ success: boolean }> {
-  const index = credentials.findIndex(c => c.id === id);
+export async function deleteCredential(id: string, organizationId = DEFAULT_ORG_ID): Promise<{ success: boolean }> {
+  const index = credentials.findIndex(c => c.id === id && c.organizationId === organizationId);
   if (index > -1) {
     credentials.splice(index, 1);
     return { success: true };

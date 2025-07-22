@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -103,12 +104,14 @@ export function CredentialDialog({ open, onOpenChange, onCredentialSaved, creden
       };
 
       if (credentialToEdit) {
+        // In a real app, you'd get the org ID from the user's session
         await updateCredential(credentialToEdit.id, { ...values, type: values.type as 'API_KEY' | 'OAuth', authData });
         toast({
           title: 'Credential Updated',
           description: `Successfully updated "${values.appName}".`,
         });
       } else {
+        // In a real app, you'd get the org ID from the user's session
         await addCredential({ ...values, type: values.type as 'API_KEY' | 'OAuth', authData });
         toast({
           title: 'Credential Added',

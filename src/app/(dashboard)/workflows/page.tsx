@@ -34,6 +34,7 @@ export default function WorkflowsPage() {
 
   const loadWorkflows = useCallback(async () => {
     setIsLoading(true);
+    // In a real app, you'd get the org ID from the user's session
     const allWorkflows = await getWorkflows();
     setWorkflows(allWorkflows);
     setIsLoading(false);
@@ -49,7 +50,8 @@ export default function WorkflowsPage() {
 
   const handleDelete = async () => {
     if (!workflowToDelete || deleteConfirmation !== workflowToDelete.name) return;
-
+    
+    // In a real app, you'd get the org ID from the user's session
     await deleteWorkflow(workflowToDelete.id);
     setWorkflows(prev => prev.filter((wf) => wf.id !== workflowToDelete.id));
 
@@ -63,6 +65,7 @@ export default function WorkflowsPage() {
 
   const handleDuplicate = async (workflowToDuplicate: WorkflowType) => {
     try {
+        // In a real app, you'd get the org ID from the user's session
         await duplicateWorkflow(workflowToDuplicate.id);
         toast({
             title: 'Workflow Duplicated',

@@ -248,6 +248,7 @@ export type WorkflowVersion = {
 
 export type Workflow = {
   id: string;
+  organizationId: string;
   name: string;
   description?: string;
   status: 'Draft' | 'Published';
@@ -260,6 +261,7 @@ export type Workflow = {
 
 export type Credential = {
     id: string;
+    organizationId: string;
     appName: string;
     accountName: string;
     type: 'API_KEY' | 'OAuth';

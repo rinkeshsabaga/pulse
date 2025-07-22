@@ -59,6 +59,7 @@ export function CreateWorkflowDialog({ open, onOpenChange, onWorkflowCreated }: 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsCreating(true);
     try {
+      // In a real app, you would get the org ID from the user's session
       const newWorkflow = await addWorkflow(values);
       toast({
         title: 'Workflow Created',
