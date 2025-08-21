@@ -16,7 +16,7 @@ import { MoreHorizontal, FolderPlus, Plus, Workflow, Edit, Copy, Trash2, Eye } f
 import { CreateWorkflowDialog } from '@/components/create-workflow-dialog';
 import { RenameWorkflowDialog } from '@/components/rename-workflow-dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { getWorkflows, deleteWorkflow, duplicateWorkflow } from '@/lib/db';
+import { getWorkflows, deleteWorkflow, duplicateWorkflow } from '@/services/db';
 import type { Workflow as WorkflowType } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';

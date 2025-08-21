@@ -27,7 +27,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { addWorkflow } from '@/lib/db';
+import { addWorkflow } from '@/services/db';
 import { Loader2 } from 'lucide-react';
 
 const formSchema = z.object({

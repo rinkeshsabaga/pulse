@@ -17,7 +17,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Copy, Webhook, Loader2 } from 'lucide-react';
 import type { WorkflowStepData, WebhookEvent } from '@/lib/types';
-import { addTestWebhookEvent } from '@/lib/db';
+import { addTestWebhookEvent } from '@/services/db';
 import { ScrollArea } from './ui/scroll-area';
 import {
   Select,

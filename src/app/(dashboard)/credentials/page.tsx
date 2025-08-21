@@ -25,7 +25,7 @@ import {
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import type { Credential } from '@/lib/types';
-import { getCredentials, deleteCredential } from '@/lib/db';
+import { getCredentials, deleteCredential } from '@/services/db';
 import { CredentialDialog } from '@/components/credential-dialog';
 import { APP_DEFINITIONS } from '@/lib/app-definitions';
 

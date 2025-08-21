@@ -11,7 +11,7 @@
  */
 
 import { ai } from '@/ai/genkit';
-import { getCredentialById } from '@/lib/db';
+import { getCredentialById } from '@/services/db';
 import { resolveVariables } from '@/lib/utils';
 import { DatabaseQueryInputSchema, DatabaseQueryOutputSchema, type DatabaseQueryInput, type DatabaseQueryOutput } from '@/lib/types';
 

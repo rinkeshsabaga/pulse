@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { getWorkflowById } from '@/lib/db';
+import { getWorkflowById } from '@/services/db';
 import { notFound } from 'next/navigation';
 import { WorkflowCanvasWrapper } from '@/components/workflow-canvas-wrapper';
 

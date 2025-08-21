@@ -2,8 +2,8 @@
 // This is a mock database. In a real application, you would use a real database.
 'use server';
 
-import type { Workflow, WorkflowStepData, WebhookEvent, Credential } from './types';
-import { initialSteps } from './initial-data';
+import type { Workflow, WorkflowStepData, WebhookEvent, Credential } from '@/lib/types';
+import { initialSteps } from '@/lib/initial-data';
 import { v4 as uuidv4 } from 'uuid';
 
 // To persist the mock database across hot reloads in development,

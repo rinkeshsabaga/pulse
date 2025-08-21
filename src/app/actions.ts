@@ -1,7 +1,7 @@
 
 'use server';
 
-import { updateWorkflow } from '@/lib/db';
+import { updateWorkflow } from '@/services/db';
 import type { Workflow as WorkflowType, WorkflowStepData } from '@/lib/types';
 
 // In a real app, you would get the organizationId from the user's session

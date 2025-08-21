@@ -25,7 +25,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { addCredential, updateCredential } from '@/lib/db';
+import { addCredential, updateCredential } from '@/services/db';
 import type { Credential } from '@/lib/types';
 import { KeyRound, Loader2 } from 'lucide-react';
 

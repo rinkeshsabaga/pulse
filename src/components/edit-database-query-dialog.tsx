@@ -26,7 +26,7 @@ import { VariableExplorer } from './variable-explorer';
 import { JsonTreeView } from './json-tree-view';
 import { ScrollArea } from './ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
-import { getCredentials } from '@/lib/db';
+import { getCredentials } from '@/services/db';
 import { databaseQuery } from '@/ai/flows/database-query-flow';
 
 type EditDatabaseQueryDialogProps = {
