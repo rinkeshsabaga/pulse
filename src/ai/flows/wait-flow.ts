@@ -9,7 +9,6 @@
  */
 
 import { ai } from '@/ai/genkit';
-import { sleep } from 'genkit';
 import { z } from 'zod';
 import {
   parse,
@@ -19,7 +18,6 @@ import {
   differenceInMilliseconds,
   getDay,
   set,
-  nextDay,
 } from 'date-fns';
 import type { WaitInput, WaitOutput, OfficeHoursDay } from '@/lib/types';
 import { WaitInputSchema, WaitOutputSchema } from '@/lib/types';
@@ -49,6 +47,7 @@ const waitFlow = ai.defineFlow(
       case 'duration': {
         const value = input.waitDurationValue || 0;
         const unit = input.waitDurationUnit || 'minutes';
+        if (unit === 'seconds') waitMs = value * 1000;
         if (unit === 'minutes') waitMs = value * 60 * 1000;
         if (unit === 'hours') waitMs = value * 60 * 60 * 1000;
         if (unit === 'days') waitMs = value * 24 * 60 * 60 * 1000;
@@ -89,7 +88,8 @@ const waitFlow = ai.defineFlow(
             if (getDay(now) === targetDayIndex && isAfter(targetDateTime, now)) {
                 return targetDateTime;
             } else {
-                return set(nextDay(now, targetDayIndex), { hours, minutes, seconds: 0, milliseconds: 0 });
+                const daysUntilTarget = (targetDayIndex - getDay(now) + 7) % 7 || 7;
+                return set(addDays(now, daysUntilTarget), { hours, minutes, seconds: 0, milliseconds: 0 });
             }
         });
 
@@ -164,7 +164,7 @@ const waitFlow = ai.defineFlow(
     }
 
     if (waitMs > 0) {
-      await sleep(waitMs);
+      await new Promise(resolve => setTimeout(resolve, waitMs));
     }
 
     return { waitedMilliseconds: Math.max(0, waitMs) };

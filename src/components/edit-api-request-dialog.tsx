@@ -170,8 +170,8 @@ export function EditApiRequestDialog({ open, onOpenChange, onSave, step, dataCon
       case 'json':
         return (
             <div className="relative">
-                <Textarea
-                    value={typeof body.content === 'string' ? body.content : JSON.stringify(body.content, null, 2)}
+              <Textarea
+                    value={body.content}
                     onChange={e => setBody({ ...body, content: e.target.value })}
                     placeholder={'{\n  "key": "value",\n  "nested": {\n    "id": "{{trigger.body.user.id}}"\n  }\n}'}
                     rows={10}

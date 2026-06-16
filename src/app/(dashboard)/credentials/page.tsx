@@ -24,8 +24,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
-import type { Credential } from '@/lib/types';
-import { getCredentials, deleteCredential } from '@/services/db';
+import { getCredentials, deleteCredential, type CredentialPublic } from '@/services/credentials';
 import { CredentialDialog } from '@/components/credential-dialog';
 import { APP_DEFINITIONS } from '@/lib/app-definitions';
 
@@ -46,11 +45,11 @@ const iconClassMap: Record<string, string> = APP_DEFINITIONS.reduce((acc, app) =
 
 
 export default function CredentialsPage() {
-  const [credentials, setCredentials] = useState<Credential[]>([]);
+  const [credentials, setCredentials] = useState<CredentialPublic[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [credentialToEdit, setCredentialToEdit] = useState<Credential | null>(null);
-  const [credentialToDelete, setCredentialToDelete] = useState<Credential | null>(null);
+  const [credentialToEdit, setCredentialToEdit] = useState<CredentialPublic | null>(null);
+  const [credentialToDelete, setCredentialToDelete] = useState<CredentialPublic | null>(null);
   const { toast } = useToast();
 
   const loadCredentials = useCallback(async () => {
@@ -74,7 +73,7 @@ export default function CredentialsPage() {
     loadCredentials();
   }, [loadCredentials]);
 
-  const handleOpenDialog = (credential?: Credential) => {
+  const handleOpenDialog = (credential?: CredentialPublic) => {
     setCredentialToEdit(credential || null);
     setIsDialogOpen(true);
   };
@@ -82,15 +81,22 @@ export default function CredentialsPage() {
   const handleDelete = async () => {
     if (!credentialToDelete) return;
 
-    // In a real app, you'd get the org ID from the user's session
-    await deleteCredential(credentialToDelete.id);
-    setCredentials(prev => prev.filter((cred) => cred.id !== credentialToDelete.id));
-
-    toast({
-      title: 'Credential Deleted',
-      description: `"${credentialToDelete.appName}" credential has been successfully deleted.`,
-    });
-    setCredentialToDelete(null);
+    try {
+      const result = await deleteCredential(credentialToDelete.id);
+      if (!result.success) throw new Error('Credential was not found.');
+      setCredentials(prev => prev.filter((cred) => cred.id !== credentialToDelete.id));
+      toast({
+        title: 'Credential Deleted',
+        description: `"${credentialToDelete.appName}" credential has been revoked and deleted.`,
+      });
+      setCredentialToDelete(null);
+    } catch (error) {
+      toast({
+        variant: 'destructive',
+        title: 'Could not delete credential',
+        description: error instanceof Error ? error.message : 'The credential could not be revoked.',
+      });
+    }
   };
 
 

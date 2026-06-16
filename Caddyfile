@@ -1,0 +1,5 @@
+# Replace your-domain.com with your actual domain
+# Caddy will automatically provision an SSL certificate for it.
+app.sabaga.in {
+    reverse_proxy web:3000
+}

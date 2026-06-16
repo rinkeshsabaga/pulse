@@ -1,13 +1,21 @@
-
-import type {Metadata} from 'next';
+import type { Metadata } from 'next';
+import { Inter } from 'next/font/google';
 import './globals.css';
-import { Toaster } from "@/components/ui/toaster"
+import 'reactflow/dist/style.css';
+import { ClerkProvider } from '@clerk/nextjs';
 import { ThemeProvider } from '@/components/theme-provider';
-import { cn } from '@/lib/utils';
+import { Toaster } from '@/components/ui/toaster';
+
+const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
 
 export const metadata: Metadata = {
-  title: 'SabagaPulse',
-  description: 'Design, execute, and monitor workflows with AI-powered function generation.',
+  title: {
+    default: 'SabagaPulse — Workflow Automation',
+    template: '%s | SabagaPulse',
+  },
+  description:
+    'SabagaPulse is a powerful workflow automation platform that connects your apps and automates repetitive tasks.',
+  keywords: ['workflow automation', 'SaaS', 'no-code', 'integrations', 'zapier alternative'],
 };
 
 export default function RootLayout({
@@ -16,24 +24,20 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning className="h-full">
-      <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
-        <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
-      </head>
-      <body className={cn("font-body antialiased h-full")}>
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
-        >
-          {children}
-          <Toaster />
-        </ThemeProvider>
-      </body>
-    </html>
+    <ClerkProvider>
+      <html lang="en" suppressHydrationWarning className="h-full">
+        <body className={`${inter.variable} h-full font-sans antialiased`}>
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="system"
+            enableSystem
+            disableTransitionOnChange
+          >
+            {children}
+            <Toaster />
+          </ThemeProvider>
+        </body>
+      </html>
+    </ClerkProvider>
   );
 }

@@ -16,7 +16,7 @@ import { MoreHorizontal, FolderPlus, Plus, Workflow, Edit, Copy, Trash2, Eye } f
 import { CreateWorkflowDialog } from '@/components/create-workflow-dialog';
 import { RenameWorkflowDialog } from '@/components/rename-workflow-dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { getWorkflows, deleteWorkflow, duplicateWorkflow } from '@/services/db';
+import { getWorkflows, deleteWorkflow, duplicateWorkflow } from '@/services/workflows';
 import type { Workflow as WorkflowType } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -153,8 +153,8 @@ export default function WorkflowsPage() {
                       {workflow.description && (
                         <p className="text-sm text-muted-foreground">{workflow.description}</p>
                       )}
-                      <Badge variant={workflow.status === 'Draft' ? 'secondary' : 'default'} className="mt-1">
-                        {workflow.status}
+                      <Badge variant={workflow.status === 'DRAFT' ? 'secondary' : 'default'} className="mt-1">
+                        {workflow.status.charAt(0) + workflow.status.slice(1).toLowerCase()}
                       </Badge>
                     </div>
                   </div>

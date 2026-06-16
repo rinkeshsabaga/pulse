@@ -21,7 +21,7 @@ const initialWorkflows: Workflow[] = [
     organizationId: DEFAULT_ORG_ID,
     name: 'Onboarding Email Sequence', 
     description: 'Sends a series of emails to new users.', 
-    status: 'Published', 
+    status: 'PUBLISHED',
     steps: initialSteps,
     version: 1,
     history: [
@@ -33,7 +33,7 @@ const initialWorkflows: Workflow[] = [
     organizationId: DEFAULT_ORG_ID,
     name: 'Daily Report', 
     description: 'Generates and emails a daily sales report.', 
-    status: 'Published', 
+    status: 'PUBLISHED',
     steps: [],
     version: 1,
     history: [
@@ -45,7 +45,7 @@ const initialWorkflows: Workflow[] = [
     organizationId: DEFAULT_ORG_ID,
     name: 'Failed Payment Alert', 
     description: 'Notifies the team on Slack about failed payments.', 
-    status: 'Draft', 
+    status: 'DRAFT',
     steps: [],
     version: 1,
     history: [
@@ -84,8 +84,8 @@ if (!global.__credentials__) {
 }
 
 
-const workflows: Workflow[] = global.__workflows__;
-const credentials: Credential[] = global.__credentials__;
+const workflows: Workflow[] = global.__workflows__ ?? [];
+const credentials: Credential[] = global.__credentials__ ?? [];
 
 
 export async function getWorkflows(organizationId = DEFAULT_ORG_ID): Promise<Workflow[]> {
@@ -108,7 +108,7 @@ export async function addWorkflow(workflowData: { name: string; description?: st
     organizationId,
     name: workflowData.name,
     description: workflowData.description || '',
-    status: 'Draft',
+    status: 'DRAFT',
     steps: [],
     version: 1,
     history: [], // Initialize with an empty history array
@@ -126,7 +126,7 @@ export async function duplicateWorkflow(id: string, organizationId = DEFAULT_ORG
     ...originalWorkflow,
     id: `wf_${Date.now()}`,
     name: `Copy of ${originalWorkflow.name}`,
-    status: 'Draft',
+    status: 'DRAFT',
     version: 1,
     history: [],
   };

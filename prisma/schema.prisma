@@ -1,0 +1,196 @@
+// ─────────────────────────────────────────────────────────────────────────────
+// Prisma Schema — Full Multi-Tenant SaaS
+// ─────────────────────────────────────────────────────────────────────────────
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─── Organizations ────────────────────────────────────────────────────────────
+
+model Organization {
+  id                   String   @id @default(cuid())
+  clerkOrgId           String   @unique
+  name                 String
+  slug                 String   @unique
+  plan                 Plan     @default(FREE)
+  stripeCustomerId     String?
+  stripeSubscriptionId String?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  members     Member[]
+  workflows   Workflow[]
+  credentials Credential[]
+  runs        WorkflowRun[]
+  usage       UsageRecord[]
+  auditLogs   AuditLog[]
+}
+
+model Member {
+  id             String     @id @default(cuid())
+  clerkUserId    String
+  organizationId String
+  role           MemberRole @default(MEMBER)
+  createdAt      DateTime   @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([clerkUserId, organizationId])
+  @@index([clerkUserId])
+  @@index([organizationId])
+}
+
+enum MemberRole {
+  OWNER
+  ADMIN
+  MEMBER
+  VIEWER
+}
+
+enum Plan {
+  FREE
+  STARTER
+  PRO
+  ENTERPRISE
+}
+
+// ─── Workflows ────────────────────────────────────────────────────────────────
+
+model Workflow {
+  id             String         @id @default(cuid())
+  organizationId String
+  name           String
+  description    String?
+  status         WorkflowStatus @default(DRAFT)
+  steps          Json           @default("[]")
+  nodes          Json?
+  edges          Json?
+  version        Int            @default(1)
+  webhookSecret  String?
+  lastRunAt      DateTime?
+  lastRunStatus  RunStatus?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  organization Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  history      WorkflowVersion[]
+  runs         WorkflowRun[]
+
+  @@index([organizationId])
+  @@index([status])
+}
+
+enum WorkflowStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+model WorkflowVersion {
+  id         String   @id @default(cuid())
+  workflowId String
+  version    Int
+  steps      Json
+  createdAt  DateTime @default(now())
+
+  workflow Workflow @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+
+  @@index([workflowId])
+}
+
+// ─── Workflow Runs ────────────────────────────────────────────────────────────
+
+model WorkflowRun {
+  id             String    @id @default(cuid())
+  workflowId     String
+  organizationId String
+  status         RunStatus @default(PENDING)
+  trigger        String    @default("manual")
+  triggerData    Json?
+  stepLogs       Json      @default("[]")
+  startedAt      DateTime  @default(now())
+  finishedAt     DateTime?
+  durationMs     Int?
+  error          String?
+  inngestRunId   String?
+
+  workflow     Workflow     @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([workflowId])
+  @@index([organizationId])
+  @@index([startedAt])
+  @@index([status])
+}
+
+enum RunStatus {
+  PENDING
+  RUNNING
+  SUCCESS
+  FAILED
+  CANCELLED
+  TIMED_OUT
+}
+
+// ─── Credentials ──────────────────────────────────────────────────────────────
+
+model Credential {
+  id                String         @id @default(cuid())
+  organizationId    String
+  appName           String
+  accountName       String
+  type              CredentialType
+  encryptedData     String
+  nangoConnectionId String?
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+}
+
+enum CredentialType {
+  API_KEY
+  OAUTH
+  DATABASE_URL
+  BASIC_AUTH
+}
+
+// ─── Usage & Billing ──────────────────────────────────────────────────────────
+
+model UsageRecord {
+  id             String   @id @default(cuid())
+  organizationId String
+  workflowRunId  String?
+  creditsUsed    Int      @default(1)
+  period         String   // "YYYY-MM" format e.g. "2025-06"
+  createdAt      DateTime @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, period])
+}
+
+// ─── Audit Logs ───────────────────────────────────────────────────────────────
+
+model AuditLog {
+  id             String   @id @default(cuid())
+  organizationId String
+  clerkUserId    String
+  action         String   // e.g. "workflow.create", "credential.delete"
+  resourceType   String   // "workflow" | "credential" | "member" | etc.
+  resourceId     String?
+  metadata       Json?
+  createdAt      DateTime @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@index([createdAt])
+}

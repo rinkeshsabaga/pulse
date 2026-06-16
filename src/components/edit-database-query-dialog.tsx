@@ -21,12 +21,12 @@ import {
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Database, Play, Loader2 } from 'lucide-react';
-import type { WorkflowStepData, Credential } from '@/lib/types';
+import type { WorkflowStepData } from '@/lib/types';
 import { VariableExplorer } from './variable-explorer';
 import { JsonTreeView } from './json-tree-view';
 import { ScrollArea } from './ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
-import { getCredentials } from '@/services/db';
+import { getCredentials, type CredentialPublic } from '@/services/credentials';
 import { databaseQuery } from '@/ai/flows/database-query-flow';
 
 type EditDatabaseQueryDialogProps = {
@@ -40,7 +40,7 @@ type EditDatabaseQueryDialogProps = {
 export function EditDatabaseQueryDialog({ open, onOpenChange, onSave, step, dataContext = {} }: EditDatabaseQueryDialogProps) {
   const [credentialId, setCredentialId] = useState('');
   const [query, setQuery] = useState('');
-  const [credentials, setCredentials] = useState<Credential[]>([]);
+  const [credentials, setCredentials] = useState<CredentialPublic[]>([]);
   
   const [isTesting, setIsTesting] = useState(false);
   const [testOutput, setTestOutput] = useState<Record<string, any> | null>(null);
@@ -48,9 +48,8 @@ export function EditDatabaseQueryDialog({ open, onOpenChange, onSave, step, data
 
   useEffect(() => {
     const fetchCredentials = async () => {
-      // In a real app, you would get org ID from the user's session
       const creds = await getCredentials();
-      setCredentials(creds);
+      setCredentials(creds.filter((credential) => credential.type === 'DATABASE_URL'));
     };
     if (open) {
       fetchCredentials();
@@ -78,20 +77,20 @@ export function EditDatabaseQueryDialog({ open, onOpenChange, onSave, step, data
       const result = await databaseQuery({ credentialId, query, dataContext });
       setTestOutput({
         status: result.success ? 'Success' : 'Error',
-        details: result.error || 'Query executed successfully (simulated).',
+        details: result.error || 'Read-only query executed successfully.',
         output: result.rows,
       });
     } catch (error: any) {
       console.error('Failed to run test query:', error);
       setTestOutput({
         status: 'Error',
-        details: 'Failed to simulate running the query.',
+        details: 'Failed to run the read-only query.',
         error: error.message,
       });
       toast({
         variant: 'destructive',
         title: 'Test Failed',
-        description: 'Could not simulate running the query.',
+        description: 'Could not run the read-only query.',
       });
     } finally {
       setIsTesting(false);
@@ -164,7 +163,7 @@ export function EditDatabaseQueryDialog({ open, onOpenChange, onSave, step, data
             <div className="space-y-2">
               <Label>Test Query</Label>
               <p className="text-sm text-muted-foreground">
-                Click the button to simulate this query. No actual database connection will be made.
+                Run the query in a read-only transaction with a 10-second timeout.
               </p>
               <Button onClick={handleTestAction} disabled={isTesting || !credentialId} className="w-full">
                 {isTesting ? <Loader2 className="animate-spin" /> : <Play />}
@@ -180,9 +179,9 @@ export function EditDatabaseQueryDialog({ open, onOpenChange, onSave, step, data
                   ) : (
                     <div className="flex items-center justify-center h-full text-sm text-muted-foreground p-10 text-center">
                       {isTesting ? (
-                        <p>Running simulation...</p>
+                        <p>Running query...</p>
                       ) : (
-                        <p>Click "Test Query" to see a mock response.</p>
+                        <p>Click "Test Query" to inspect the real database response.</p>
                       )}
                     </div>
                   )}

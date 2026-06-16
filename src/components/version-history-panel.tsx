@@ -31,10 +31,19 @@ type VersionHistoryPanelProps = {
   isOpen: boolean;
   onClose: () => void;
   history: WorkflowVersion[];
+  currentVersion: number;
+  currentStepCount: number;
   onRevert: (version: WorkflowVersion) => void;
 };
 
-export function VersionHistoryPanel({ isOpen, onClose, history, onRevert }: VersionHistoryPanelProps) {
+export function VersionHistoryPanel({
+  isOpen,
+  onClose,
+  history,
+  currentVersion,
+  currentStepCount,
+  onRevert,
+}: VersionHistoryPanelProps) {
 
   // Sort history from newest to oldest, ensuring history is an array.
   const sortedHistory = Array.isArray(history) 
@@ -55,6 +64,23 @@ export function VersionHistoryPanel({ isOpen, onClose, history, onRevert }: Vers
         </SheetHeader>
         <ScrollArea className="h-[calc(100%-80px)] mt-4 pr-4">
           <div className="space-y-6">
+            <div className="flex items-start gap-4">
+              <div className="flex flex-col items-center">
+                <div className="rounded-full bg-primary p-2 text-primary-foreground">
+                  <GitCommit className="h-5 w-5" />
+                </div>
+                {sortedHistory.length > 0 && <div className="mt-2 h-16 w-px bg-border" />}
+              </div>
+              <div className="flex-1 pt-1">
+                <div className="flex items-center gap-2 font-semibold">
+                  Version {currentVersion}
+                  <Badge>Current</Badge>
+                </div>
+                <div className="mt-2">
+                  <Badge variant="secondary">{currentStepCount} steps</Badge>
+                </div>
+              </div>
+            </div>
             {sortedHistory.map((version) => (
               <div key={version.version} className="flex items-start gap-4">
                 <div className="flex flex-col items-center">
@@ -95,7 +121,7 @@ export function VersionHistoryPanel({ isOpen, onClose, history, onRevert }: Vers
                 </div>
               </div>
             ))}
-             <div className="flex items-start gap-4">
+             {sortedHistory.length === 0 && <div className="flex items-start gap-4">
                 <div className="flex flex-col items-center">
                     <div className="p-2 bg-muted rounded-full">
                         <GitCommit className="h-5 w-5 text-muted-foreground" />
@@ -104,7 +130,7 @@ export function VersionHistoryPanel({ isOpen, onClose, history, onRevert }: Vers
                 <div className="flex-1 pt-1">
                     <div className="font-semibold">Workflow Created</div>
                 </div>
-            </div>
+            </div>}
           </div>
         </ScrollArea>
       </SheetContent>

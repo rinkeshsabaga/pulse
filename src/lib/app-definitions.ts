@@ -36,6 +36,51 @@ export type AppDefinition = {
 
 export const APP_DEFINITIONS: AppDefinition[] = [
   {
+    name: 'Shopify',
+    icon: ShoppingCart,
+    iconClassName: 'text-[#95BF47]',
+    triggers: [
+      { value: 'order_created', label: 'Order Created' },
+      { value: 'order_paid', label: 'Order Paid' },
+      { value: 'refund_created', label: 'Refund Created' },
+    ],
+    actions: [
+      { value: 'create_customer', label: 'Create Customer' },
+      { value: 'add_order_tag', label: 'Add Tag to Order' },
+      { value: 'create_draft_order', label: 'Create Draft Order' },
+    ],
+  },
+  {
+    name: 'WooCommerce',
+    icon: ShoppingCart,
+    iconClassName: 'text-[#96588A]',
+    triggers: [
+      { value: 'order_created', label: 'Order Created' },
+      { value: 'order_updated', label: 'Order Updated' },
+      { value: 'product_low_stock', label: 'Product Low Stock' },
+    ],
+    actions: [
+      { value: 'create_order', label: 'Create Order' },
+      { value: 'update_order_status', label: 'Update Order Status' },
+      { value: 'create_customer', label: 'Create Customer' },
+    ],
+  },
+  {
+    name: 'Gmail',
+    icon: Mail,
+    iconClassName: 'text-[#EA4335]',
+    triggers: [
+      { value: 'new_email', label: 'New Email' },
+      { value: 'new_labeled_email', label: 'New Labeled Email' },
+      { value: 'new_attachment', label: 'New Attachment' },
+    ],
+    actions: [
+      { value: 'send_email', label: 'Send Email' },
+      { value: 'create_draft', label: 'Create Draft' },
+      { value: 'add_label', label: 'Add Label to Email' },
+    ],
+  },
+  {
     name: 'Slack',
     icon: MessageSquare,
     iconClassName: 'text-[#4A154B]',
@@ -107,6 +152,95 @@ export const APP_DEFINITIONS: AppDefinition[] = [
         { value: 'send_message', label: 'Send Message' },
         { value: 'add_role', label: 'Add Role to User' },
         { value: 'kick_user', label: 'Kick User' },
+    ],
+  },
+  {
+    name: 'Twilio WhatsApp',
+    icon: MessageSquare,
+    iconClassName: 'text-[#25D366]',
+    triggers: [
+      { value: 'message_received', label: 'WhatsApp Message Received' },
+      { value: 'message_status_changed', label: 'Message Status Changed' },
+    ],
+    actions: [
+      { value: 'send_whatsapp_message', label: 'Send WhatsApp Message' },
+      { value: 'send_sms', label: 'Send SMS' },
+      { value: 'make_call', label: 'Make Phone Call' },
+    ],
+  },
+  {
+    name: 'Stripe',
+    icon: AppWindow,
+    iconClassName: 'text-[#635BFF]',
+    triggers: [
+      { value: 'payment_succeeded', label: 'Payment Succeeded' },
+      { value: 'checkout_completed', label: 'Checkout Session Completed' },
+      { value: 'invoice_payment_failed', label: 'Invoice Payment Failed' },
+    ],
+    actions: [
+      { value: 'create_customer', label: 'Create Customer' },
+      { value: 'create_invoice_item', label: 'Create Invoice Item' },
+      { value: 'send_invoice', label: 'Send Invoice' },
+    ],
+  },
+  {
+    name: 'Airtable',
+    icon: AppWindow,
+    iconClassName: 'text-[#18BFFF]',
+    triggers: [
+      { value: 'new_record', label: 'New Record' },
+      { value: 'record_updated', label: 'Record Updated' },
+      { value: 'new_view_record', label: 'New Record in View' },
+    ],
+    actions: [
+      { value: 'create_record', label: 'Create Record' },
+      { value: 'update_record', label: 'Update Record' },
+      { value: 'find_records', label: 'Find Records' },
+    ],
+  },
+  {
+    name: 'Notion',
+    icon: AppWindow,
+    iconClassName: 'text-neutral-900 dark:text-neutral-100',
+    triggers: [
+      { value: 'page_created', label: 'Page Created' },
+      { value: 'database_updated', label: 'Database Updated' },
+      { value: 'new_database_item', label: 'New Database Item' },
+    ],
+    actions: [
+      { value: 'create_page', label: 'Create Page' },
+      { value: 'update_page_properties', label: 'Update Page Properties' },
+      { value: 'append_block_children', label: 'Append Blocks to Page' },
+    ],
+  },
+  {
+    name: 'Zendesk',
+    icon: AppWindow,
+    iconClassName: 'text-[#03363D]',
+    triggers: [
+      { value: 'ticket_created', label: 'Ticket Created' },
+      { value: 'ticket_updated', label: 'Ticket Updated' },
+      { value: 'new_user', label: 'New User' },
+    ],
+    actions: [
+      { value: 'create_ticket', label: 'Create Ticket' },
+      { value: 'add_ticket_comment', label: 'Add Ticket Comment' },
+      { value: 'update_ticket_status', label: 'Update Ticket Status' },
+    ],
+  },
+  {
+    name: 'Freshdesk',
+    icon: AppWindow,
+    iconClassName: 'text-[#25C16F]',
+    triggers: [
+      { value: 'ticket_created', label: 'Ticket Created' },
+      { value: 'ticket_updated', label: 'Ticket Updated' },
+      { value: 'contact_created', label: 'Contact Created' },
+    ],
+    actions: [
+      { value: 'create_ticket', label: 'Create Ticket' },
+      { value: 'reply_to_ticket', label: 'Reply to Ticket' },
+      { value: 'update_ticket_status', label: 'Update Ticket Status' },
     ],
   },
   {

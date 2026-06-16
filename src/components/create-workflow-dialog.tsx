@@ -27,7 +27,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { addWorkflow } from '@/services/db';
+import { createWorkflow } from '@/services/workflows';
 import { Loader2 } from 'lucide-react';
 
 const formSchema = z.object({
@@ -60,7 +60,7 @@ export function CreateWorkflowDialog({ open, onOpenChange, onWorkflowCreated }: 
     setIsCreating(true);
     try {
       // In a real app, you would get the org ID from the user's session
-      const newWorkflow = await addWorkflow(values);
+      const newWorkflow = await createWorkflow(values);
       toast({
         title: 'Workflow Created',
         description: `Successfully created "${newWorkflow.name}". Redirecting...`,

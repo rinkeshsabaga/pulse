@@ -29,7 +29,7 @@ export const WaitModeSchema = z.enum(['duration', 'datetime', 'office_hours', 't
 export const WaitInputSchema = z.object({
   waitMode: WaitModeSchema.default('duration'),
   waitDurationValue: z.number().optional(),
-  waitDurationUnit: z.enum(['minutes', 'hours', 'days']).optional(),
+  waitDurationUnit: z.enum(['seconds', 'minutes', 'hours', 'days']).optional(),
   waitDateTime: z.string().datetime({ message: "Invalid datetime string" }).optional(),
   waitOfficeHoursDays: z.array(OfficeHoursDaySchema).optional(),
   waitOfficeHoursStartTime: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, { message: "Invalid time format, expected HH:mm" }).optional(),
@@ -49,7 +49,7 @@ export type WaitOutput = z.infer<typeof WaitOutputSchema>;
 export type WaitData = {
     waitMode?: WaitMode;
     waitDurationValue?: number;
-    waitDurationUnit?: 'minutes' | 'hours' | 'days';
+    waitDurationUnit?: 'seconds' | 'minutes' | 'hours' | 'days';
     waitDateTime?: string; // ISO string
     waitOfficeHoursDays?: OfficeHoursDay[];
     waitOfficeHoursStartTime?: string; // "HH:mm"
@@ -73,6 +73,7 @@ export type WebhookEvent = {
   receivedAt: string;
   method: string;
   headers: Record<string, string>;
+  query?: Record<string, string>;
   body: any;
 };
 
@@ -144,11 +145,14 @@ export type DatabaseQueryData = {
 export type AppTriggerData = {
     app?: string;
     event?: string;
+    credentialId?: string;
+    storeUrl?: string;
 };
 
 export type AppActionData = {
     app?: string;
     action?: string;
+    credentialId?: string;
     params?: Record<string, any>;
 };
 
@@ -208,11 +212,17 @@ export const RunWorkflowOutputSchema = z.object({
 export type RunWorkflowOutput = z.infer<typeof RunWorkflowOutputSchema>;
 
 
-export type StepData = WaitData & ShopifyTriggerData & ApiRequestData & EmailData & DatabaseQueryData & AppTriggerData & AppActionData & ConditionData & ParallelData & {
+export type StepData = WaitData & ShopifyTriggerData & ApiRequestData & {
     nextStepId?: string;
     webhookUrl?: string;
     events?: WebhookEvent[];
     selectedEventId?: string | null;
+    appTrigger?: AppTriggerData;
+    appAction?: AppActionData;
+    emailData?: EmailData;
+    databaseQueryData?: DatabaseQueryData;
+    conditionData?: ConditionData;
+    branches?: ParallelBranch[];
     cronString?: string;
     scheduleMode?: 'cron' | 'interval' | 'daily' | 'weekly' | 'monthly';
     scheduleIntervalValue?: number;
@@ -240,9 +250,17 @@ export type WorkflowStepData = {
   data?: StepData;
 };
 
+export function isAppActionStep(step: WorkflowStepData): boolean {
+  return step.title === 'App Action' || Boolean(step.data?.appAction);
+}
+
+export function isAppTriggerStep(step: WorkflowStepData): boolean {
+  return step.title === 'App Event' || Boolean(step.data?.appTrigger);
+}
+
 export type WorkflowVersion = {
   version: number;
-  date: string; // ISO string
+  date: string | Date;
   steps: WorkflowStepData[];
 }
 
@@ -250,13 +268,14 @@ export type Workflow = {
   id: string;
   organizationId: string;
   name: string;
-  description?: string;
-  status: 'Draft' | 'Published';
+  description?: string | null;
+  status: 'DRAFT' | 'PUBLISHED' | 'ARCHIVED';
   steps: WorkflowStepData[];
   version: number;
+  webhookSecret?: string | null;
   history: WorkflowVersion[];
-  nodes?: Node[];
-  edges?: Edge[];
+  nodes?: Node[] | null;
+  edges?: Edge[] | null;
 };
 
 export type Credential = {
@@ -264,9 +283,13 @@ export type Credential = {
     organizationId: string;
     appName: string;
     accountName: string;
-    type: 'API_KEY' | 'OAuth';
+    type: 'API_KEY' | 'OAUTH' | 'DATABASE_URL' | 'BASIC_AUTH';
+    nangoConnectionId?: string | null;
     authData: {
         apiKey?: string;
         apiSecret?: string;
+        username?: string;
+        password?: string;
+        connectionString?: string;
     };
 };

@@ -17,7 +17,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Copy, Webhook, Loader2 } from 'lucide-react';
 import type { WorkflowStepData, WebhookEvent } from '@/lib/types';
-import { addTestWebhookEvent } from '@/services/db';
+import { randomBytes } from 'crypto';
 import { ScrollArea } from './ui/scroll-area';
 import {
   Select,
@@ -68,21 +68,24 @@ export function EditTriggerDialog({ step, workflowId, open, onOpenChange, onSave
     setIsGenerating(true);
     try {
       // In a real app, you'd get the org ID from the user's session
-      const updatedWorkflow = await addTestWebhookEvent(workflowId, step.id);
-      if (updatedWorkflow) {
-        const updatedStep = updatedWorkflow.steps.find(s => s.id === step.id);
-        const newEvents = updatedStep?.data?.events || [];
-        setEvents(newEvents);
-        if (newEvents.length > 0 && !selectedEventId) {
-            setSelectedEventId(newEvents[0].id);
-        } else if (newEvents.length > 0) {
-            setSelectedEventId(newEvents[0].id);
-        }
-        toast({
-            title: "Test event generated",
-            description: "A new test event has been added to the list."
-        });
-      }
+      // Just generate a mock event client-side for now
+      const mockEvent: WebhookEvent = {
+        id: `evt_${Math.random().toString(36).substring(2, 9)}`,
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: { test: true, timestamp: Date.now(), message: "Hello World" },
+        query: {},
+        receivedAt: new Date().toISOString()
+      };
+      
+      const newEvents = [mockEvent, ...events];
+      setEvents(newEvents);
+      setSelectedEventId(mockEvent.id);
+      
+      toast({
+          title: "Test event generated",
+          description: "A new test event has been added to the list."
+      });
     } catch (e) {
       toast({ variant: 'destructive', title: 'Error', description: 'Could not generate test event.'});
     } finally {

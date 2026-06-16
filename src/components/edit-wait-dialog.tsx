@@ -54,7 +54,7 @@ const allDays = dayOptions.map(d => d.id as OfficeHoursDay);
 export function EditWaitDialog({ step, open, onOpenChange, onSave, dataContext = {} }: EditWaitDialogProps) {
   const [mode, setMode] = useState<WaitMode>('duration');
   const [durationValue, setDurationValue] = useState(5);
-  const [durationUnit, setDurationUnit] = useState<'minutes' | 'hours' | 'days'>('minutes');
+  const [durationUnit, setDurationUnit] = useState<'seconds' | 'minutes' | 'hours' | 'days'>('minutes');
   const [dateTime, setDateTime] = useState<Date | undefined>(new Date());
   const [officeHoursDays, setOfficeHoursDays] = useState<OfficeHoursDay[]>(['mon', 'tue', 'wed', 'thu', 'fri']);
   const [officeHoursStartTime, setOfficeHoursStartTime] = useState('09:00');
@@ -196,6 +196,7 @@ export function EditWaitDialog({ step, open, onOpenChange, onSave, dataContext =
                                 <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
+                                <SelectItem value="seconds">Seconds</SelectItem>
                                 <SelectItem value="minutes">Minutes</SelectItem>
                                 <SelectItem value="hours">Hours</SelectItem>
                                 <SelectItem value="days">Days</SelectItem>

@@ -11,9 +11,10 @@
  */
 
 import { ai } from '@/ai/genkit';
-import { getCredentialById } from '@/services/db';
+import { getCredentialById, getCredentialSecrets } from '@/services/credentials';
 import { resolveVariables } from '@/lib/utils';
 import { DatabaseQueryInputSchema, DatabaseQueryOutputSchema, type DatabaseQueryInput, type DatabaseQueryOutput } from '@/lib/types';
+import type { PoolClient } from 'pg';
 
 
 const databaseQueryFlow = ai.defineFlow(
@@ -23,11 +24,8 @@ const databaseQueryFlow = ai.defineFlow(
     outputSchema: DatabaseQueryOutputSchema,
   },
   async (input) => {
-    // In a real application, you would get the organization ID from the user's session
-    // and pass it to getCredentialById.
     const credential = await getCredentialById(input.credentialId);
-    if (!credential) {
-      console.error(`Credential with ID ${input.credentialId} not found.`);
+    if (!credential || credential.type !== 'DATABASE_URL') {
       return {
         success: false,
         rows: [],
@@ -36,36 +34,31 @@ const databaseQueryFlow = ai.defineFlow(
     }
 
     const resolvedQuery = resolveVariables(input.query, input.dataContext || {});
+    const secrets = await getCredentialSecrets(credential.id, credential.organizationId);
+    const connectionString = typeof secrets.connectionString === 'string' ? secrets.connectionString : '';
+    if (!connectionString) return { success: false, rows: [], error: 'Database connection URL is missing.' };
 
-    console.log('--- SIMULATING DATABASE QUERY ---');
-    console.log('Connecting with:', credential.appName, `(${credential.accountName})`);
-    console.log('Executing Query:', resolvedQuery);
-    console.log('---------------------------------');
-
-    // Simulate different results based on the query.
-    let mockRows = [];
-    if (/select.*from.*users/i.test(resolvedQuery)) {
-        mockRows = [
-            { id: 1, name: 'Alice', email: 'alice@example.com', signup_date: '2023-01-15' },
-            { id: 2, name: 'Bob', email: 'bob@example.com', signup_date: '2023-02-20' },
-            { id: 3, name: 'Charlie', email: 'charlie@example.com', signup_date: '2023-03-10' },
-        ];
-    } else if (/select.*from.*orders/i.test(resolvedQuery)) {
-         mockRows = [
-            { order_id: 'ord_123', user_id: 1, amount: 99.99, date: '2024-05-01' },
-            { order_id: 'ord_124', user_id: 2, amount: 49.50, date: '2024-05-02' },
-            { order_id: 'ord_125', user_id: 1, amount: 120.00, date: '2024-05-03' },
-        ];
-    } else {
-        mockRows = [
-            { result: 'Query executed successfully.', details: 'This is mock data as the query was not recognized.' },
-        ];
+    const { Pool } = await import('pg');
+    const pool = new Pool({ connectionString, connectionTimeoutMillis: 10_000 });
+    let client: PoolClient | null = null;
+    try {
+      client = await pool.connect();
+      await client.query('BEGIN READ ONLY');
+      await client.query("SET LOCAL statement_timeout = '10s'");
+      const result = await client.query(resolvedQuery);
+      await client.query('ROLLBACK');
+      return { success: true, rows: result.rows };
+    } catch (error) {
+      if (client) await client.query('ROLLBACK').catch(() => undefined);
+      return {
+        success: false,
+        rows: [],
+        error: error instanceof Error ? error.message : 'Database query failed.',
+      };
+    } finally {
+      client?.release();
+      await pool.end();
     }
-
-    return {
-      success: true,
-      rows: mockRows,
-    };
   }
 );
 

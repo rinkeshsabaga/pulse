@@ -74,13 +74,10 @@ const WorkflowNode = memo(({ data, id }: NodeProps<NodeData>) => {
   if (isConditionNode) {
     multiOutputHandles.push({ id: 'default', name: 'Default', isDefault: true });
   }
-
-  const handleHeight = 25; // height of each handle area
-  const totalHandlesHeight = multiOutputHandles.length * handleHeight;
-  const startY = `calc(50% - ${totalHandlesHeight / 2}px)`;
+  const hasMultiOutputHandles = isConditionNode || isParallelNode;
 
   return (
-    <>
+    <div className={cn('relative w-80', hasMultiOutputHandles && 'pb-14')}>
       <Handle
         type="target"
         position={targetPosition}
@@ -134,7 +131,7 @@ const WorkflowNode = memo(({ data, id }: NodeProps<NodeData>) => {
         </CardHeader>
       </Card>
       
-      {!isConditionNode && !isParallelNode && (
+      {!hasMultiOutputHandles && (
           <Handle
             type="source"
             position={sourcePosition}
@@ -144,24 +141,27 @@ const WorkflowNode = memo(({ data, id }: NodeProps<NodeData>) => {
           />
       )}
       
-       {(isConditionNode || isParallelNode) && (
+       {hasMultiOutputHandles && (
         <>
             {multiOutputHandles.map((handle, index) => (
                 <React.Fragment key={handle.id}>
                     <Handle
                         type="source"
-                        position={Position.Right}
+                        position={Position.Bottom}
                         id={handle.id}
-                        style={{ top: `calc(${startY} + ${index * handleHeight}px)`, zIndex: 10 }}
+                        style={{
+                          left: `${((index + 1) / (multiOutputHandles.length + 1)) * 100}%`,
+                          bottom: '3.5rem',
+                          zIndex: 10,
+                        }}
                         className={cn("!bg-primary", handle.isDefault && "!bg-gray-500")}
                     />
                      <div 
-                        className="absolute text-xs bg-background p-1 rounded-md border text-muted-foreground w-max pointer-events-none"
+                        className="absolute bottom-3 max-w-24 -translate-x-1/2 truncate rounded-md border bg-background px-2 py-1 text-xs text-muted-foreground pointer-events-none"
                         style={{ 
-                            left: 'calc(100% + 0.75rem)', 
-                            top: `calc(${startY} + ${index * handleHeight}px)`,
-                            transform: 'translateY(-50%)' 
+                            left: `${((index + 1) / (multiOutputHandles.length + 1)) * 100}%`,
                         }}
+                        title={handle.name}
                     >
                         {handle.name}
                     </div>
@@ -169,7 +169,7 @@ const WorkflowNode = memo(({ data, id }: NodeProps<NodeData>) => {
             ))}
         </>
       )}
-    </>
+    </div>
   );
 });
 

@@ -16,7 +16,7 @@ import { wait } from './wait-flow';
 import { sendEmail } from './send-email-flow';
 import { databaseQuery } from './database-query-flow';
 import { resolveVariables } from '@/lib/utils';
-import { RunWorkflowInputSchema, RunWorkflowOutputSchema, type RunWorkflowInput, type RunWorkflowOutput } from '@/lib/types';
+import { RunWorkflowInputSchema, RunWorkflowOutputSchema, WaitInputSchema, type RunWorkflowInput, type RunWorkflowOutput } from '@/lib/types';
 
 
 const runWorkflowFlow = ai.defineFlow(
@@ -41,8 +41,9 @@ const runWorkflowFlow = ai.defineFlow(
         };
     }
 
-    if (triggerStep?.data?.selectedEventId && triggerStep?.data?.events) {
-        const selectedEvent = triggerStep.data.events.find(e => e.id === triggerStep.data.selectedEventId);
+    const triggerData = triggerStep.data;
+    if (triggerData?.selectedEventId && triggerData.events) {
+        const selectedEvent = triggerData.events.find(e => e.id === triggerData.selectedEventId);
         if (selectedEvent) {
             dataContext['trigger'] = selectedEvent;
         }
@@ -70,11 +71,12 @@ const runWorkflowFlow = ai.defineFlow(
             switch(step.title) {
                 case 'Wait':
                     if (step.data) {
-                        stepOutput = await wait(step.data);
+                        stepOutput = await wait(WaitInputSchema.parse(step.data));
                     }
                     nextStepId = step.data?.nextStepId;
                     break;
-                case 'Condition':
+                case 'If/Else':
+                case 'Switch':
                     if (step.data?.conditionData) {
                         const result = await condition({ cases: step.data.conditionData.cases, dataContext: pathDataContext });
                         const matchedCase = step.data.conditionData.cases.find(c => c.name === result.outcome);

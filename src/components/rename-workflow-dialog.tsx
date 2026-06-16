@@ -25,7 +25,7 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { updateWorkflow } from '@/services/db';
+import { updateWorkflow } from '@/services/workflows';
 import { Loader2 } from 'lucide-react';
 import type { Workflow } from '@/lib/types';
 

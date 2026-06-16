@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useCallback, useState, useEffect } from 'react';
+import React, { useCallback, useState, useEffect, useRef } from 'react';
 import { AIFunctionGenerator } from './ai-function-generator';
 import { EditTriggerDialog } from './edit-trigger-dialog';
 import { EditShopifyTriggerDialog } from './edit-shopify-trigger-dialog';
@@ -15,7 +15,14 @@ import { EditCronJobDialog } from './edit-cron-job-dialog';
 import { EditSendEmailDialog } from './edit-send-email-dialog';
 import { EditDatabaseQueryDialog } from './edit-database-query-dialog';
 import { EditParallelDialog } from './edit-parallel-dialog';
-import type { Workflow as WorkflowType, WorkflowStepData, IconName, WorkflowVersion } from '@/lib/types';
+import {
+  isAppActionStep,
+  isAppTriggerStep,
+  type Workflow as WorkflowType,
+  type WorkflowStepData,
+  type IconName,
+  type WorkflowVersion,
+} from '@/lib/types';
 import { v4 as uuidv4 } from 'uuid';
 import { DashboardLayout } from './dashboard-layout';
 import { WorkflowCanvas } from './workflow-canvas';
@@ -32,29 +39,40 @@ export function WorkflowCanvasWrapper({ workflow: initialWorkflow }: WorkflowCan
   const [steps, setSteps] = useState<WorkflowStepData[]>(initialWorkflow.steps);
   const [isAiGeneratorOpen, setIsAiGeneratorOpen] = useState(false);
   const [editingStepInfo, setEditingStepInfo] = useState<{ step: WorkflowStepData, dataContext: any }| null>(null);
+  const stepsRef = useRef(initialWorkflow.steps);
+  const saveQueueRef = useRef<Promise<void>>(Promise.resolve());
   const { toast } = useToast();
   
   useEffect(() => {
     setWorkflow(initialWorkflow);
     setSteps(initialWorkflow.steps);
+    stepsRef.current = initialWorkflow.steps;
   }, [initialWorkflow]);
 
-  const handleSetSteps = useCallback(async (newStepsOrFn: React.SetStateAction<WorkflowStepData[]>) => {
-    const newSteps = typeof newStepsOrFn === 'function' ? newStepsOrFn(steps) : newStepsOrFn;
-    
+  const handleSetSteps = useCallback((newStepsOrFn: React.SetStateAction<WorkflowStepData[]>) => {
+    const newSteps = typeof newStepsOrFn === 'function' ? newStepsOrFn(stepsRef.current) : newStepsOrFn;
+    stepsRef.current = newSteps;
     setSteps(newSteps);
-    const updatedWorkflow = await handleUpdate(workflow.id, { steps: newSteps });
-    if(updatedWorkflow) {
-        setWorkflow(updatedWorkflow);
-    }
-  }, [workflow.id, steps]);
+    saveQueueRef.current = saveQueueRef.current.then(async () => {
+      const updatedWorkflow = await handleUpdate(workflow.id, { steps: newSteps });
+      if (updatedWorkflow) setWorkflow(updatedWorkflow);
+    }).catch((error) => {
+      toast({
+        variant: 'destructive',
+        title: 'Workflow save failed',
+        description: error instanceof Error ? error.message : 'The latest graph change could not be saved.',
+      });
+    });
+  }, [workflow.id, toast]);
 
   const handleRevertVersion = useCallback(async (version: WorkflowVersion) => {
+    await saveQueueRef.current;
     const revertedSteps = version.steps;
     const updatedWorkflow = await handleRevert(workflow.id, revertedSteps);
     if (updatedWorkflow) {
       setWorkflow(updatedWorkflow);
       setSteps(updatedWorkflow.steps);
+      stepsRef.current = updatedWorkflow.steps;
       toast({
         title: 'Workflow Reverted',
         description: `Successfully reverted to Version ${version.version}.`
@@ -156,9 +174,9 @@ export function WorkflowCanvasWrapper({ workflow: initialWorkflow }: WorkflowCan
   }
 
   return (
-    <div className="h-full flex flex-col">
+    <div className="flex h-full min-h-0 flex-col">
       <DashboardLayout onAddStep={handleAddStep}>
-        <div className="flex-1 h-full w-full">
+        <div className="h-full min-h-0 w-full">
             <WorkflowCanvas 
                 workflow={workflow}
                 steps={steps}
@@ -200,15 +218,17 @@ export function WorkflowCanvasWrapper({ workflow: initialWorkflow }: WorkflowCan
                 onSave={handleSaveAction}
             />
         )}
-        {editingStepInfo && editingStepInfo.step.title === 'App Event' && (
+        {editingStepInfo && isAppTriggerStep(editingStepInfo.step) && (
             <EditAppTriggerDialog
                 step={editingStepInfo.step}
+                workflowId={workflow.id}
+                webhookSecret={workflow.webhookSecret}
                 open={!!editingStepInfo}
                 onOpenChange={(isOpen) => !isOpen && setEditingStepInfo(null)}
                 onSave={handleSaveAction}
             />
         )}
-        {editingStepInfo && editingStepInfo.step.title === 'App Action' && (
+        {editingStepInfo && isAppActionStep(editingStepInfo.step) && (
             <EditAppActionDialog
                 step={editingStepInfo.step}
                 dataContext={editingStepInfo.dataContext}
@@ -245,14 +265,14 @@ export function WorkflowCanvasWrapper({ workflow: initialWorkflow }: WorkflowCan
             />
         )}
         <EditCustomCodeDialog
-            step={editingStepInfo?.step}
+            step={editingStepInfo?.step ?? null}
             dataContext={editingStepInfo?.dataContext}
             open={!!editingStepInfo && (editingStepInfo.step.title === 'Custom Code' || editingStepInfo.step.title === 'Custom AI Function')}
             onOpenChange={(isOpen) => !isOpen && setEditingStepInfo(null)}
             onSave={handleSaveAction}
         />
         <EditWaitDialog
-            step={editingStepInfo?.step}
+            step={editingStepInfo?.step ?? null}
             dataContext={editingStepInfo?.dataContext}
             open={!!editingStepInfo && editingStepInfo.step.title === 'Wait'}
             onOpenChange={(isOpen) => !isOpen && setEditingStepInfo(null)}

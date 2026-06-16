@@ -42,7 +42,7 @@ export function getLayoutedElements(steps: WorkflowStepData[], nodeData: NodeCal
 
   // Create edges based on nextStepId logic
   steps.forEach(step => {
-    if (step.title === 'Condition' && step.data?.conditionData) {
+    if ((step.title === 'If/Else' || step.title === 'Switch') && step.data?.conditionData) {
       // Handle branching for Condition nodes
       step.data.conditionData.cases.forEach((caseItem) => {
         if (caseItem.nextStepId) {

@@ -18,7 +18,7 @@ import ReactFlow, {
   applyNodeChanges,
   applyEdgeChanges,
   EdgeChange,
-  NodeChange,
+  BackgroundVariant,
 } from 'reactflow';
 import { Button } from '@/components/ui/button';
 import { Play, Trash2, History, Loader2 } from 'lucide-react';
@@ -41,8 +41,11 @@ import { Badge } from './ui/badge';
 import { Switch } from './ui/switch';
 import { Label } from './ui/label';
 import { VersionHistoryPanel } from './version-history-panel';
-import { runWorkflow } from '@/ai/flows/run-workflow-flow';
-import { handleUpdate } from '@/app/actions';
+import {
+  handlePublishWorkflow,
+  handleRunWorkflow,
+  handleUnpublishWorkflow,
+} from '@/app/actions';
 
 
 type WorkflowCanvasProps = {
@@ -107,7 +110,7 @@ function WorkflowCanvasComponent({
 
         const sourceStep = { ...newSteps[sourceStepIndex] };
         
-        if (sourceStep.title === 'Condition' && sourceStep.data?.conditionData) {
+        if ((sourceStep.title === 'If/Else' || sourceStep.title === 'Switch') && sourceStep.data?.conditionData) {
             const conditionData = { ...sourceStep.data.conditionData };
             const cases = [...(conditionData.cases || [])];
 
@@ -155,7 +158,7 @@ function WorkflowCanvasComponent({
             const sourceStep = { ...nextSteps[sourceStepIndex] };
             let stepWasModified = false;
   
-            if (sourceStep.title === 'Condition' && sourceStep.data?.conditionData) {
+            if ((sourceStep.title === 'If/Else' || sourceStep.title === 'Switch') && sourceStep.data?.conditionData) {
               const conditionData = { ...sourceStep.data.conditionData };
               if (edgeToRemove.sourceHandle === 'default') {
                 conditionData.defaultNextStepId = undefined;
@@ -217,7 +220,7 @@ function WorkflowCanvasComponent({
     setIsHistoryOpen(false);
   }
 
-  const handleRunWorkflow = async () => {
+  const handleRunClick = async () => {
     if (steps.length === 0) {
       toast({
         variant: 'destructive',
@@ -228,24 +231,24 @@ function WorkflowCanvasComponent({
     }
     setIsExecuting(true);
     try {
-      const result = await runWorkflow({ steps });
+      const result = await handleRunWorkflow(currentWorkflow.id);
       if (result.success) {
         toast({
-          title: 'Workflow Run Successful',
-          description: result.message,
+          title: 'Workflow Run Started',
+          description: `Run ID: ${result.inngestRunId}`,
         });
       } else {
          toast({
           variant: 'destructive',
           title: 'Workflow Run Failed',
-          description: result.message,
+          description: 'Failed to start execution.',
         });
       }
     } catch (error: any) {
         toast({
           variant: 'destructive',
           title: 'Execution Error',
-          description: `An unexpected error occurred: ${error.message}`,
+          description: error.message || 'An unexpected error occurred.',
         });
     } finally {
         setIsExecuting(false);
@@ -254,21 +257,29 @@ function WorkflowCanvasComponent({
 
   const handleStatusChange = async (isPublished: boolean) => {
     setIsSaving(true);
-    const newStatus = isPublished ? 'Published' : 'Draft';
     try {
-        const updatedWorkflow = await handleUpdate(currentWorkflow.id, { status: newStatus });
-        if (updatedWorkflow) {
-            setCurrentWorkflow(updatedWorkflow);
+        const result = isPublished
+          ? await handlePublishWorkflow(currentWorkflow.id)
+          : await handleUnpublishWorkflow(currentWorkflow.id);
+
+        if (result.success && result.workflow) {
+            setCurrentWorkflow(result.workflow);
             toast({
                 title: 'Status Updated',
-                description: `Workflow is now ${newStatus}.`
+                description: `Workflow is now ${isPublished ? 'published' : 'a draft'}.`
+            });
+        } else {
+            toast({
+              variant: 'destructive',
+              title: 'Workflow cannot be published',
+              description: result.errors.slice(0, 3).map((error) => error.message).join(' '),
             });
         }
-    } catch (error) {
+    } catch (error: any) {
         toast({
             variant: 'destructive',
             title: 'Error',
-            description: 'Failed to update workflow status.'
+            description: error.message || 'Failed to update workflow status.'
         });
     } finally {
         setIsSaving(false);
@@ -277,7 +288,7 @@ function WorkflowCanvasComponent({
 
   return (
     <>
-    <div className="flex-1 flex flex-col h-full">
+    <div className="flex h-full min-h-0 flex-1 flex-col">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 p-4 md:p-6 pl-20">
         <div className="flex-1 space-y-1 min-w-0">
           <div className="flex items-center gap-3">
@@ -288,12 +299,12 @@ function WorkflowCanvasComponent({
             <div className="flex items-center space-x-2 ml-auto md:ml-0">
                 <Switch 
                     id="publish-toggle" 
-                    checked={currentWorkflow.status === 'Published'}
+                    checked={currentWorkflow.status === 'PUBLISHED'}
                     onCheckedChange={handleStatusChange}
                     disabled={isSaving}
                 />
                 <Label htmlFor="publish-toggle" className="text-sm font-medium whitespace-nowrap">
-                    {isSaving ? 'Saving...' : (currentWorkflow.status === 'Published' ? 'Published' : 'Draft')}
+                    {isSaving ? 'Saving...' : (currentWorkflow.status === 'PUBLISHED' ? 'Published' : 'Draft')}
                 </Label>
             </div>
           </div>
@@ -309,7 +320,7 @@ function WorkflowCanvasComponent({
             <History className="mr-2 h-4 w-4" />
             History
           </Button>
-          <Button variant="outline" onClick={handleRunWorkflow} disabled={isExecuting}>
+          <Button variant="outline" onClick={handleRunClick} disabled={isExecuting}>
             {isExecuting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Play className="mr-2 h-4 w-4" />}
             Run Workflow
           </Button>
@@ -326,7 +337,7 @@ function WorkflowCanvasComponent({
 
       <Separator />
 
-      <div className="flex-1 h-full w-full">
+      <div className="relative min-h-0 flex-1 w-full">
         <ReactFlow
           nodes={nodes}
           edges={edges}
@@ -339,8 +350,18 @@ function WorkflowCanvasComponent({
         >
           <Controls />
           <MiniMap nodeStrokeWidth={3} zoomable pannable />
-          <Background variant="dots" gap={16} size={1} />
+          <Background variant={BackgroundVariant.Dots} gap={16} size={1} />
         </ReactFlow>
+        {steps.length === 0 && (
+          <div className="pointer-events-none absolute inset-0 flex items-center justify-center p-6">
+            <div className="max-w-sm rounded-lg border bg-card/95 p-6 text-center shadow-sm">
+              <h2 className="font-semibold">Your workflow is ready</h2>
+              <p className="mt-2 text-sm text-muted-foreground">
+                Choose a trigger or action from the Designer panel to add the first step.
+              </p>
+            </div>
+          </div>
+        )}
       </div>
     </div>
     <AlertDialog open={isClearAlertOpen} onOpenChange={setIsClearAlertOpen}>
@@ -366,6 +387,8 @@ function WorkflowCanvasComponent({
         isOpen={isHistoryOpen}
         onClose={() => setIsHistoryOpen(false)}
         history={currentWorkflow.history}
+        currentVersion={currentWorkflow.version}
+        currentStepCount={steps.length}
         onRevert={handleRevertVersion}
     />
     </>

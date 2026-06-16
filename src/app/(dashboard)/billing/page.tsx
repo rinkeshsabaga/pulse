@@ -1,354 +1,324 @@
-
 'use client';
 
-import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
+import React, { useEffect, useState } from 'react';
+import { useOrganization } from '@clerk/nextjs';
 import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
-import { Download, CreditCard, CheckCircle2, ArrowRight, PlusCircle, Zap } from 'lucide-react';
-import { UpdateCardDialog } from '@/components/update-card-dialog';
+import { Button } from '@/components/ui/button';
+import { Progress } from '@/components/ui/progress';
+import { Separator } from '@/components/ui/separator';
+import { Zap, Check, ArrowUpRight, CreditCard, Loader2, Users, Workflow, Activity, GitCommit, History } from 'lucide-react';
+import { PLAN_LIMITS } from '@/lib/billing-policy';
+import type { PlanName } from '@/lib/billing-policy';
 import { useToast } from '@/hooks/use-toast';
-import { usePlan } from '@/app/(dashboard)/layout';
 
-const billingHistory = [
-    { invoice: 'INV-2024-005', date: 'June 1, 2024', amount: '$50.00', status: 'Paid' },
-    { invoice: 'INV-2024-004', date: 'May 1, 2024', amount: '$50.00', status: 'Paid' },
-    { invoice: 'INV-2024-003', date: 'April 1, 2024', amount: '$50.00', status: 'Paid' },
-    { invoice: 'INV-2024-002', date: 'March 1, 2024', amount: '$50.00', status: 'Paid' },
-];
+// ─────────────────────────────────────────────────────────────────────────────
+// Billing Page
+// Shows current plan, usage meters, and upgrade options.
+// ─────────────────────────────────────────────────────────────────────────────
 
-const plansData = [
-    {
-      name: 'Free',
-      price: '$0',
-      priceFrequency: '/ month',
-      description: 'For individuals and small teams just getting started.',
-      features: [
-        '1,000 Credits / month',
-        '2 Team Members',
-        'Community Support',
-        'Basic Integrations',
-      ],
-      credits: {
-          price: '$10',
-          amount: '1,000 Credits'
-      },
-      monthlyCredits: 1000,
-    },
-    {
-      name: 'Growth',
-      price: '$49',
-      priceFrequency: '/ month',
-      description: 'For growing teams that need more power and automation.',
-      features: [
-        '10,000 Credits / month',
-        '5 Team Members',
-        'Email & Chat Support',
-        'Advanced Integrations',
-        'Access to AI Features',
-      ],
-      credits: {
-          price: '$10',
-          amount: '1,200 Credits'
-      },
-      monthlyCredits: 10000,
-    },
-    {
-      name: 'Advanced',
-      price: '$99',
-      priceFrequency: '/ month',
-      description: 'For businesses that require advanced features and support.',
-      features: [
-        '50,000 Credits / month',
-        '15 Team Members',
-        'Priority Support',
-        'Custom Integrations',
-        'Dedicated AI Models',
-      ],
-       credits: {
-          price: '$10',
-          amount: '1,500 Credits'
-      },
-      monthlyCredits: 50000,
-    },
-    {
-      name: 'Enterprise',
-      price: 'Custom',
-      priceFrequency: '',
-      description: 'For large organizations with custom needs and security requirements.',
-      features: [
-        'Unlimited Credits',
-        'Unlimited Team Members',
-        '24/7 Dedicated Support',
-        'On-premise Deployment',
-        'Security & Compliance Reviews',
-      ],
-      credits: {
-          price: 'Custom',
-          amount: 'Custom Credits'
-      },
-      monthlyCredits: 'Unlimited',
-    },
-];
+type UsageSummary = {
+  plan: PlanName;
+  limits: typeof PLAN_LIMITS.FREE;
+  usage: {
+    runs: { used: number; limit: number };
+    workflows: { used: number; limit: number };
+    members: { used: number; limit: number };
+    stepsPerWorkflow: { used: number; limit: number };
+    retentionDays: { used: number; limit: number };
+  };
+};
 
-const creditPricing = [
-    { node: 'Any Trigger', cost: '1 Credit' },
-    { node: 'API Request', cost: '1 Credit' },
-    { node: 'Custom Code / AI Function', cost: '1 Credit' },
-    { node: 'Other Actions', cost: '1 Credit' },
-    { node: 'Wait Node', cost: '1 Credit / day' },
-];
+const ALL_PLANS: PlanName[] = ['FREE', 'STARTER', 'PRO', 'ENTERPRISE'];
 
-export default function BillingPage() {
-  const [isUpdateCardOpen, setIsUpdateCardOpen] = useState(false);
-  const { currentPlan, setCurrentPlan } = usePlan();
-  const [cardInfo, setCardInfo] = useState({
-      endingIn: '4242',
-      expires: '06/2028'
-  });
-  const { toast } = useToast();
+const PLAN_CTA: Record<PlanName, string> = {
+  FREE: 'Upgrade to Starter',
+  STARTER: 'Upgrade to Pro',
+  PRO: 'Talk to Sales',
+  ENTERPRISE: 'Current Plan',
+};
 
-  const handleCardUpdate = (newCardData: { endingIn: string; expires: string; }) => {
-    setCardInfo(newCardData);
-  }
-
-  const handlePlanChange = (planName: string) => {
-    if (planName === 'Enterprise') {
-        toast({
-            title: 'Contact Sales',
-            description: 'Please get in touch with our sales team to discuss your needs.'
-        });
-        // Optionally, you could open a mailto link:
-        // window.location.href = "mailto:sales@sabagapulse.com";
-        return;
-    }
-    setCurrentPlan(planName);
-    toast({
-        title: 'Plan Updated!',
-        description: `You have successfully upgraded to the ${planName} plan.`
-    });
-  }
-  
-  const currentPlanDetails = plansData.find(p => p.name === currentPlan);
+function UsageMeter({
+  label,
+  icon: Icon,
+  used,
+  limit,
+}: {
+  label: string;
+  icon: React.ElementType;
+  used: number;
+  limit: number;
+}) {
+  const unlimited = limit === -1;
+  const pct = unlimited ? 0 : Math.min(100, (used / limit) * 100);
+  const isWarning = !unlimited && pct >= 80;
+  const isOver = !unlimited && pct >= 100;
 
   return (
-    <>
-    <div className="grid flex-1 items-start gap-8">
-      <div className="space-y-2">
-        <h1 className="text-3xl font-bold font-headline">Billing & Plans</h1>
-        <p className="text-muted-foreground">Manage your subscription and billing details.</p>
+    <div className="space-y-2">
+      <div className="flex items-center justify-between text-sm">
+        <div className="flex items-center gap-1.5 text-muted-foreground">
+          <Icon className="h-3.5 w-3.5" />
+          <span>{label}</span>
+        </div>
+        <span className={isOver ? 'text-destructive font-semibold' : 'font-medium'}>
+          {used.toLocaleString()}{' '}
+          <span className="text-muted-foreground font-normal">
+            / {unlimited ? '∞' : limit.toLocaleString()}
+          </span>
+        </span>
+      </div>
+      {!unlimited && (
+        <Progress
+          value={pct}
+          className={`h-1.5 ${isWarning ? '[&>div]:bg-amber-500' : ''} ${isOver ? '[&>div]:bg-destructive' : ''}`}
+        />
+      )}
+    </div>
+  );
+}
+
+function LimitValue({
+  label,
+  icon: Icon,
+  value,
+}: {
+  label: string;
+  icon: React.ElementType;
+  value: string;
+}) {
+  return (
+    <div className="flex items-center justify-between text-sm">
+      <div className="flex items-center gap-1.5 text-muted-foreground">
+        <Icon className="h-3.5 w-3.5" />
+        <span>{label}</span>
+      </div>
+      <span className="font-medium">{value}</span>
+    </div>
+  );
+}
+
+export default function BillingPage() {
+  const { organization } = useOrganization();
+  const { toast } = useToast();
+  const [summary, setSummary] = useState<UsageSummary | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isUpgrading, setIsUpgrading] = useState(false);
+  const [isOpeningPortal, setIsOpeningPortal] = useState(false);
+
+  const currentPlan = summary?.plan ?? ((organization?.publicMetadata?.plan as string) ?? 'FREE') as PlanName;
+  const limits = PLAN_LIMITS[currentPlan];
+
+  useEffect(() => {
+    fetch('/api/usage/summary')
+      .then(async (response) => {
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'Could not load usage.');
+        return data;
+      })
+      .then((data) => setSummary(data))
+      .catch((error) => {
+        toast({
+          variant: 'destructive',
+          title: 'Could not load billing usage',
+          description: error instanceof Error ? error.message : 'Usage data is unavailable.',
+        });
+      })
+      .finally(() => setIsLoading(false));
+  }, [toast]);
+
+  const handleUpgrade = async (targetPlan: PlanName, billing: 'monthly' | 'yearly') => {
+    if (targetPlan === 'ENTERPRISE') {
+      window.open('mailto:sales@sabagapulse.com?subject=Enterprise Inquiry', '_blank');
+      return;
+    }
+
+    setIsUpgrading(true);
+    try {
+      const res = await fetch('/api/billing/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ plan: targetPlan, billing }),
+      });
+      const { url, error } = await res.json();
+      if (!res.ok) throw new Error(error || 'Checkout failed.');
+      if (url) window.location.href = url;
+    } catch (error) {
+      toast({
+        variant: 'destructive',
+        title: 'Could not open checkout',
+        description: error instanceof Error ? error.message : 'Try again.',
+      });
+    } finally {
+      setIsUpgrading(false);
+    }
+  };
+
+  const handleManageSubscription = async () => {
+    setIsOpeningPortal(true);
+    try {
+      const res = await fetch('/api/billing/portal', { method: 'POST' });
+      const { url, error } = await res.json();
+      if (!res.ok) throw new Error(error || 'Could not open billing portal.');
+      if (url) window.location.href = url;
+    } catch (error) {
+      toast({
+        variant: 'destructive',
+        title: 'Could not open billing portal',
+        description: error instanceof Error ? error.message : 'Try again.',
+      });
+    } finally {
+      setIsOpeningPortal(false);
+    }
+  };
+
+  return (
+    <div className="flex flex-col gap-8 max-w-5xl">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold font-headline">Billing & Plans</h1>
+          <p className="text-muted-foreground">Manage your subscription and usage</p>
+        </div>
+        {currentPlan !== 'FREE' && (
+          <Button variant="outline" onClick={handleManageSubscription} disabled={isOpeningPortal}>
+            {isOpeningPortal ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CreditCard className="mr-2 h-4 w-4" />}
+            Manage Subscription
+          </Button>
+        )}
       </div>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-4 lg:gap-8">
-        {plansData.map((plan) => {
-          const isCurrent = plan.name === currentPlan;
-          let buttonText = 'Upgrade';
-          if (isCurrent) buttonText = 'Current Plan';
-          if (plan.name === 'Enterprise') buttonText = 'Contact Sales';
+      {/* Current Plan Card */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>Current Plan</CardTitle>
+              <CardDescription>Your active subscription and this month's usage</CardDescription>
+            </div>
+            <Badge className="text-base px-3 py-1 font-semibold">
+              <Zap className="mr-1.5 h-4 w-4" />
+              {limits.displayName}
+            </Badge>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-5">
+          {isLoading ? (
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Loading usage...
+            </div>
+          ) : summary ? (
+            <div className="space-y-4">
+              <UsageMeter
+                label="Workflow Runs this month"
+                icon={Activity}
+                used={summary.usage.runs.used}
+                limit={summary.usage.runs.limit}
+              />
+              <UsageMeter
+                label="Workflows"
+                icon={Workflow}
+                used={summary.usage.workflows.used}
+                limit={summary.usage.workflows.limit}
+              />
+              <UsageMeter
+                label="Team Members"
+                icon={Users}
+                used={summary.usage.members.used}
+                limit={summary.usage.members.limit}
+              />
+              <UsageMeter
+                label="Steps per workflow"
+                icon={GitCommit}
+                used={summary.usage.stepsPerWorkflow.used}
+                limit={summary.usage.stepsPerWorkflow.limit}
+              />
+              <LimitValue
+                label="Run log retention"
+                icon={History}
+                value={`${summary.usage.retentionDays.limit} days`}
+              />
+            </div>
+          ) : (
+            <p className="text-muted-foreground text-sm">Usage data unavailable.</p>
+          )}
+        </CardContent>
+      </Card>
 
-          return (
-            <Card key={plan.name} className={`flex flex-col ${isCurrent ? 'border-primary shadow-lg' : ''}`}>
-              <CardHeader className="pb-4">
-                <CardTitle>{plan.name}</CardTitle>
-                <CardDescription>{plan.description}</CardDescription>
-              </CardHeader>
-              <CardContent className="flex-1 space-y-6">
-                  <div className="flex items-baseline">
-                      <span className="text-4xl font-bold">{plan.price}</span>
-                      {plan.priceFrequency && <span className="text-muted-foreground ml-1">{plan.priceFrequency}</span>}
-                  </div>
-                  <ul className="space-y-3">
-                      {plan.features.map((feature) => (
-                          <li key={feature} className="flex items-center gap-2">
-                              <CheckCircle2 className="h-5 w-5 text-green-500" />
-                              <span className="text-sm">{feature}</span>
-                          </li>
-                      ))}
+      {/* Plan Grid */}
+      <div>
+        <h2 className="text-lg font-semibold mb-4">Compare Plans</h2>
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          {ALL_PLANS.map((plan) => {
+            const p = PLAN_LIMITS[plan];
+            const isCurrent = plan === currentPlan;
+            const isDowngrade =
+              ALL_PLANS.indexOf(plan) < ALL_PLANS.indexOf(currentPlan);
+
+            return (
+              <Card
+                key={plan}
+                className={isCurrent ? 'border-primary ring-2 ring-primary ring-offset-2' : ''}
+              >
+                <CardHeader className="pb-3">
+                  {isCurrent && (
+                    <Badge className="w-fit mb-2" variant="default">
+                      Current
+                    </Badge>
+                  )}
+                  <CardTitle className="text-lg">{p.displayName}</CardTitle>
+                  <CardDescription>
+                    {p.price.monthly === 0
+                      ? 'Free forever'
+                      : p.price.monthly === -1
+                      ? 'Custom pricing'
+                      : `$${p.price.monthly / 100}/mo`}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <ul className="space-y-1.5 text-sm">
+                    {p.features.map((f) => (
+                      <li key={f} className="flex items-start gap-2">
+                        <Check className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+                        <span>{f}</span>
+                      </li>
+                    ))}
                   </ul>
                   <Separator />
-                  <div className="space-y-3">
-                      <h4 className="font-semibold text-sm">Need more credits?</h4>
-                      <div className="flex justify-between items-center">
-                          <div>
-                              <p className="font-medium">{plan.credits.amount}</p>
-                              <p className="text-sm text-muted-foreground">{plan.credits.price}</p>
-                          </div>
-                          <Button variant="outline" size="sm">
-                              <PlusCircle className="mr-2 h-4 w-4" />
-                              Buy
-                          </Button>
-                      </div>
-                  </div>
-              </CardContent>
-              <CardFooter>
-                  <Button 
-                    className="w-full" 
-                    variant={isCurrent || plan.name === 'Enterprise' ? 'outline' : 'default'}
-                    disabled={isCurrent}
-                    onClick={() => handlePlanChange(plan.name)}
-                  >
-                      {buttonText}
-                      {!isCurrent && plan.name !== 'Enterprise' && <ArrowRight className="ml-2 h-4 w-4" />}
-                  </Button>
-              </CardFooter>
-            </Card>
-          )
-        })}
-      </div>
-      
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2 space-y-8">
-            <Card>
-                <CardHeader>
-                    <CardTitle>Credit Usage & Pricing</CardTitle>
-                    <CardDescription>
-                        Credits are used for each operation within your workflows.
-                    </CardDescription>
-                </CardHeader>
-                <CardContent>
-                     <Table>
-                        <TableHeader>
-                        <TableRow>
-                            <TableHead>Node Type</TableHead>
-                            <TableHead className="text-right">Credits per Use</TableHead>
-                        </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                        {creditPricing.map((item) => (
-                            <TableRow key={item.node}>
-                                <TableCell>
-                                    <div className="font-medium flex items-center gap-2">
-                                        <Zap className="h-4 w-4 text-primary/70" />
-                                        {item.node}
-                                    </div>
-                                </TableCell>
-                                <TableCell className="text-right">{item.cost}</TableCell>
-                            </TableRow>
-                        ))}
-                        </TableBody>
-                    </Table>
+                  {!isCurrent && !isDowngrade && (
+                    <Button
+                      className="w-full"
+                      variant={plan === 'PRO' ? 'default' : 'outline'}
+                      onClick={() => handleUpgrade(plan, 'monthly')}
+                      disabled={isUpgrading}
+                    >
+                      {isUpgrading ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <>
+                          {PLAN_CTA[plan]}
+                          <ArrowUpRight className="ml-1.5 h-3.5 w-3.5" />
+                        </>
+                      )}
+                    </Button>
+                  )}
+                  {isCurrent && (
+                    <Button variant="outline" className="w-full" disabled>
+                      Current Plan
+                    </Button>
+                  )}
                 </CardContent>
-            </Card>
-
-            <Card>
-            <CardHeader className="px-7">
-              <CardTitle>Billing History</CardTitle>
-              <CardDescription>
-                Review your past invoices and payment details.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Invoice</TableHead>
-                    <TableHead className="hidden sm:table-cell">Date</TableHead>
-                    <TableHead className="hidden sm:table-cell">Status</TableHead>
-                    <TableHead className="text-right">Amount</TableHead>
-                     <TableHead className="text-right"></TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {billingHistory.map((item) => (
-                     <TableRow key={item.invoice}>
-                        <TableCell>
-                            <div className="font-medium">{item.invoice}</div>
-                        </TableCell>
-                        <TableCell className="hidden sm:table-cell">{item.date}</TableCell>
-                        <TableCell className="hidden sm:table-cell">
-                            <Badge className="text-xs" variant={item.status === 'Paid' ? 'default' : 'secondary'}>
-                                {item.status}
-                            </Badge>
-                        </TableCell>
-                        <TableCell className="text-right">{item.amount}</TableCell>
-                        <TableCell className="text-right">
-                             <Button size="icon" variant="outline">
-                                <Download className="h-4 w-4" />
-                                <span className="sr-only">Download Invoice</span>
-                            </Button>
-                        </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
-        </div>
-        
-        <div className="lg:col-span-1 space-y-8">
-             <Card>
-                <CardHeader className="p-4">
-                    <CardTitle>Current Plan Usage</CardTitle>
-                    <CardDescription>You are on the <span className="font-semibold text-primary">{currentPlan}</span> Plan.</CardDescription>
-                </CardHeader>
-                <CardContent className="p-4 pt-0 grid gap-4">
-                     <div className="space-y-2">
-                        <div className="flex justify-between text-sm font-medium">
-                            <span>Monthly Credits</span>
-                            <span>250 / {currentPlanDetails?.monthlyCredits}</span>
-                        </div>
-                        <Progress value={(250 / (currentPlanDetails?.monthlyCredits === 'Unlimited' ? Infinity : currentPlanDetails?.monthlyCredits || 1)) * 100} aria-label="Credit usage" />
-                     </div>
-                     <div className="space-y-2">
-                        <div className="flex justify-between text-sm font-medium">
-                            <span>Team Members</span>
-                            <span>1 / {currentPlanDetails?.features[1].split(' ')[0]}</span>
-                        </div>
-                        <Progress value={50} aria-label="50% of team member seats used" />
-                     </div>
-                </CardContent>
-                 <CardFooter className="flex flex-col items-start gap-2 border-t p-4">
-                    <p className="text-sm text-muted-foreground">
-                        Your plan renews on July 1, 2024.
-                    </p>
-                    <div className="flex w-full items-center justify-between">
-                         <Button variant="link" size="sm" className="p-0 h-auto">Manage Subscription</Button>
-                         <Button variant="outline" size="sm">Add Credits</Button>
-                    </div>
-                </CardFooter>
-            </Card>
-            <Card>
-                <CardHeader>
-                    <CardTitle>Payment Method</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <div className="flex items-center justify-between rounded-lg border border-dashed p-4">
-                        <div className="flex items-center gap-3">
-                            <CreditCard className="h-8 w-8 text-muted-foreground" />
-                            <div>
-                                <p className="font-semibold">Visa ending in **** {cardInfo.endingIn}</p>
-                                <p className="text-sm text-muted-foreground">Expires {cardInfo.expires}</p>
-                            </div>
-                        </div>
-                         <Button variant="outline" onClick={() => setIsUpdateCardOpen(true)}>Update</Button>
-                    </div>
-                </CardContent>
-            </Card>
+              </Card>
+            );
+          })}
         </div>
       </div>
     </div>
-    <UpdateCardDialog 
-        open={isUpdateCardOpen} 
-        onOpenChange={setIsUpdateCardOpen}
-        onCardUpdated={handleCardUpdate}
-    />
-    </>
   );
 }
