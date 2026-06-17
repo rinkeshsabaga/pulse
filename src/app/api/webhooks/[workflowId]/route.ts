@@ -143,33 +143,43 @@ export async function POST(
     }
   });
 
+
   // Fire the Inngest event (async — returns immediately)
-  await inngest.send({
-    name: 'workflow/run',
-    data: {
-      workflowId: workflow.id,
-      organizationId: workflow.organizationId,
-      trigger: appTrigger ? 'app' : 'webhook',
-      triggerData: {
-        ...(appTrigger && {
-          app,
-          event,
-          stepId: appTrigger.id,
-          provider: app?.toLowerCase().replace(/\s+/g, '_'),
-        }),
-        method: request.method,
-        headers,
-        body,
-        receivedAt: new Date().toISOString(),
+  try {
+    await inngest.send({
+      name: 'workflow/run',
+      data: {
+        workflowId: workflow.id,
+        organizationId: workflow.organizationId,
+        trigger: appTrigger ? 'app' : 'webhook',
+        triggerData: {
+          ...(appTrigger && {
+            app,
+            event,
+            stepId: appTrigger.id,
+            provider: app?.toLowerCase().replace(/\s+/g, '_'),
+          }),
+          method: request.method,
+          headers,
+          body,
+          receivedAt: new Date().toISOString(),
+        },
       },
-    },
-  });
+    });
+  } catch (error) {
+    console.error('[webhook] inngest.send failed:', error);
+    return NextResponse.json(
+      { error: 'Failed to queue workflow run', detail: error instanceof Error ? error.message : String(error) },
+      { status: 500 }
+    );
+  }
 
   return NextResponse.json(
     { success: true, message: 'Workflow triggered' },
     { status: 200 }
   );
 }
+
 
 // Allow GET for webhook verification (e.g., Shopify ping)
 export async function GET(
