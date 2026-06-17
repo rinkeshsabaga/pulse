@@ -161,7 +161,7 @@ export default async function HomePage() {
                     </TableCell>
                   </TableRow>
                 ) : (
-                  recentWorkflows.map((wf) => (
+                  recentWorkflows.map((wf: typeof recentWorkflows[number]) => (
                     <TableRow key={wf.id}>
                       <TableCell>
                         <Link href={`/workflows/${wf.id}`} className="font-medium hover:underline">
