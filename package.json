@@ -12,7 +12,8 @@
     "typecheck": "tsc --noEmit",
     "env:check": "node --import tsx scripts/validate-env.ts",
     "db:validate": "prisma validate",
-    "test": "node --import tsx --test tests/*.test.ts"
+    "test": "node --import tsx --test tests/*.test.ts",
+    "postinstall": "prisma generate"
   },
   "dependencies": {
     "@clerk/nextjs": "^7.5.2",
