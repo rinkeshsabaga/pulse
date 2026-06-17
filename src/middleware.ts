@@ -10,6 +10,7 @@ const isPublicRoute = createRouteMatcher([
   '/signup(.*)',
   '/api/webhooks/stripe(.*)',      // Stripe webhooks — no auth
   '/api/webhooks/(.*)',            // Incoming workflow triggers — validated by secret
+  '/api/inngest(.*)',              // Inngest — authenticated via signing key
 ]);
 
 const isOnboardingRoute = createRouteMatcher(['/onboarding(.*)', '/api/organizations/create(.*)']);
