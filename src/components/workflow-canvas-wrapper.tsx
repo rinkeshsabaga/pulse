@@ -101,7 +101,8 @@ export function WorkflowCanvasWrapper({ workflow: initialWorkflow }: WorkflowCan
     };
     
     if (newStep.type === 'trigger' && newStep.title === 'Webhook') {
-      newStep.data = { webhookUrl: `https://api.sabagapulse.com/v1/webhooks/wf_${Date.now()}`, events: [], selectedEventId: null };
+      const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? window.location.origin;
+      newStep.data = { webhookUrl: `${baseUrl}/api/webhooks/${workflow.id}`, events: [], selectedEventId: null };
     }
     if (newStep.type === 'trigger' && newStep.title === 'Shopify') {
         newStep.description = 'Click Edit to select an event';
