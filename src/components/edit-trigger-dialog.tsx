@@ -2,7 +2,7 @@
 // src/components/edit-trigger-dialog.tsx
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -15,9 +15,8 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Copy, Webhook, Loader2 } from 'lucide-react';
+import { Copy, Webhook, Loader2, RefreshCw } from 'lucide-react';
 import type { WorkflowStepData, WebhookEvent } from '@/lib/types';
-import { randomBytes } from 'crypto';
 import { ScrollArea } from './ui/scroll-area';
 import {
   Select,
@@ -42,17 +41,49 @@ export function EditTriggerDialog({ step, workflowId, open, onOpenChange, onSave
   const { toast } = useToast();
   const [events, setEvents] = useState<WebhookEvent[]>([]);
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
-  const [isGenerating, setIsGenerating] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const fetchEvents = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const res = await fetch(`/api/webhooks/${workflowId}/events`);
+      if (res.ok) {
+        const data = await res.json();
+        const fetchedEvents: WebhookEvent[] = data.events ?? [];
+
+        // Merge with any locally generated test events from step data
+        const localEvents = (step.data?.events ?? []) as WebhookEvent[];
+        const localOnlyEvents = localEvents.filter(
+          (le) => !fetchedEvents.some((fe) => fe.id === le.id)
+        );
+
+        const merged = [...fetchedEvents, ...localOnlyEvents];
+        setEvents(merged);
+
+        // Auto-select the most recent event if nothing selected
+        if (!selectedEventId && merged.length > 0) {
+          setSelectedEventId(merged[0].id);
+        }
+      }
+    } catch {
+      // Silently fail — keep existing events
+    } finally {
+      setIsLoading(false);
+    }
+  }, [workflowId, step.data?.events, selectedEventId]);
 
   useEffect(() => {
     if (open) {
-      const initialEvents = step.data?.events || [];
-      setEvents(initialEvents);
-      
-      const initialSelectedId = step.data?.selectedEventId || (initialEvents.length > 0 ? initialEvents[0].id : null);
-      setSelectedEventId(initialSelectedId);
+      fetchEvents();
     }
-  }, [open, step.data]);
+  }, [open, fetchEvents]);
+
+  // Auto-refresh every 5 seconds while dialog is open
+  useEffect(() => {
+    if (!open) return;
+    const interval = setInterval(fetchEvents, 5000);
+    return () => clearInterval(interval);
+  }, [open, fetchEvents]);
 
   const handleCopy = () => {
     if (step.data?.webhookUrl) {
@@ -65,32 +96,23 @@ export function EditTriggerDialog({ step, workflowId, open, onOpenChange, onSave
   };
   
   const handleGenerateTestEvent = async () => {
-    setIsGenerating(true);
-    try {
-      // In a real app, you'd get the org ID from the user's session
-      // Just generate a mock event client-side for now
-      const mockEvent: WebhookEvent = {
-        id: `evt_${Math.random().toString(36).substring(2, 9)}`,
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: { test: true, timestamp: Date.now(), message: "Hello World" },
-        query: {},
-        receivedAt: new Date().toISOString()
-      };
-      
-      const newEvents = [mockEvent, ...events];
-      setEvents(newEvents);
-      setSelectedEventId(mockEvent.id);
-      
-      toast({
-          title: "Test event generated",
-          description: "A new test event has been added to the list."
-      });
-    } catch (e) {
-      toast({ variant: 'destructive', title: 'Error', description: 'Could not generate test event.'});
-    } finally {
-        setIsGenerating(false);
-    }
+    const mockEvent: WebhookEvent = {
+      id: `evt_${Math.random().toString(36).substring(2, 9)}`,
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: { test: true, timestamp: Date.now(), message: "Hello World" },
+      query: {},
+      receivedAt: new Date().toISOString()
+    };
+    
+    const newEvents = [mockEvent, ...events];
+    setEvents(newEvents);
+    setSelectedEventId(mockEvent.id);
+    
+    toast({
+        title: "Test event generated",
+        description: "A new test event has been added to the list."
+    });
   }
 
   const handleSave = () => {
@@ -133,17 +155,20 @@ export function EditTriggerDialog({ step, workflowId, open, onOpenChange, onSave
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                    <Button onClick={handleGenerateTestEvent} disabled={isGenerating} className="w-full">
-                        {isGenerating ? (
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        ) : null}
+                <div className="flex gap-2">
+                    <Button onClick={handleGenerateTestEvent} className="flex-1">
                         Generate Test Event
+                    </Button>
+                    <Button variant="outline" size="icon" onClick={fetchEvents} disabled={isLoading}>
+                        <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
                     </Button>
                 </div>
                 
                 <div className="space-y-2 flex-1 flex flex-col">
-                    <Label htmlFor="event-selector">Select an event</Label>
+                    <Label htmlFor="event-selector">
+                      Select an event
+                      {isLoading && <Loader2 className="inline ml-2 h-3 w-3 animate-spin" />}
+                    </Label>
                     <Select value={selectedEventId || ''} onValueChange={setSelectedEventId}>
                         <SelectTrigger id="event-selector">
                            <SelectValue placeholder="No events received yet..." />
