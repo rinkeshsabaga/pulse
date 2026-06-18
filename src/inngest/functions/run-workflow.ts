@@ -202,7 +202,7 @@ async function executeStepDefinition(
           // Keep non-JSON responses as text.
         }
         const output = { status: response.status, ok: response.ok, body: responseBody };
-        const input = { url: url.toString(), method: data.method ?? 'GET' };
+        const input = { url: url.toString(), method: data.method ?? 'GET', body: body ?? null };
 
         if (!response.ok) {
           return { success: false, input, output, error: `HTTP ${response.status}` };
